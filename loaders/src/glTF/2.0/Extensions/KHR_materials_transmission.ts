@@ -49,8 +49,9 @@ interface ITransmissionHelperOptions {
 
 /**
  * A class to handle setting up the rendering of opaque objects to be shown through transmissive objects.
+ * @hidden
  */
-class TransmissionHelper {
+export class TransmissionHelper {
 
     /**
      * Creates the default options for the helper.
@@ -152,6 +153,9 @@ class TransmissionHelper {
         this._materialObservers[mesh.uniqueId] = mesh.onMaterialChangedObservable.add(this.onMeshMaterialChanged.bind(this));
         if (this.shouldRenderAsTransmission(mesh.material)) {
             this._transparentMeshesCache.push(mesh);
+            if (this._opaqueRenderTarget) {
+                (mesh.material as PBRMaterial).subSurface.refractionTexture = this._opaqueRenderTarget;
+            }
         } else {
             this._opaqueMeshesCache.push(mesh);
         }
