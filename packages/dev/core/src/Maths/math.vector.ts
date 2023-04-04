@@ -23,6 +23,785 @@ const _ExtractAsInt = (value: number) => {
 };
 
 /**
+ * Reprents a vector in space
+ */
+export class Vector {
+
+
+	/**
+	 * The coordinates of the vector
+	 */
+	public vector: number[];
+
+	/**
+	 * the first coordinate of the vector
+	 */
+	public get x(): number {
+		return +this.vector[0];
+	}
+
+	/**
+	 * the second coordinate of the vector
+	 */
+	public get y(): number {
+		return +this.vector[1];
+	}
+
+	/**
+	 * the third coordinate of the vector
+	 */
+	public get z(): number {
+		return +this.vector[2];
+	}
+
+	/**
+	 * the first coordinate of the vector
+	 */
+	public set x(value: number) {
+		this.vector[0] = +value;
+	}
+
+	/**
+	 * the second coordinate of the vector
+	 */
+	public set y(value: number) {
+		this.vector[1] = +value;
+	}
+
+	/**
+	 * the third coordinate of the vector
+	 */
+	public set z(value: number) {
+		this.vector[2] = +value;
+	}
+
+    /**
+     * Creates a new Vector from the given coordinates
+     */
+    constructor(...coords: number[]) {
+		this.vector = coords;
+	}
+
+    /**
+     * Gets a string with the Vector coordinates
+     * @returns a string with the Vector coordinates
+     */
+    public toString(): string {
+        return this.vector.toString();
+    }
+
+    /**
+     * Gets class name
+     * @returns the string "Vector"
+     */
+    public getClassName(): string {
+        return "Vector";
+    }
+
+    /**
+     * Gets current vector hash code
+     * @returns the Vector hash code as a number
+     */
+    public getHashCode(): number {
+		return this.vector.map(v => _ExtractAsInt(v)).reduce((hash, val) => (hash * 397) ^ val, 1);
+    }
+
+    // Operators
+
+    /**
+     * Sets the Vector coordinates in the given array from the given index.
+     * @param array defines the source array
+     * @param index defines the offset in source array
+     * @returns the current Vector
+     */
+    public toArray(array: FloatArray, index: number = 0): this {
+		this.vector.forEach((val, i) => {
+			array[index + i] = val;
+		});
+        return this;
+    }
+
+    /**
+     * Update the current vector from an array
+     * @param array defines the destination array
+     * @param index defines the offset in the destination array
+     * @returns the current Vector
+     */
+    public fromArray(array: FloatArray, index: number = 0): this {
+        Vector.FromArrayToRef(array, index, this);
+        return this;
+    }
+
+    /**
+     * Copy the current vector to an array
+     * @returns a new array with the Vector coordinates.
+     */
+    public asArray(): number[] {
+        const result = new Array<number>();
+        this.toArray(result, 0);
+        return result;
+    }
+
+    /**
+     * Sets the current Vector coordinates with the given source coordinates
+     * @param source defines the source Vector
+     * @returns the current updated Vector
+     */
+    public copyFrom(source: DeepImmutable<Vector>): this {
+		source.toArray(this.vector, 0);
+        return this;
+    }
+
+    /**
+     * Sets the Vector coordinates with the given floats
+     * @returns the current updated Vector
+     */
+    public copyFromFloats(...floats: number[]): this {
+        floats.forEach((val, i) => {
+			this.vector[i] = val;
+		});
+        return this;
+    }
+
+    /**
+     * Sets the Vector coordinates with the given floats
+     * @returns the current updated Vector
+     */
+    public set(...coordinates: number[]): this {
+        return this.copyFromFloats(...coordinates);
+    }
+    /**
+     * Add another vector with the current one
+     * @param otherVector defines the other vector
+     * @returns a new Vector set with the addition of the current Vector and the given one coordinates
+     */
+    public add(otherVector: DeepImmutable<Vector>): this {
+        const ref = new (this.constructor as VectorConstructor<this>)();
+		this.addToRef(otherVector, ref);
+		return ref;
+    }
+
+    /**
+     * Sets the "result" coordinates with the addition of the current Vector and the given one coordinates
+     * @param otherVector defines the other vector
+     * @param result defines the target vector
+     * @returns result input
+     */
+    public addToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
+        this.vector.forEach((val, i) => {
+			result.vector[i] = val + otherVector.vector[i];
+		});
+        return result;
+    }
+
+    /**
+     * Set the Vector coordinates by adding the given Vector coordinates
+     * @param otherVector defines the other vector
+     * @returns the current updated Vector
+     */
+    public addInPlace(otherVector: DeepImmutable<Vector>): this {
+        this.vector.forEach((val, i) => {
+			this.vector[i] += otherVector.vector[i];
+		});
+        return this;
+    }
+
+    /**
+     * Gets a new Vector2 set with the subtracted coordinates of the given one from the current Vector2
+     * @param otherVector defines the other vector
+     * @returns a new Vector
+     */
+    public subtract(otherVector: DeepImmutable<Vector>): this {
+        const ref = new (this.constructor as VectorConstructor<this>)();
+		this.subtractToRef(otherVector, ref);
+		return ref;
+    }
+
+    /**
+     * Sets the "result" coordinates with the subtraction of the given one from the current Vector coordinates.
+     * @param otherVector defines the other vector
+     * @param result defines the target vector
+     * @returns result input
+     */
+    public subtractToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
+        this.vector.forEach((val, i) => {
+			result.vector[i] = val - otherVector.vector[i];
+		});
+        return result;
+    }
+    /**
+     * Sets the current Vector coordinates by subtracting from it the given one coordinates
+     * @param otherVector defines the other vector
+     * @returns the current updated Vector
+     */
+    public subtractInPlace(otherVector: DeepImmutable<Vector>): this {
+        this.vector.forEach((val, i) => {
+			this.vector[i] -= otherVector.vector[i];
+		});
+        return this;
+    }
+
+    /**
+     * Returns a new Vector set with the multiplication of the current Vector and the given one coordinates
+     * @param otherVector defines the other vector
+     * @returns a new Vector
+     */
+    public multiply(otherVector: DeepImmutable<Vector>): this {
+        const ref = new (this.constructor as VectorConstructor<this>)();
+		this.multiplyToRef(otherVector, ref);
+		return ref;
+    }
+
+    /**
+     * Sets "result" coordinates with the multiplication of the current Vector and the given one coordinates
+     * @param otherVector defines the other vector
+     * @param result defines the target vector
+     * @returns result input
+     */
+    public multiplyToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
+        this.vector.forEach((val, i) => {
+			result.vector[i] = val * otherVector.vector[i];
+		});
+        return result;
+    }
+
+	/**
+     * Multiplies in place the current Vector coordinates by the given ones
+     * @param otherVector defines the other vector
+     * @returns the current updated Vector
+     */
+    public multiplyInPlace(otherVector: DeepImmutable<Vector>): this {
+        this.vector.forEach((val, i) => {
+			this.vector[i] *= otherVector.vector[i];
+		});
+        return this;
+    }
+
+    /**
+     * Gets a new Vector set with the Vector coordinates multiplied by the given floats
+     * @returns a new Vector
+     */
+    public multiplyByFloats(...floats: number[]): this {
+        const result = new (this.constructor as VectorConstructor<this>)();
+		this.vector.forEach((val, i) => {
+			result.vector[i] = val * floats[i];
+		});
+		return result;
+    }
+
+    /**
+     * Returns a new Vector set with the Vector coordinates divided by the given one coordinates
+     * @param otherVector defines the other vector
+     * @returns a new Vector
+     */
+    public divide(otherVector: DeepImmutable<Vector>): this {
+        const ref = new (this.constructor as VectorConstructor<this>)();
+		this.divideToRef(otherVector, ref);
+		return ref;
+    }
+
+    /**
+     * Sets the "result" coordinates with the Vector divided by the given one coordinates
+     * @param otherVector defines the other vector
+     * @param result defines the target vector
+     * @returns result input
+     */
+    public divideToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
+        this.vector.forEach((val, i) => {
+			result.vector[i] = val / otherVector.vector[i];
+		});
+        return result;
+    }
+
+    /**
+     * Divides the current Vector coordinates by the given ones
+     * @param otherVector defines the other vector
+     * @returns the current updated Vector
+     */
+    public divideInPlace(otherVector: DeepImmutable<Vector>): this {
+        this.vector.forEach((val, i) => {
+			this.vector[i] /= otherVector.vector[i];
+		});
+		return this;
+    }
+
+    /**
+     * Gets a new Vector with current Vector negated coordinates
+     * @returns a new Vector
+     */
+    public negate(): this {
+        const ref = new (this.constructor as VectorConstructor<this>);
+		this.negateToRef(ref);
+		return ref;
+    }
+
+    /**
+     * Negate this vector in place
+     * @returns this
+     */
+    public negateInPlace(): this {
+        this.vector.forEach((val, i) => {
+			this.vector[i] = -val;
+		});
+        return this;
+    }
+
+    /**
+     * Negate the current Vector and stores the result in the given vector "result" coordinates
+     * @param result defines the Vector object where to store the result
+     * @returns the result
+     */
+    public negateToRef<T extends Vector>(result: T): T {
+		this.vector.forEach((val, i) => {
+			result.vector[i] = -val;
+		});
+        return result;
+    }
+
+    /**
+     * Multiply the Vector coordinates by
+     * @param scale defines the scaling factor
+     * @returns the current updated Vector
+     */
+    public scaleInPlace(scale: number): this {
+        this.vector.forEach((val, i) => {
+			this.vector[i] *= scale;
+		});
+        return this;
+    }
+
+    /**
+     * Returns a new Vector scaled by "scale" from the current Vector
+     * Example Playground https://playground.babylonjs.com/#QYBWV4#52
+     * @param scale defines the scaling factor
+     * @returns a new Vector
+     */
+    public scale(scale: number): this {
+        const result = new (this.constructor as VectorConstructor<this>)();
+        this.scaleToRef(scale, result);
+        return result;
+    }
+
+    /**
+     * Scale the current Vector values by a factor to a given Vector
+     * Example Playground https://playground.babylonjs.com/#QYBWV4#57
+     * @param scale defines the scale factor
+     * @param result defines the Vector object where to store the result
+     * @returns result input
+     */
+    public scaleToRef<T extends Vector>(scale: number, result: T): T {
+        this.vector.forEach((val, i) => {
+			result.vector[i] = val * scale;
+		});
+        return result;
+    }
+
+    /**
+     * Scale the current Vector values by a factor and add the result to a given Vector
+     * @param scale defines the scale factor
+     * @param result defines the Vector object where to store the result
+     * @returns result input
+     */
+    public scaleAndAddToRef<T extends Vector>(scale: number, result: T): T {
+        this.vector.forEach((val, i) => {
+			result.vector[i] += val * scale;
+		});
+        return result;
+    }
+
+    /**
+     * Gets a boolean if two vectors are equals
+     * @param otherVector defines the other vector
+     * @returns true if the given vector coordinates strictly equal the current Vector ones
+     */
+    public equals(otherVector: DeepImmutable<Vector>): boolean {
+        return this.vector.every((val, i) => val == otherVector.vector[i]);
+    }
+
+    /**
+     * Gets a boolean if two vectors are equals (using an epsilon value)
+     * @param otherVector defines the other vector
+     * @param epsilon defines the minimal distance to consider equality
+     * @returns true if the given vector coordinates are close to the current ones by a distance of epsilon.
+     */
+    public equalsWithEpsilon(otherVector: DeepImmutable<Vector>, epsilon: number = Epsilon): boolean {
+        return otherVector && this.vector.every((val, i) => Scalar.WithinEpsilon(val, otherVector.vector[i], epsilon));
+    }
+
+    /**
+     * Gets a new Vector from current Vector floored values
+     * eg (1.2, 2.31) returns (1, 2)
+     * @returns a new Vector
+     */
+    public floor(): this {
+        const ref = new (this.constructor as VectorConstructor<this>)();
+		this.floorToRef(ref);
+		return ref;
+    }
+
+	/**
+     * Gets a new Vector from current Vector floored values
+     * eg (1.2, 2.31) returns (1, 2)
+     * @returns a new Vector
+     */
+    public floorToRef<T extends Vector>(result: T): T {
+        this.vector.forEach((val, i) => {
+			result.vector[i] = Math.floor(val);
+		});
+		return result;
+    }
+
+    /**
+     * Gets a new Vector from current Vector fractional values
+     * eg (1.2, 2.31) returns (0.2, 0.31)
+     * @returns a new Vector
+     */
+    public fract(): this {
+        const ref = new (this.constructor as VectorConstructor<this>)();
+		this.fractToRef(ref);
+		return ref;
+    }
+
+	/**
+     * Gets a new Vector from current Vector fractional values
+     * eg (1.2, 2.31) returns (0.2, 0.31)
+     * @returns a new Vector
+     */
+    public fractToRef<T extends Vector>(result: T): T {
+		this.vector.forEach((val, i) => {
+			result.vector[i] = val - Math.floor(val);
+		});
+		return result;
+    }
+
+    // Properties
+
+	/**
+	 * The number of dimensions the vector has (the length of the coordinate array)
+	 */
+	public get dimension(): number {
+		return this.vector.length;
+	}
+
+    /**
+     * Gets the length of the vector
+     * @returns the vector length (float)
+     */
+    public length(): number {
+        return Math.sqrt(this.lengthSquared());
+    }
+
+    /**
+     * Gets the vector squared length
+     * @returns the vector squared length (float)
+     */
+    public lengthSquared(): number {
+        return this.vector.reduce((sum, val) => sum + val ** 2, 0);
+    }
+
+    // Methods
+
+    /**
+     * Normalize the vector
+     * @returns the current updated Vector
+     */
+    public normalize(): this {
+        Vector.NormalizeToRef(this, this);
+        return this;
+    }
+
+    /**
+     * Gets a new Vector copied from the Vector
+     * @returns a new Vector
+     */
+    public clone(): this {
+        return new (this.constructor as VectorConstructor<this>)(...this.vector);
+    }
+
+    /**
+     * Gets a new Vector set from the given index element of the given array
+     * Example Playground https://playground.babylonjs.com/#QYBWV4#79
+     * @param array defines the data source
+     * @param offset defines the offset in the data source
+     * @returns a new Vector
+     */
+    public static FromArray(array: DeepImmutable<ArrayLike<number>>, offset: number = 0, length: number = 2): Vector {
+		const vector = Array.from(array).slice(offset, offset + length - 1);
+        return new Vector(...vector);
+    }
+
+    /**
+     * Sets "result" from the given index element of the given array
+     * @param array defines the data source
+     * @param offset defines the offset in the data source
+     * @param result defines the target vector
+     * @returns result input
+     */
+    public static FromArrayToRef<T extends Vector>(array: DeepImmutable<ArrayLike<number>>, offset: number, result: T): T {
+		const dim = result.dimension;
+        const vector = Array.from(array).slice(offset, offset + dim - 1);
+		result.set(...vector);
+        return result;
+    }
+
+    /**
+     * Gets a new Vector located for "amount" (float) on the CatmullRom spline defined by the given four Vector
+     * @param value1 defines 1st point of control
+     * @param value2 defines 2nd point of control
+     * @param value3 defines 3rd point of control
+     * @param value4 defines 4th point of control
+     * @param amount defines the interpolation factor
+     * @returns a new Vector
+     */
+    public static CatmullRom<T extends Vector>(
+        value1: DeepImmutable<T>,
+        value2: DeepImmutable<Vector>,
+        value3: DeepImmutable<Vector>,
+        value4: DeepImmutable<Vector>,
+        amount: number
+    ): T {
+
+		const vector = value1.vector.map((v, i) =>
+			0.5 *
+            2.0 * value2.vector[i] +
+            (-value1.vector[i] + value3.vector[i]) * amount +
+            (2.0 * value1.vector[i] - 5.0 * value2.vector[i] + 4.0 * value3.vector[i] - value4.x) * amount ** 2 +
+            (-value1.vector[i] + 3.0 * value2.vector[i] - 3.0 * value3.vector[i] + value4.vector[i]) * amount ** 3
+		);
+
+        return new (value1.constructor as VectorConstructor<T>)(...vector);
+    }
+
+    /**
+     * Returns a new Vector set with same the coordinates than "value" ones if the vector "value" is in the square defined by "min" and "max".
+     * If a coordinate of "value" is lower than "min" coordinates, the returned Vector is given this "min" coordinate.
+     * If a coordinate of "value" is greater than "max" coordinates, the returned Vector is given this "max" coordinate
+     * @param value defines the value to clamp
+     * @param min defines the lower limit
+     * @param max defines the upper limit
+     * @returns a new Vector
+     */
+    public static Clamp<T extends Vector>(value: DeepImmutable<T>, min: DeepImmutable<Vector>, max: DeepImmutable<Vector>): T {
+		const vector = value.vector.map((val, i) => {
+			val > max.vector[i] ? max.vector[i] : val;
+			val < min.vector[i] ? min.vector[i] : val;
+			return val;
+		});
+
+        return new (value.constructor as VectorConstructor<T>)(...vector);
+    }
+
+    /**
+     * Returns a new Vector located for "amount" (float) on the Hermite spline defined by the vectors "value1", "value2", "tangent1", "tangent2"
+     * @param value1 defines the 1st control point
+     * @param tangent1 defines the outgoing tangent
+     * @param value2 defines the 2nd control point
+     * @param tangent2 defines the incoming tangent
+     * @param amount defines the interpolation factor
+     * @returns a new Vector
+     */
+    public static Hermite<T extends Vector>(
+        value1: DeepImmutable<T>,
+        tangent1: DeepImmutable<Vector>,
+        value2: DeepImmutable<Vector>,
+        tangent2: DeepImmutable<Vector>,
+        amount: number
+    ): T {
+
+		const vector = value1.vector.map((v, i) => {
+			return value1.vector[i] * 2.0 * amount ** 3 - 3.0 * amount ** 2 + 1.0
+			+ value2.vector[i] * -2.0 * amount ** 3 + 3.0 * amount ** 2
+			+ tangent1.vector[i] * amount ** 3 - 2.0 * amount ** 2 + amount
+			+ tangent2.vector[i] * amount ** 3 - amount ** 2
+		});
+
+        return new (value1.constructor as VectorConstructor<T>)(...vector);
+    }
+
+    /**
+     * Returns a new Vector which is the 1st derivative of the Hermite spline defined by the vectors "value1", "value2", "tangent1", "tangent2".
+     * @param value1 defines the first control point
+     * @param tangent1 defines the first tangent
+     * @param value2 defines the second control point
+     * @param tangent2 defines the second tangent
+     * @param time define where the derivative must be done
+     * @returns 1st derivative
+     */
+    public static Hermite1stDerivative<T extends Vector>(
+        value1: DeepImmutable<T>,
+        tangent1: DeepImmutable<Vector>,
+        value2: DeepImmutable<Vector>,
+        tangent2: DeepImmutable<Vector>,
+        time: number
+    ): T {
+        const result = new (value1.constructor as VectorConstructor<T>)();
+
+        this.Hermite1stDerivativeToRef(value1, tangent1, value2, tangent2, time, result);
+
+        return result;
+    }
+
+    /**
+     * Returns a new Vector which is the 1st derivative of the Hermite spline defined by the vectors "value1", "value2", "tangent1", "tangent2".
+     * @param value1 defines the first control point
+     * @param tangent1 defines the first tangent
+     * @param value2 defines the second control point
+     * @param tangent2 defines the second tangent
+     * @param time define where the derivative must be done
+     * @param result define where the derivative will be stored
+     * @returns result input
+     */
+    public static Hermite1stDerivativeToRef<T extends Vector>(
+        value1: DeepImmutable<Vector>,
+        tangent1: DeepImmutable<Vector>,
+        value2: DeepImmutable<Vector>,
+        tangent2: DeepImmutable<Vector>,
+        time: number,
+        result: T
+    ): T {
+
+		value1.vector.forEach((v, i) => {
+			result.vector[i] = (time ** 2 - time) * 6 * value1.vector[i] + (3 * time ** 2 - 4 * time + 1) * tangent1.vector[i] + (-(time ** 2) + time) * 6 * value2.vector[i] + (3 * time ** 2 - 2 * time) * tangent2.vector[i];
+		});
+        return result;
+    }
+
+    /**
+     * Returns a new Vector located for "amount" (float) on the linear interpolation between the vector "start" adn the vector "end".
+     * @param start defines the start vector
+     * @param end defines the end vector
+     * @param amount defines the interpolation factor
+     * @returns a new Vector
+     */
+    public static Lerp<T extends Vector>(start: DeepImmutable<T>, end: DeepImmutable<Vector>, amount: number): Vector {
+		const vector = start.vector.map((val, i) => val + (end.vector[i] - val) * amount);
+        return new (start.constructor as VectorConstructor<T>)(...vector);
+    }
+
+    /**
+     * Gets the dot product of the vector "left" and the vector "right"
+     * @param left defines first vector
+     * @param right defines second vector
+     * @returns the dot product (float)
+     */
+    public static Dot(left: DeepImmutable<Vector>, right: DeepImmutable<Vector>): number {
+        return left.vector.map((val, i) => left.vector[i] * right.vector[i]).reduce((acc, cur) => acc + cur, 0);
+    }
+
+    /**
+     * Returns a new Vector equal to the normalized given vector
+     * @param vector defines the vector to normalize
+     * @returns a new Vector
+     */
+    public static Normalize<T extends Vector>(vector: DeepImmutable<T>): T {
+        const newVector = new (vector.constructor as VectorConstructor<T>)();
+        this.NormalizeToRef(vector, newVector);
+        return newVector;
+    }
+
+    /**
+     * Normalize a given vector into a second one
+     * @param vector defines the vector to normalize
+     * @param result defines the vector where to store the result
+     * @returns result input
+     */
+    public static NormalizeToRef<T extends Vector>(vector: DeepImmutable<Vector>, result: T): T {
+        const len = vector.length();
+
+        if (len === 0) {
+            return result;
+        }
+
+		vector.vector.forEach((val, i) => {
+			result.vector[i] = val / len;
+		});
+        return result;
+    }
+
+    /**
+     * Gets a new Vector set with the minimal coordinate values from the "left" and "right" vectors
+     * @param left defines 1st vector
+     * @param right defines 2nd vector
+     * @returns a new Vector
+     */
+    public static Minimize<T extends Vector>(left: DeepImmutable<T>, right: DeepImmutable<Vector>): T {
+		const vector = left.vector.map((v, i) => left.vector[i] < right.vector[i] ? left.vector[i] : right.vector[i]);
+        return new (left.constructor as VectorConstructor<T>)(...vector);
+    }
+
+    /**
+     * Gets a new Vector set with the maximal coordinate values from the "left" and "right" vectors
+     * @param left defines 1st vector
+     * @param right defines 2nd vector
+     * @returns a new Vector
+     */
+    public static Maximize<T extends Vector>(left: DeepImmutable<T>, right: DeepImmutable<Vector>): T {
+		const vector = left.vector.map((v, i) => left.vector[i] > right.vector[i] ? left.vector[i] : right.vector[i]);
+        return new (left.constructor as VectorConstructor<T>)(...vector);
+    }
+
+    /**
+     * Gets the distance between the vectors "value1" and "value2"
+     * @param value1 defines first vector
+     * @param value2 defines second vector
+     * @returns the distance between vectors
+     */
+    public static Distance(value1: DeepImmutable<Vector>, value2: DeepImmutable<Vector>): number {
+        return Math.sqrt(Vector.DistanceSquared(value1, value2));
+    }
+
+    /**
+     * Returns the squared distance between the vectors "value1" and "value2"
+     * @param value1 defines first vector
+     * @param value2 defines second vector
+     * @returns the squared distance between vectors
+     */
+    public static DistanceSquared(value1: DeepImmutable<Vector>, value2: DeepImmutable<Vector>): number {
+		return value1.vector.map((v, i) => (value1.vector[i] - value2.vector[i]) ** 2).reduce((acc, cur) => acc + cur, 0);
+    }
+
+    /**
+     * Gets a new Vector located at the center of the vectors "value1" and "value2"
+     * @param value1 defines first vector
+     * @param value2 defines second vector
+     * @returns a new Vector
+     */
+    public static Center<T extends Vector>(value1: DeepImmutable<T>, value2: DeepImmutable<Vector>): T {
+        const result = new (value1.constructor as VectorConstructor<T>)();
+        return Vector.CenterToRef(value1, value2, result);
+    }
+
+    /**
+     * Gets the center of the vectors "value1" and "value2" and stores the result in the vector "ref"
+     * @param value1 defines first vector
+     * @param value2 defines second vector
+     * @param ref defines third vector
+     * @returns ref
+     */
+    public static CenterToRef<T extends Vector>(value1: DeepImmutable<Vector>, value2: DeepImmutable<Vector>, ref: T): T {
+        return ref.copyFromFloats(...value1.vector.map((v, i) => (value1.vector[i] + value2.vector[i]) / 2));
+    }
+
+    /**
+     * Gets the shortest distance (float) between the point "p" and the segment defined by the two points "segA" and "segB".
+     * @param p defines the middle point
+     * @param segA defines one point of the segment
+     * @param segB defines the other point of the segment
+     * @returns the shortest distance
+     */
+    public static DistanceOfPointFromSegment(p: DeepImmutable<Vector>, segA: DeepImmutable<Vector>, segB: DeepImmutable<Vector>): number {
+        const l2 = Vector.DistanceSquared(segA, segB);
+        if (l2 === 0.0) {
+            return Vector.Distance(p, segA);
+        }
+        const v = segB.subtract(segA);
+        const t = Math.max(0, Math.min(1, Vector.Dot(p.subtract(segA), v) / l2));
+        const proj = segA.add(v.multiplyByFloats(t, t));
+        return Vector.Distance(p, proj);
+    }
+}
+
+/**
  * Class representing a vector containing 2 coordinates
  * Example Playground - Overview -  https://playground.babylonjs.com/#QYBWV4#9
  */
