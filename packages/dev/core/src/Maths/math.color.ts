@@ -1,8 +1,9 @@
-import type { DeepImmutable, FloatArray } from "../types";
+import type { DeepImmutable } from "../types";
 import { Scalar } from "./math.scalar";
 import { ToLinearSpace, ToGammaSpace } from "./math.constants";
 import { ArrayTools } from "../Misc/arrayTools";
 import { RegisterClass } from "../Misc/typeStore";
+import { Vector } from "./math";
 
 function colorChannelToLinearSpace(color: number): number {
     return Math.pow(color, ToLinearSpace);
@@ -29,27 +30,58 @@ function colorChannelToGammaSpaceExact(color: number): number {
 /**
  * Class used to hold a RGB color
  */
-export class Color3 {
+export class Color3 extends Vector {
     /**
      * Creates a new Color3 object from red, green, blue values, all between 0 and 1
      * @param r defines the red component (between 0 and 1, default is 0)
      * @param g defines the green component (between 0 and 1, default is 0)
      * @param b defines the blue component (between 0 and 1, default is 0)
      */
-    constructor(
-        /**
-         * Defines the red component (between 0 and 1, default is 0)
-         */
-        public r: number = 0,
-        /**
-         * Defines the green component (between 0 and 1, default is 0)
-         */
-        public g: number = 0,
-        /**
-         * Defines the blue component (between 0 and 1, default is 0)
-         */
-        public b: number = 0
-    ) {}
+    constructor(r: number = 0, g: number = 0, b: number = 0) {
+		super(r, g, b);
+	}
+
+	/**
+	 * Gets the red component (between 0 and 1)
+	 */
+	public get r(): number {
+		return +this.vector[0];
+	}
+
+	/**
+	 * Gets the green component (between 0 and 1)
+	 */
+	public get g(): number {
+		return +this.vector[1];
+	}
+
+	/**
+	 * Gets the blue component (between 0 and 1)
+	 */
+	public get b(): number {
+		return +this.vector[2];
+	}
+
+	/**
+	 * Sets the red component (between 0 and 1)
+	 */
+	public set r(value: number) {
+		this.vector[0] = +value;
+	}
+
+	/**
+	 * Sets the green component (between 0 and 1)
+	 */
+	public set g(value: number) {
+		this.vector[1] = +value;
+	}
+
+	/**
+	 * Sets the blue component (between 0 and 1)
+	 */
+	public set b(value: number) {
+		this.vector[2] = +value;
+	}
 
     /**
      * Creates a string with the Color3 current values
@@ -67,43 +99,7 @@ export class Color3 {
         return "Color3";
     }
 
-    /**
-     * Compute the Color3 hash code
-     * @returns an unique number that can be used to hash Color3 objects
-     */
-    public getHashCode(): number {
-        let hash = (this.r * 255) | 0;
-        hash = (hash * 397) ^ ((this.g * 255) | 0);
-        hash = (hash * 397) ^ ((this.b * 255) | 0);
-        return hash;
-    }
-
     // Operators
-
-    /**
-     * Stores in the given array from the given starting index the red, green, blue values as successive elements
-     * @param array defines the array where to store the r,g,b components
-     * @param index defines an optional index in the target array to define where to start storing values
-     * @returns the current Color3 object
-     */
-    public toArray(array: FloatArray, index: number = 0): Color3 {
-        array[index] = this.r;
-        array[index + 1] = this.g;
-        array[index + 2] = this.b;
-
-        return this;
-    }
-
-    /**
-     * Update the current color with values stored in an array from the starting index of the given array
-     * @param array defines the source array
-     * @param offset defines an offset in the source array
-     * @returns the current Color3 object
-     */
-    public fromArray(array: DeepImmutable<ArrayLike<number>>, offset: number = 0): Color3 {
-        Color3.FromArrayToRef(array, offset, this);
-        return this;
-    }
 
     /**
      * Returns a new Color4 object from the current Color3 and the given alpha
@@ -115,108 +111,11 @@ export class Color3 {
     }
 
     /**
-     * Returns a new array populated with 3 numeric elements : red, green and blue values
-     * @returns the new array
-     */
-    public asArray(): number[] {
-        return [this.r, this.g, this.b];
-    }
-
-    /**
      * Returns the luminance value
      * @returns a float value
      */
     public toLuminance(): number {
         return this.r * 0.3 + this.g * 0.59 + this.b * 0.11;
-    }
-
-    /**
-     * Multiply each Color3 rgb values by the given Color3 rgb values in a new Color3 object
-     * @param otherColor defines the second operand
-     * @returns the new Color3 object
-     */
-    public multiply(otherColor: DeepImmutable<Color3>): Color3 {
-        return new Color3(this.r * otherColor.r, this.g * otherColor.g, this.b * otherColor.b);
-    }
-
-    /**
-     * Multiply the rgb values of the Color3 and the given Color3 and stores the result in the object "result"
-     * @param otherColor defines the second operand
-     * @param result defines the Color3 object where to store the result
-     * @returns the current Color3
-     */
-    public multiplyToRef(otherColor: DeepImmutable<Color3>, result: Color3): Color3 {
-        result.r = this.r * otherColor.r;
-        result.g = this.g * otherColor.g;
-        result.b = this.b * otherColor.b;
-        return this;
-    }
-
-    /**
-     * Determines equality between Color3 objects
-     * @param otherColor defines the second operand
-     * @returns true if the rgb values are equal to the given ones
-     */
-    public equals(otherColor: DeepImmutable<Color3>): boolean {
-        return otherColor && this.r === otherColor.r && this.g === otherColor.g && this.b === otherColor.b;
-    }
-
-    /**
-     * Determines equality between the current Color3 object and a set of r,b,g values
-     * @param r defines the red component to check
-     * @param g defines the green component to check
-     * @param b defines the blue component to check
-     * @returns true if the rgb values are equal to the given ones
-     */
-    public equalsFloats(r: number, g: number, b: number): boolean {
-        return this.r === r && this.g === g && this.b === b;
-    }
-
-    /**
-     * Creates a new Color3 with the current Color3 values multiplied by scale
-     * @param scale defines the scaling factor to apply
-     * @returns a new Color3 object
-     */
-    public scale(scale: number): Color3 {
-        return new Color3(this.r * scale, this.g * scale, this.b * scale);
-    }
-
-    /**
-     * Multiplies the Color3 values by the float "scale"
-     * @param scale defines the scaling factor to apply
-     * @returns the current updated Color3
-     */
-    public scaleInPlace(scale: number): Color3 {
-        this.r *= scale;
-        this.g *= scale;
-        this.b *= scale;
-        return this;
-    }
-
-    /**
-     * Multiplies the rgb values by scale and stores the result into "result"
-     * @param scale defines the scaling factor
-     * @param result defines the Color3 object where to store the result
-     * @returns the unmodified current Color3
-     */
-    public scaleToRef(scale: number, result: Color3): Color3 {
-        result.r = this.r * scale;
-        result.g = this.g * scale;
-        result.b = this.b * scale;
-        return this;
-    }
-
-    /**
-     * Scale the current Color3 values by a factor and add the result to a given Color3
-     * @param scale defines the scale factor
-     * @param result defines color to store the result into
-     * @returns the unmodified current Color3
-     */
-    public scaleAndAddToRef(scale: number, result: Color3): Color3 {
-        result.r += this.r * scale;
-        result.g += this.g * scale;
-        result.b += this.b * scale;
-        return this;
     }
 
     /**
@@ -231,95 +130,6 @@ export class Color3 {
         result.g = Scalar.Clamp(this.g, min, max);
         result.b = Scalar.Clamp(this.b, min, max);
         return this;
-    }
-
-    /**
-     * Creates a new Color3 set with the added values of the current Color3 and of the given one
-     * @param otherColor defines the second operand
-     * @returns the new Color3
-     */
-    public add(otherColor: DeepImmutable<Color3>): Color3 {
-        return new Color3(this.r + otherColor.r, this.g + otherColor.g, this.b + otherColor.b);
-    }
-
-    /**
-     * Stores the result of the addition of the current Color3 and given one rgb values into "result"
-     * @param otherColor defines the second operand
-     * @param result defines Color3 object to store the result into
-     * @returns the unmodified current Color3
-     */
-    public addToRef(otherColor: DeepImmutable<Color3>, result: Color3): Color3 {
-        result.r = this.r + otherColor.r;
-        result.g = this.g + otherColor.g;
-        result.b = this.b + otherColor.b;
-        return this;
-    }
-
-    /**
-     * Returns a new Color3 set with the subtracted values of the given one from the current Color3
-     * @param otherColor defines the second operand
-     * @returns the new Color3
-     */
-    public subtract(otherColor: DeepImmutable<Color3>): Color3 {
-        return new Color3(this.r - otherColor.r, this.g - otherColor.g, this.b - otherColor.b);
-    }
-
-    /**
-     * Stores the result of the subtraction of given one from the current Color3 rgb values into "result"
-     * @param otherColor defines the second operand
-     * @param result defines Color3 object to store the result into
-     * @returns the unmodified current Color3
-     */
-    public subtractToRef(otherColor: DeepImmutable<Color3>, result: Color3): Color3 {
-        result.r = this.r - otherColor.r;
-        result.g = this.g - otherColor.g;
-        result.b = this.b - otherColor.b;
-        return this;
-    }
-
-    /**
-     * Copy the current object
-     * @returns a new Color3 copied the current one
-     */
-    public clone(): Color3 {
-        return new Color3(this.r, this.g, this.b);
-    }
-
-    /**
-     * Copies the rgb values from the source in the current Color3
-     * @param source defines the source Color3 object
-     * @returns the updated Color3 object
-     */
-    public copyFrom(source: DeepImmutable<Color3>): Color3 {
-        this.r = source.r;
-        this.g = source.g;
-        this.b = source.b;
-        return this;
-    }
-
-    /**
-     * Updates the Color3 rgb values from the given floats
-     * @param r defines the red component to read from
-     * @param g defines the green component to read from
-     * @param b defines the blue component to read from
-     * @returns the current Color3 object
-     */
-    public copyFromFloats(r: number, g: number, b: number): Color3 {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        return this;
-    }
-
-    /**
-     * Updates the Color3 rgb values from the given floats
-     * @param r defines the red component to read from
-     * @param g defines the green component to read from
-     * @param b defines the blue component to read from
-     * @returns the current Color3 object
-     */
-    public set(r: number, g: number, b: number): Color3 {
-        return this.copyFromFloats(r, g, b);
     }
 
     /**
@@ -519,28 +329,6 @@ export class Color3 {
     }
 
     /**
-     * Creates a new Color3 from the starting index of the given array
-     * @param array defines the source array
-     * @param offset defines an offset in the source array
-     * @returns a new Color3 object
-     */
-    public static FromArray(array: DeepImmutable<ArrayLike<number>>, offset: number = 0): Color3 {
-        return new Color3(array[offset], array[offset + 1], array[offset + 2]);
-    }
-
-    /**
-     * Creates a new Color3 from the starting index element of the given array
-     * @param array defines the source array to read from
-     * @param offset defines the offset in the source array
-     * @param result defines the target Color3 object
-     */
-    public static FromArrayToRef(array: DeepImmutable<ArrayLike<number>>, offset: number = 0, result: Color3) {
-        result.r = array[offset];
-        result.g = array[offset + 1];
-        result.b = array[offset + 2];
-    }
-
-    /**
      * Creates a new Color3 from integer values (< 256)
      * @param r defines the red component to read from (value between 0 and 255)
      * @param g defines the green component to read from (value between 0 and 255)
@@ -549,102 +337,6 @@ export class Color3 {
      */
     public static FromInts(r: number, g: number, b: number): Color3 {
         return new Color3(r / 255.0, g / 255.0, b / 255.0);
-    }
-
-    /**
-     * Creates a new Color3 with values linearly interpolated of "amount" between the start Color3 and the end Color3
-     * @param start defines the start Color3 value
-     * @param end defines the end Color3 value
-     * @param amount defines the gradient value between start and end
-     * @returns a new Color3 object
-     */
-    public static Lerp(start: DeepImmutable<Color3>, end: DeepImmutable<Color3>, amount: number): Color3 {
-        const result = new Color3(0.0, 0.0, 0.0);
-        Color3.LerpToRef(start, end, amount, result);
-        return result;
-    }
-
-    /**
-     * Creates a new Color3 with values linearly interpolated of "amount" between the start Color3 and the end Color3
-     * @param left defines the start value
-     * @param right defines the end value
-     * @param amount defines the gradient factor
-     * @param result defines the Color3 object where to store the result
-     */
-    public static LerpToRef(left: DeepImmutable<Color3>, right: DeepImmutable<Color3>, amount: number, result: Color3): void {
-        result.r = left.r + (right.r - left.r) * amount;
-        result.g = left.g + (right.g - left.g) * amount;
-        result.b = left.b + (right.b - left.b) * amount;
-    }
-
-    /**
-     * Returns a new Color3 located for "amount" (float) on the Hermite interpolation spline defined by the vectors "value1", "tangent1", "value2", "tangent2"
-     * @param value1 defines the first control point
-     * @param tangent1 defines the first tangent Color3
-     * @param value2 defines the second control point
-     * @param tangent2 defines the second tangent Color3
-     * @param amount defines the amount on the interpolation spline (between 0 and 1)
-     * @returns the new Color3
-     */
-    public static Hermite(value1: DeepImmutable<Color3>, tangent1: DeepImmutable<Color3>, value2: DeepImmutable<Color3>, tangent2: DeepImmutable<Color3>, amount: number): Color3 {
-        const squared = amount * amount;
-        const cubed = amount * squared;
-        const part1 = 2.0 * cubed - 3.0 * squared + 1.0;
-        const part2 = -2.0 * cubed + 3.0 * squared;
-        const part3 = cubed - 2.0 * squared + amount;
-        const part4 = cubed - squared;
-
-        const r = value1.r * part1 + value2.r * part2 + tangent1.r * part3 + tangent2.r * part4;
-        const g = value1.g * part1 + value2.g * part2 + tangent1.g * part3 + tangent2.g * part4;
-        const b = value1.b * part1 + value2.b * part2 + tangent1.b * part3 + tangent2.b * part4;
-        return new Color3(r, g, b);
-    }
-
-    /**
-     * Returns a new Color3 which is the 1st derivative of the Hermite spline defined by the colors "value1", "value2", "tangent1", "tangent2".
-     * @param value1 defines the first control point
-     * @param tangent1 defines the first tangent
-     * @param value2 defines the second control point
-     * @param tangent2 defines the second tangent
-     * @param time define where the derivative must be done
-     * @returns 1st derivative
-     */
-    public static Hermite1stDerivative(
-        value1: DeepImmutable<Color3>,
-        tangent1: DeepImmutable<Color3>,
-        value2: DeepImmutable<Color3>,
-        tangent2: DeepImmutable<Color3>,
-        time: number
-    ): Color3 {
-        const result = Color3.Black();
-
-        this.Hermite1stDerivativeToRef(value1, tangent1, value2, tangent2, time, result);
-
-        return result;
-    }
-
-    /**
-     * Returns a new Color3 which is the 1st derivative of the Hermite spline defined by the colors "value1", "value2", "tangent1", "tangent2".
-     * @param value1 defines the first control point
-     * @param tangent1 defines the first tangent
-     * @param value2 defines the second control point
-     * @param tangent2 defines the second tangent
-     * @param time define where the derivative must be done
-     * @param result define where to store the derivative
-     */
-    public static Hermite1stDerivativeToRef(
-        value1: DeepImmutable<Color3>,
-        tangent1: DeepImmutable<Color3>,
-        value2: DeepImmutable<Color3>,
-        tangent2: DeepImmutable<Color3>,
-        time: number,
-        result: Color3
-    ) {
-        const t2 = time * time;
-
-        result.r = (t2 - time) * 6 * value1.r + (3 * t2 - 4 * time + 1) * tangent1.r + (-t2 + time) * 6 * value2.r + (3 * t2 - 2 * time) * tangent2.r;
-        result.g = (t2 - time) * 6 * value1.g + (3 * t2 - 4 * time + 1) * tangent1.g + (-t2 + time) * 6 * value2.g + (3 * t2 - 2 * time) * tangent2.g;
-        result.b = (t2 - time) * 6 * value1.b + (3 * t2 - 4 * time + 1) * tangent1.b + (-t2 + time) * 6 * value2.b + (3 * t2 - 2 * time) * tangent2.b;
     }
 
     /**
@@ -737,7 +429,7 @@ export class Color3 {
 /**
  * Class used to hold a RBGA color
  */
-export class Color4 {
+export class Color4 extends Vector {
     /**
      * Creates a new Color4 object from red, green, blue values, all between 0 and 1
      * @param r defines the red component (between 0 and 1, default is 0)
@@ -745,163 +437,67 @@ export class Color4 {
      * @param b defines the blue component (between 0 and 1, default is 0)
      * @param a defines the alpha component (between 0 and 1, default is 1)
      */
-    constructor(
-        /**
-         * Defines the red component (between 0 and 1, default is 0)
-         */
-        public r: number = 0,
-        /**
-         * Defines the green component (between 0 and 1, default is 0)
-         */
-        public g: number = 0,
-        /**
-         * Defines the blue component (between 0 and 1, default is 0)
-         */
-        public b: number = 0,
-        /**
-         * Defines the alpha component (between 0 and 1, default is 1)
-         */
-        public a: number = 1
-    ) {}
+    constructor(r: number = 0, g: number = 0, b: number = 0, a: number = 1) {
+		super(r, g, b, a);
+	}
+
+	/**
+	 * Gets the red component (between 0 and 1)
+	 */
+	public get r(): number {
+		return +this.vector[0];
+	}
+
+	/**
+	 * Gets the green component (between 0 and 1)
+	 */
+	public get g(): number {
+		return +this.vector[1];
+	}
+
+	/**
+	 * Gets the blue component (between 0 and 1)
+	 */
+	public get b(): number {
+		return +this.vector[2];
+	}
+
+	/**
+	 * Gets the alpha component (between 0 and 1)
+	 */
+	public get a(): number {
+		return +this.vector[3];
+	}
+
+	/**
+	 * Sets the red component (between 0 and 1)
+	 */
+	public set r(value: number) {
+		this.vector[0] = +value;
+	}
+
+	/**
+	 * Sets the green component (between 0 and 1)
+	 */
+	public set g(value: number) {
+		this.vector[1] = +value;
+	}
+
+	/**
+	 * Sets the blue component (between 0 and 1)
+	 */
+	public set b(value: number) {
+		this.vector[2] = +value;
+	}
+
+	/**
+	 * Sets the alpha component (between 0 and 1)
+	 */
+	public set a(value: number) {
+		this.vector[3] = +value;
+	}
 
     // Operators
-
-    /**
-     * Adds in place the given Color4 values to the current Color4 object
-     * @param right defines the second operand
-     * @returns the current updated Color4 object
-     */
-    public addInPlace(right: DeepImmutable<Color4>): Color4 {
-        this.r += right.r;
-        this.g += right.g;
-        this.b += right.b;
-        this.a += right.a;
-        return this;
-    }
-
-    /**
-     * Creates a new array populated with 4 numeric elements : red, green, blue, alpha values
-     * @returns the new array
-     */
-    public asArray(): number[] {
-        return [this.r, this.g, this.b, this.a];
-    }
-
-    /**
-     * Stores from the starting index in the given array the Color4 successive values
-     * @param array defines the array where to store the r,g,b components
-     * @param index defines an optional index in the target array to define where to start storing values
-     * @returns the current Color4 object
-     */
-    public toArray(array: FloatArray, index: number = 0): Color4 {
-        array[index] = this.r;
-        array[index + 1] = this.g;
-        array[index + 2] = this.b;
-        array[index + 3] = this.a;
-        return this;
-    }
-
-    /**
-     * Update the current color with values stored in an array from the starting index of the given array
-     * @param array defines the source array
-     * @param offset defines an offset in the source array
-     * @returns the current Color4 object
-     */
-    public fromArray(array: DeepImmutable<ArrayLike<number>>, offset: number = 0): Color4 {
-        Color4.FromArrayToRef(array, offset, this);
-        return this;
-    }
-
-    /**
-     * Determines equality between Color4 objects
-     * @param otherColor defines the second operand
-     * @returns true if the rgba values are equal to the given ones
-     */
-    public equals(otherColor: DeepImmutable<Color4>): boolean {
-        return otherColor && this.r === otherColor.r && this.g === otherColor.g && this.b === otherColor.b && this.a === otherColor.a;
-    }
-
-    /**
-     * Creates a new Color4 set with the added values of the current Color4 and of the given one
-     * @param right defines the second operand
-     * @returns a new Color4 object
-     */
-    public add(right: DeepImmutable<Color4>): Color4 {
-        return new Color4(this.r + right.r, this.g + right.g, this.b + right.b, this.a + right.a);
-    }
-
-    /**
-     * Creates a new Color4 set with the subtracted values of the given one from the current Color4
-     * @param right defines the second operand
-     * @returns a new Color4 object
-     */
-    public subtract(right: DeepImmutable<Color4>): Color4 {
-        return new Color4(this.r - right.r, this.g - right.g, this.b - right.b, this.a - right.a);
-    }
-
-    /**
-     * Subtracts the given ones from the current Color4 values and stores the results in "result"
-     * @param right defines the second operand
-     * @param result defines the Color4 object where to store the result
-     * @returns the current Color4 object
-     */
-    public subtractToRef(right: DeepImmutable<Color4>, result: Color4): Color4 {
-        result.r = this.r - right.r;
-        result.g = this.g - right.g;
-        result.b = this.b - right.b;
-        result.a = this.a - right.a;
-        return this;
-    }
-
-    /**
-     * Creates a new Color4 with the current Color4 values multiplied by scale
-     * @param scale defines the scaling factor to apply
-     * @returns a new Color4 object
-     */
-    public scale(scale: number): Color4 {
-        return new Color4(this.r * scale, this.g * scale, this.b * scale, this.a * scale);
-    }
-
-    /**
-     * Multiplies the Color4 values by the float "scale"
-     * @param scale defines the scaling factor to apply
-     * @returns the current updated Color4
-     */
-    public scaleInPlace(scale: number): Color4 {
-        this.r *= scale;
-        this.g *= scale;
-        this.b *= scale;
-        this.a *= scale;
-        return this;
-    }
-
-    /**
-     * Multiplies the current Color4 values by scale and stores the result in "result"
-     * @param scale defines the scaling factor to apply
-     * @param result defines the Color4 object where to store the result
-     * @returns the current unmodified Color4
-     */
-    public scaleToRef(scale: number, result: Color4): Color4 {
-        result.r = this.r * scale;
-        result.g = this.g * scale;
-        result.b = this.b * scale;
-        result.a = this.a * scale;
-        return this;
-    }
-
-    /**
-     * Scale the current Color4 values by a factor and add the result to a given Color4
-     * @param scale defines the scale factor
-     * @param result defines the Color4 object where to store the result
-     * @returns the unmodified current Color4
-     */
-    public scaleAndAddToRef(scale: number, result: Color4): Color4 {
-        result.r += this.r * scale;
-        result.g += this.g * scale;
-        result.b += this.b * scale;
-        result.a += this.a * scale;
-        return this;
-    }
 
     /**
      * Clamps the rgb values by the min and max values and stores the result into "result"
@@ -919,29 +515,6 @@ export class Color4 {
     }
 
     /**
-     * Multiply an Color4 value by another and return a new Color4 object
-     * @param color defines the Color4 value to multiply by
-     * @returns a new Color4 object
-     */
-    public multiply(color: Color4): Color4 {
-        return new Color4(this.r * color.r, this.g * color.g, this.b * color.b, this.a * color.a);
-    }
-
-    /**
-     * Multiply a Color4 value by another and push the result in a reference value
-     * @param color defines the Color4 value to multiply by
-     * @param result defines the Color4 to fill the result in
-     * @returns the result Color4
-     */
-    public multiplyToRef(color: Color4, result: Color4): Color4 {
-        result.r = this.r * color.r;
-        result.g = this.g * color.g;
-        result.b = this.b * color.b;
-        result.a = this.a * color.a;
-        return result;
-    }
-
-    /**
      * Creates a string with the Color4 current values
      * @returns the string representation of the Color4 object
      */
@@ -955,67 +528,6 @@ export class Color4 {
      */
     public getClassName(): string {
         return "Color4";
-    }
-
-    /**
-     * Compute the Color4 hash code
-     * @returns an unique number that can be used to hash Color4 objects
-     */
-    public getHashCode(): number {
-        let hash = (this.r * 255) | 0;
-        hash = (hash * 397) ^ ((this.g * 255) | 0);
-        hash = (hash * 397) ^ ((this.b * 255) | 0);
-        hash = (hash * 397) ^ ((this.a * 255) | 0);
-        return hash;
-    }
-
-    /**
-     * Creates a new Color4 copied from the current one
-     * @returns a new Color4 object
-     */
-    public clone(): Color4 {
-        return new Color4(this.r, this.g, this.b, this.a);
-    }
-
-    /**
-     * Copies the given Color4 values into the current one
-     * @param source defines the source Color4 object
-     * @returns the current updated Color4 object
-     */
-    public copyFrom(source: Color4): Color4 {
-        this.r = source.r;
-        this.g = source.g;
-        this.b = source.b;
-        this.a = source.a;
-        return this;
-    }
-
-    /**
-     * Copies the given float values into the current one
-     * @param r defines the red component to read from
-     * @param g defines the green component to read from
-     * @param b defines the blue component to read from
-     * @param a defines the alpha component to read from
-     * @returns the current updated Color4 object
-     */
-    public copyFromFloats(r: number, g: number, b: number, a: number): Color4 {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
-        return this;
-    }
-
-    /**
-     * Copies the given float values into the current one
-     * @param r defines the red component to read from
-     * @param g defines the green component to read from
-     * @param b defines the blue component to read from
-     * @param a defines the alpha component to read from
-     * @returns the current updated Color4 object
-     */
-    public set(r: number, g: number, b: number, a: number): Color4 {
-        return this.copyFromFloats(r, g, b, a);
     }
 
     /**
@@ -1128,105 +640,6 @@ export class Color4 {
     }
 
     /**
-     * Creates a new Color4 object set with the linearly interpolated values of "amount" between the left Color4 object and the right Color4 object
-     * @param left defines the start value
-     * @param right defines the end value
-     * @param amount defines the gradient factor
-     * @returns a new Color4 object
-     */
-    public static Lerp(left: DeepImmutable<Color4>, right: DeepImmutable<Color4>, amount: number): Color4 {
-        const result = new Color4(0.0, 0.0, 0.0, 0.0);
-        Color4.LerpToRef(left, right, amount, result);
-        return result;
-    }
-
-    /**
-     * Set the given "result" with the linearly interpolated values of "amount" between the left Color4 object and the right Color4 object
-     * @param left defines the start value
-     * @param right defines the end value
-     * @param amount defines the gradient factor
-     * @param result defines the Color4 object where to store data
-     */
-    public static LerpToRef(left: DeepImmutable<Color4>, right: DeepImmutable<Color4>, amount: number, result: Color4): void {
-        result.r = left.r + (right.r - left.r) * amount;
-        result.g = left.g + (right.g - left.g) * amount;
-        result.b = left.b + (right.b - left.b) * amount;
-        result.a = left.a + (right.a - left.a) * amount;
-    }
-
-    /**
-     * Interpolate between two Color4 using Hermite interpolation
-     * @param value1 defines first Color4
-     * @param tangent1 defines the incoming tangent
-     * @param value2 defines second Color4
-     * @param tangent2 defines the outgoing tangent
-     * @param amount defines the target Color4
-     * @returns the new interpolated Color4
-     */
-    public static Hermite(value1: DeepImmutable<Color4>, tangent1: DeepImmutable<Color4>, value2: DeepImmutable<Color4>, tangent2: DeepImmutable<Color4>, amount: number): Color4 {
-        const squared = amount * amount;
-        const cubed = amount * squared;
-        const part1 = 2.0 * cubed - 3.0 * squared + 1.0;
-        const part2 = -2.0 * cubed + 3.0 * squared;
-        const part3 = cubed - 2.0 * squared + amount;
-        const part4 = cubed - squared;
-
-        const r = value1.r * part1 + value2.r * part2 + tangent1.r * part3 + tangent2.r * part4;
-        const g = value1.g * part1 + value2.g * part2 + tangent1.g * part3 + tangent2.g * part4;
-        const b = value1.b * part1 + value2.b * part2 + tangent1.b * part3 + tangent2.b * part4;
-        const a = value1.a * part1 + value2.a * part2 + tangent1.a * part3 + tangent2.a * part4;
-        return new Color4(r, g, b, a);
-    }
-
-    /**
-     * Returns a new Color4 which is the 1st derivative of the Hermite spline defined by the colors "value1", "value2", "tangent1", "tangent2".
-     * @param value1 defines the first control point
-     * @param tangent1 defines the first tangent
-     * @param value2 defines the second control point
-     * @param tangent2 defines the second tangent
-     * @param time define where the derivative must be done
-     * @returns 1st derivative
-     */
-    public static Hermite1stDerivative(
-        value1: DeepImmutable<Color4>,
-        tangent1: DeepImmutable<Color4>,
-        value2: DeepImmutable<Color4>,
-        tangent2: DeepImmutable<Color4>,
-        time: number
-    ): Color4 {
-        const result = new Color4();
-
-        this.Hermite1stDerivativeToRef(value1, tangent1, value2, tangent2, time, result);
-
-        return result;
-    }
-
-    /**
-     * Update a Color4 with the 1st derivative of the Hermite spline defined by the colors "value1", "value2", "tangent1", "tangent2".
-     * @param value1 defines the first control point
-     * @param tangent1 defines the first tangent
-     * @param value2 defines the second control point
-     * @param tangent2 defines the second tangent
-     * @param time define where the derivative must be done
-     * @param result define where to store the derivative
-     */
-    public static Hermite1stDerivativeToRef(
-        value1: DeepImmutable<Color4>,
-        tangent1: DeepImmutable<Color4>,
-        value2: DeepImmutable<Color4>,
-        tangent2: DeepImmutable<Color4>,
-        time: number,
-        result: Color4
-    ) {
-        const t2 = time * time;
-
-        result.r = (t2 - time) * 6 * value1.r + (3 * t2 - 4 * time + 1) * tangent1.r + (-t2 + time) * 6 * value2.r + (3 * t2 - 2 * time) * tangent2.r;
-        result.g = (t2 - time) * 6 * value1.g + (3 * t2 - 4 * time + 1) * tangent1.g + (-t2 + time) * 6 * value2.g + (3 * t2 - 2 * time) * tangent2.g;
-        result.b = (t2 - time) * 6 * value1.b + (3 * t2 - 4 * time + 1) * tangent1.b + (-t2 + time) * 6 * value2.b + (3 * t2 - 2 * time) * tangent2.b;
-        result.a = (t2 - time) * 6 * value1.a + (3 * t2 - 4 * time + 1) * tangent1.a + (-t2 + time) * 6 * value2.a + (3 * t2 - 2 * time) * tangent2.a;
-    }
-
-    /**
      * Creates a new Color4 from a Color3 and an alpha value
      * @param color3 defines the source Color3 to read from
      * @param alpha defines the alpha component (1.0 by default)
@@ -1234,29 +647,6 @@ export class Color4 {
      */
     public static FromColor3(color3: DeepImmutable<Color3>, alpha: number = 1.0): Color4 {
         return new Color4(color3.r, color3.g, color3.b, alpha);
-    }
-
-    /**
-     * Creates a new Color4 from the starting index element of the given array
-     * @param array defines the source array to read from
-     * @param offset defines the offset in the source array
-     * @returns a new Color4 object
-     */
-    public static FromArray(array: DeepImmutable<ArrayLike<number>>, offset: number = 0): Color4 {
-        return new Color4(array[offset], array[offset + 1], array[offset + 2], array[offset + 3]);
-    }
-
-    /**
-     * Creates a new Color4 from the starting index element of the given array
-     * @param array defines the source array to read from
-     * @param offset defines the offset in the source array
-     * @param result defines the target Color4 object
-     */
-    public static FromArrayToRef(array: DeepImmutable<ArrayLike<number>>, offset: number = 0, result: Color4) {
-        result.r = array[offset];
-        result.g = array[offset + 1];
-        result.b = array[offset + 2];
-        result.a = array[offset + 3];
     }
 
     /**
