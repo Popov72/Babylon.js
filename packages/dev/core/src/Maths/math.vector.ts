@@ -693,9 +693,9 @@ export class Vector {
      * @param offset defines the offset in the data source
      * @returns a new Vector
      */
-    public static FromArray(array: DeepImmutable<ArrayLike<number>>, offset: number = 0, length: number = 2): Vector {
+    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: DeepImmutable<ArrayLike<number>>, offset: number = 0, length: number = 2): T {
         const vector = Array.from(array).slice(offset, offset + length - 1);
-        return new Vector(...vector);
+        return new this(...vector);
     }
 
     /**
