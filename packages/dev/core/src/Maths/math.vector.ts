@@ -1052,7 +1052,7 @@ export class Vector2 extends Vector {
         super(x, y);
     }
 
-	/**
+    /**
      * the first coordinate of the vector
      */
     public get x(): number {
@@ -1248,7 +1248,7 @@ export class Vector3 extends Vector {
         super(x, y, z);
     }
 
-	/**
+    /**
      * the first coordinate of the vector
      */
     public get x(): number {
@@ -2416,7 +2416,7 @@ export class Vector4 extends Vector {
         super(x, y, z, w);
     }
 
-	/**
+    /**
      * the first coordinate of the vector
      */
     public get x(): number {
