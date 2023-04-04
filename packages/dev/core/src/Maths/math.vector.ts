@@ -33,62 +33,6 @@ export class Vector {
     public vector: number[];
 
     /**
-     * the first coordinate of the vector
-     */
-    public get x(): number {
-        return +this.vector[0];
-    }
-
-    /**
-     * the second coordinate of the vector
-     */
-    public get y(): number {
-        return +this.vector[1];
-    }
-
-    /**
-     * the third coordinate of the vector
-     */
-    public get z(): number {
-        return +this.vector[2];
-    }
-
-    /**
-     * the fourth coordinate of the vector
-     */
-    public get w(): number {
-        return +this.vector[3];
-    }
-
-    /**
-     * the first coordinate of the vector
-     */
-    public set x(value: number) {
-        this.vector[0] = +value;
-    }
-
-    /**
-     * the second coordinate of the vector
-     */
-    public set y(value: number) {
-        this.vector[1] = +value;
-    }
-
-    /**
-     * the third coordinate of the vector
-     */
-    public set z(value: number) {
-        this.vector[2] = +value;
-    }
-
-    /**
-     * the fourth coordinate of the vector
-     */
-    public set w(value: number) {
-        this.vector[3] = +value;
-    }
-
-    /**
      * Creates a new Vector from the given coordinates
      */
     constructor(...coords: number[]) {
@@ -805,7 +749,7 @@ export class Vector {
             (v, i) =>
                 0.5 * 2.0 * value2.vector[i] +
                 (-value1.vector[i] + value3.vector[i]) * amount +
-                (2.0 * value1.vector[i] - 5.0 * value2.vector[i] + 4.0 * value3.vector[i] - value4.x) * amount ** 2 +
+                (2.0 * value1.vector[i] - 5.0 * value2.vector[i] + 4.0 * value3.vector[i] - value4.vector[i]) * amount ** 2 +
                 (-value1.vector[i] + 3.0 * value2.vector[i] - 3.0 * value3.vector[i] + value4.vector[i]) * amount ** 3
         );
 
@@ -1108,6 +1052,34 @@ export class Vector2 extends Vector {
         super(x, y);
     }
 
+	/**
+     * the first coordinate of the vector
+     */
+    public get x(): number {
+        return +this.vector[0];
+    }
+
+    /**
+     * the second coordinate of the vector
+     */
+    public get y(): number {
+        return +this.vector[1];
+    }
+
+    /**
+     * the first coordinate of the vector
+     */
+    public set x(value: number) {
+        this.vector[0] = +value;
+    }
+
+    /**
+     * the second coordinate of the vector
+     */
+    public set y(value: number) {
+        this.vector[1] = +value;
+    }
+
     /**
      * Gets a string with the Vector2 coordinates
      * @returns a string with the Vector2 coordinates
@@ -1274,6 +1246,48 @@ export class Vector3 extends Vector {
      */
     constructor(x: number = 0, y: number = 0, z: number = 0) {
         super(x, y, z);
+    }
+
+	/**
+     * the first coordinate of the vector
+     */
+    public get x(): number {
+        return +this.vector[0];
+    }
+
+    /**
+     * the second coordinate of the vector
+     */
+    public get y(): number {
+        return +this.vector[1];
+    }
+
+    /**
+     * the third coordinate of the vector
+     */
+    public get z(): number {
+        return +this.vector[2];
+    }
+
+    /**
+     * the first coordinate of the vector
+     */
+    public set x(value: number) {
+        this.vector[0] = +value;
+    }
+
+    /**
+     * the second coordinate of the vector
+     */
+    public set y(value: number) {
+        this.vector[1] = +value;
+    }
+
+    /**
+     * the third coordinate of the vector
+     */
+    public set z(value: number) {
+        this.vector[2] = +value;
     }
 
     /**
@@ -2400,6 +2414,62 @@ export class Vector4 extends Vector {
      */
     constructor(x: number = 0, y: number = 0, z: number = 0, w: number = 0) {
         super(x, y, z, w);
+    }
+
+	/**
+     * the first coordinate of the vector
+     */
+    public get x(): number {
+        return +this.vector[0];
+    }
+
+    /**
+     * the second coordinate of the vector
+     */
+    public get y(): number {
+        return +this.vector[1];
+    }
+
+    /**
+     * the third coordinate of the vector
+     */
+    public get z(): number {
+        return +this.vector[2];
+    }
+
+    /**
+     * the fourth coordinate of the vector
+     */
+    public get w(): number {
+        return +this.vector[3];
+    }
+
+    /**
+     * the first coordinate of the vector
+     */
+    public set x(value: number) {
+        this.vector[0] = +value;
+    }
+
+    /**
+     * the second coordinate of the vector
+     */
+    public set y(value: number) {
+        this.vector[1] = +value;
+    }
+
+    /**
+     * the third coordinate of the vector
+     */
+    public set z(value: number) {
+        this.vector[2] = +value;
+    }
+
+    /**
+     * the fourth coordinate of the vector
+     */
+    public set w(value: number) {
+        this.vector[3] = +value;
     }
 
     /**
