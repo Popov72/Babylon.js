@@ -688,7 +688,6 @@ export class Vector {
      * Returns a new Vector with random values between min and max
      * @param min the minimum random value
      * @param max the maximum random value
-	 * @param dim the dimension of the random Vector
 	 * @param result the result to store the random values in
      * @returns the updated result Vector
      */
