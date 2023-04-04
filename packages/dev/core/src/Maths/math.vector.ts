@@ -53,7 +53,7 @@ export class Vector {
         return +this.vector[2];
     }
 
-	/**
+    /**
      * the fourth coordinate of the vector
      */
     public get w(): number {
@@ -81,7 +81,7 @@ export class Vector {
         this.vector[2] = +value;
     }
 
-	/**
+    /**
      * the fourth coordinate of the vector
      */
     public set w(value: number) {
