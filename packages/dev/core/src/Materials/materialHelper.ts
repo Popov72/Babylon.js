@@ -477,7 +477,7 @@ export class MaterialHelper {
         }
 
         // Specular
-        if (specularSupported && !light.specular.equalsFloats(0, 0, 0)) {
+        if (specularSupported && !light.specular.equalsToFloats(0, 0, 0)) {
             state.specularEnabled = true;
         }
 

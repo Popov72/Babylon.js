@@ -531,6 +531,20 @@ export class Vector {
         return this.vector.every((val, i) => val == floats[i]);
     }
 
+	/**
+	 * Alias for equalsToFloats
+     * @param floats defines the coordinates to compare against
+     * @returns true if both vectors are equal
+	 */
+	public equalsFloats(x: number, y: number): boolean;
+    public equalsFloats(x: number, y: number, z: number): boolean;
+    public equalsFloats(x: number, y: number, z: number, w: number): boolean;
+    public equalsFloats(...floats: number[]): boolean;
+    public equalsFloats(...floats: number[]): boolean {
+        return this.equalsToFloats(...floats);
+    }
+
+
     /**
      * Gets a new Vector from current Vector floored values
      * eg (1.2, 2.31) returns (1, 2)
@@ -739,7 +753,7 @@ export class Vector {
      * @returns a new Vector
      */
     public static CatmullRom<T extends Vector>(
-        value1: DeepImmutable<T>,
+        value1: DeepImmutable<Vector>,
         value2: DeepImmutable<Vector>,
         value3: DeepImmutable<Vector>,
         value4: DeepImmutable<Vector>,
@@ -812,7 +826,7 @@ export class Vector {
      * @returns a new Vector
      */
     public static Hermite<T extends Vector>(
-        value1: DeepImmutable<T>,
+        value1: DeepImmutable<Vector>,
         tangent1: DeepImmutable<Vector>,
         value2: DeepImmutable<Vector>,
         tangent2: DeepImmutable<Vector>,
@@ -846,7 +860,7 @@ export class Vector {
      * @returns 1st derivative
      */
     public static Hermite1stDerivative<T extends Vector>(
-        value1: DeepImmutable<T>,
+        value1: DeepImmutable<Vector>,
         tangent1: DeepImmutable<Vector>,
         value2: DeepImmutable<Vector>,
         tangent2: DeepImmutable<Vector>,
@@ -894,7 +908,7 @@ export class Vector {
      * @param amount defines the interpolation factor
      * @returns a new Vector
      */
-    public static Lerp<T extends Vector>(start: DeepImmutable<T>, end: DeepImmutable<Vector>, amount: number): Vector {
+    public static Lerp<T extends Vector>(start: DeepImmutable<T>, end: DeepImmutable<Vector>, amount: number): T {
         const ref = new (start.constructor as VectorConstructor<T>)();
         return this.LerpToRef(start, end, amount, ref);
     }
@@ -906,7 +920,7 @@ export class Vector {
      * @param amount defines the interpolation factor
      * @returns a new Vector
      */
-    public static LerpToRef<T extends Vector>(start: DeepImmutable<T>, end: DeepImmutable<Vector>, amount: number, result: T): Vector {
+    public static LerpToRef<T extends Vector>(start: DeepImmutable<T>, end: DeepImmutable<Vector>, amount: number, result: T): T {
         start.vector.forEach((val, i) => {
             result.vector[i] = val + (end.vector[i] - val) * amount;
         });
@@ -1290,6 +1304,54 @@ export class Vector3 extends Vector {
         this.vector[2] = +value;
     }
 
+	/**
+     * the first coordinate of the vector
+	 * @deprecated use without underscore
+     */
+    public get _x(): number {
+        return +this.vector[0];
+    }
+
+    /**
+     * the second coordinate of the vector
+	 * @deprecated use without underscore
+     */
+    public get _y(): number {
+        return +this.vector[1];
+    }
+
+    /**
+     * the third coordinate of the vector
+	 * @deprecated use without underscore
+     */
+    public get _z(): number {
+        return +this.vector[2];
+    }
+
+    /**
+     * the first coordinate of the vector
+	 * @deprecated use without underscore
+     */
+    public set _x(value: number) {
+        this.vector[0] = +value;
+    }
+
+    /**
+     * the second coordinate of the vector
+	 * @deprecated use without underscore
+     */
+    public set _y(value: number) {
+        this.vector[1] = +value;
+    }
+
+    /**
+     * the third coordinate of the vector
+	 * @deprecated use without underscore
+     */
+    public set _z(value: number) {
+        this.vector[2] = +value;
+    }
+
     /**
      * Creates a string representation of the Vector3
      * Example Playground https://playground.babylonjs.com/#R1F8YU#67
@@ -1603,7 +1665,7 @@ export class Vector3 extends Vector {
      * @param normal Normal of the projection plane
      * @returns the angle in radians (float) between vector0 and vector1 projected on the plane with the specified normal
      */
-    public static GetAngleBetweenVectorsOnPlane(vector0: Vector3, vector1: Vector3, normal: Vector3): number {
+    public static GetAngleBetweenVectorsOnPlane(vector0: DeepImmutable<Vector3>, vector1: DeepImmutable<Vector3>, normal: DeepImmutable<Vector3>): number {
         MathTmp.Vector3[0].copyFrom(vector0);
         const v0 = MathTmp.Vector3[0];
         MathTmp.Vector3[1].copyFrom(vector1);
@@ -1883,7 +1945,7 @@ export class Vector3 extends Vector {
      * @param transformation defines the transformation matrix
      * @returns the transformed Vector3
      */
-    public static TransformCoordinates<T extends Vector3>(vector: DeepImmutable<Vector3>, transformation: DeepImmutable<Matrix>): Vector3 {
+    public static TransformCoordinates(vector: DeepImmutable<Vector3>, transformation: DeepImmutable<Matrix>): Vector3 {
         const result = Vector3.Zero();
         Vector3.TransformCoordinatesToRef(vector, transformation, result);
         return result;
@@ -1951,7 +2013,7 @@ export class Vector3 extends Vector {
      * @param result defines the Vector3 where to store the result
      * @returns result input
      */
-    public static TransformNormalToRef<T extends Vector3>(vector: DeepImmutable<Vector3>, transformation: DeepImmutable<Matrix>, result: T): T {
+    public static TransformNormalToRef<T extends Vector3>(vector: DeepImmutable<Vector3> | Vector3, transformation: DeepImmutable<Matrix>, result: T): T {
         this.TransformNormalFromFloatsToRef(vector.x, vector.y, vector.z, transformation, result);
         return result;
     }
