@@ -11,6 +11,7 @@ import { PerformanceConfigurator } from "../Engines/performanceConfigurator";
 import { EngineStore } from "../Engines/engineStore";
 import type { TransformNode } from "../Meshes/transformNode";
 
+export type VectorConstructor<T extends Vector> = new (...args: ConstructorParameters<typeof Vector>) => T;
 export type Vector2Constructor<T extends Vector2> = new (...args: ConstructorParameters<typeof Vector2>) => T;
 export type Vector3Constructor<T extends Vector3> = new (...args: ConstructorParameters<typeof Vector3>) => T;
 export type Vector4Constructor<T extends Vector4> = new (...args: ConstructorParameters<typeof Vector4>) => T;
@@ -170,6 +171,16 @@ export class Vector {
     public set(...coordinates: number[]): this {
         return this.copyFromFloats(...coordinates);
     }
+
+	/**
+	 * Sets the Vector coordinates to the given value
+	 * @returns the current updated Vector
+	 */
+	public setAll(value: number): this {
+		this.vector.fill(value);
+		return this;
+	}
+
     /**
      * Add another vector with the current one
      * @param otherVector defines the other vector
@@ -206,6 +217,18 @@ export class Vector {
         return this;
     }
 
+	/**
+	 * Adds the given coordinates to the current Vector
+	 * @param floats the floats to add
+	 * @returns the current updated Vector
+	 */
+	public addInPlaceFromFloats(...floats: number[]): this {
+		this.vector.forEach((val, i) => {
+			this.vector[i] += floats[i];
+		});
+		return this;
+	}
+
     /**
      * Gets a new Vector2 set with the subtracted coordinates of the given one from the current Vector2
      * @param otherVector defines the other vector
@@ -229,6 +252,7 @@ export class Vector {
 		});
         return result;
     }
+
     /**
      * Sets the current Vector coordinates by subtracting from it the given one coordinates
      * @param otherVector defines the other vector
@@ -239,6 +263,32 @@ export class Vector {
 			this.vector[i] -= otherVector.vector[i];
 		});
         return this;
+    }
+
+    /**
+     * Returns a new Vector set with the subtraction of the given floats from the current Vector coordinates
+     * @param floats the coordinates to subtract
+     * @returns the resulting Vector
+     */
+    public subtractFromFloats(...floats: number[]): this {
+        const ref = new (this.constructor as VectorConstructor<this>)();
+		this.subtractFromFloatsToRef(...floats, ref);
+		return ref;
+    }
+
+    /**
+     * Subtracts the given floats from the current Vector coordinates and set the given vector "result" with this result
+	 * Note: Implementation uses array magic so types may be confusing.
+     * @param args the coordinates to subtract with the last element as the result
+     * @returns the result
+     */
+    public subtractFromFloatsToRef<T extends Vector>(...args: [...number[], T]): T {
+		const result = args.pop() as T;
+		const floats = args as number[];
+		this.vector.forEach((val, i) => {
+			result.vector[i] = val - floats[i]
+		});
+        return result;
     }
 
     /**
@@ -324,6 +374,62 @@ export class Vector {
 		});
 		return this;
     }
+
+	/**
+	 * Updates the current Vector with the minmal coordinate values between its and the given vector ones.
+	 * @param otherVector defines the other vector
+	 * @returns this current updated Vector
+	 */
+	public minimizeInPlace(otherVector: DeepImmutable<Vector>): this {
+		this.vector.forEach((val, i) => {
+			if(otherVector.vector[i] < val){
+				this.vector[i] = otherVector.vector[i];
+			}
+		});
+		return this;
+	}
+
+	/**
+	 * Updates the current Vector with the minmal coordinate values between its and the given floats.
+	 * @param floats defines the floats to compare against
+	 * @returns this current updated Vector
+	 */
+	public minimizeInPlaceFromFloats(...floats: number[]): this {
+		this.vector.forEach((val, i) => {
+			if(floats[i] < val){
+				this.vector[i] = floats[i];
+			}
+		});
+		return this;
+	}
+
+	/**
+	 * Updates the current Vector with the maximal coordinate values between its and the given vector ones.
+	 * @param otherVector defines the other vector
+	 * @returns this current updated Vector
+	 */
+	public maximizeInPlace(otherVector: DeepImmutable<Vector>): this {
+		this.vector.forEach((val, i) => {
+			if(otherVector.vector[i] > val){
+				this.vector[i] = otherVector.vector[i];
+			}
+		});
+		return this;
+	}
+
+	/**
+	 * Updates the current Vector with the maximal coordinate values between its and the given floats.
+	 * @param floats defines the floats to compare against
+	 * @returns this current updated Vector
+	 */
+	public maximizeInPlaceFromFloats(...floats: number[]): this {
+		this.vector.forEach((val, i) => {
+			if(floats[i] > val){
+				this.vector[i] = floats[i];
+			}
+		});
+		return this;
+	}
 
     /**
      * Gets a new Vector with current Vector negated coordinates
@@ -429,6 +535,15 @@ export class Vector {
     }
 
     /**
+     * Returns true if the current Vectoe coordinates equals the given floats
+     * @param floats defines the coordinates to compare against
+     * @returns true if both vectors are equal
+     */
+    public equalsToFloats(...floats: number[]): boolean {
+        return this.vector.every((val, i) => val == floats[i]);
+    }
+
+    /**
      * Gets a new Vector from current Vector floored values
      * eg (1.2, 2.31) returns (1, 2)
      * @returns a new Vector
@@ -510,6 +625,44 @@ export class Vector {
         return this;
     }
 
+	/**
+     * Normalize the current Vector with the given input length.
+     * Please note that this is an in place operation.
+     * @param len the length of the vector
+     * @returns the current updated Vector
+     */
+    public normalizeFromLength(len: number): this {
+        if (len === 0 || len === 1.0) {
+            return this;
+        }
+
+        return this.scaleInPlace(1.0 / len);
+    }
+
+    /**
+     * Normalize the current Vector to a new vector
+     * @returns the new Vector
+     */
+    public normalizeToNew(): this {
+        const normalized = new (this.constructor as VectorConstructor<this>)();
+        this.normalizeToRef(normalized);
+        return normalized;
+    }
+
+    /**
+     * Normalize the current Vector to the reference
+     * @param reference define the Vector to update
+     * @returns the updated Vector
+     */
+    public normalizeToRef<T extends Vector>(reference: T): T {
+        const len = this.length();
+        if (len === 0 || len === 1.0) {
+            return reference.copyFromFloats(...this.vector);
+        }
+
+        return this.scaleToRef(1.0 / len, reference);
+    }
+
     /**
      * Gets a new Vector copied from the Vector
      * @returns a new Vector
@@ -519,8 +672,36 @@ export class Vector {
     }
 
     /**
+     * Returns a new Vector with random values between min and max
+     * @param min the minimum random value
+     * @param max the maximum random value
+	 * @param dim the dimension of the random Vector
+     * @returns a Vector with random values between min and max
+     */
+    public static Random(min: number = 0, max: number = 1, dim: number = 3): Vector {
+        const ref = new Vector(...(new Array(dim)).fill(0));
+		this.RandomToRef(min, max, ref);
+		return ref;
+    }
+
+    /**
+     * Returns a new Vector with random values between min and max
+     * @param min the minimum random value
+     * @param max the maximum random value
+	 * @param dim the dimension of the random Vector
+	 * @param result the result to store the random values in
+     * @returns the updated result Vector
+     */
+    public static RandomToRef(min: number = 0, max: number = 1, result: Vector): Vector {
+        const ref = new Vector();
+		result.vector.forEach((val, i) => {
+			result.vector[i] = Scalar.RandomRange(min, max);
+		});
+		return ref;
+    }
+
+    /**
      * Gets a new Vector set from the given index element of the given array
-     * Example Playground https://playground.babylonjs.com/#QYBWV4#79
      * @param array defines the data source
      * @param offset defines the offset in the data source
      * @returns a new Vector
@@ -541,6 +722,19 @@ export class Vector {
 		const dim = result.dimension;
         const vector = Array.from(array).slice(offset, offset + dim - 1);
 		result.set(...vector);
+        return result;
+    }
+
+    /**
+     * Sets the given vector "result" with the given floats.
+     * @param args defines the coordinates of the source with the last paramater being the result
+     */
+    public static FromFloatsToRef<T extends Vector>(...args: [...number[], T]): T {
+		const result = args.pop() as T;
+		const floats = args as number[];
+		floats.forEach((val, i) => {
+			result.vector[i] = val;
+		});
         return result;
     }
 
@@ -582,13 +776,40 @@ export class Vector {
      * @returns a new Vector
      */
     public static Clamp<T extends Vector>(value: DeepImmutable<T>, min: DeepImmutable<Vector>, max: DeepImmutable<Vector>): T {
-		const vector = value.vector.map((val, i) => {
-			val > max.vector[i] ? max.vector[i] : val;
-			val < min.vector[i] ? min.vector[i] : val;
-			return val;
+		const ref = new (value.constructor as VectorConstructor<T>)();
+		this.ClampToRef(value, min, max, ref);
+		return ref;
+    }
+
+    /**
+     * Returns a new Vector set with same the coordinates than "value" ones if the vector "value" is in the square defined by "min" and "max".
+     * If a coordinate of "value" is lower than "min" coordinates, the returned Vector is given this "min" coordinate.
+     * If a coordinate of "value" is greater than "max" coordinates, the returned Vector is given this "max" coordinate
+     * @param value defines the value to clamp
+     * @param min defines the lower limit
+     * @param max defines the upper limit
+	 * @param result defines the vector where to store the result
+     * @returns the updated result Vector
+     */
+    public static ClampToRef<T extends Vector>(value: DeepImmutable<T>, min: DeepImmutable<Vector>, max: DeepImmutable<Vector>, result: T): T {
+		value.vector.forEach((val, i) => {
+			val = val > max.vector[i] ? max.vector[i] : val;
+			val = val < min.vector[i] ? min.vector[i] : val;
+			result.vector[i] = val;
 		});
 
-        return new (value.constructor as VectorConstructor<T>)(...vector);
+        return result;
+    }
+
+	/**
+     * Checks if a given vector is inside a specific range
+     * @param v defines the vector to test
+     * @param min defines the minimum range
+     * @param max defines the maximum range
+     */
+    public static CheckExtends(v: Vector, min: Vector, max: Vector): void {
+        min.minimizeInPlace(v);
+        max.maximizeInPlace(v);
     }
 
     /**
