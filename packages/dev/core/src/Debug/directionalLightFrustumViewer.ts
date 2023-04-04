@@ -247,12 +247,24 @@ export class DirectionalLightFrustumViewer {
         this._rootNode = new TransformNode("directionalLightHelperRoot_" + this._light.name, this._scene);
         this._rootNode.parent = this._light.parent;
 
-        this._nearLinesPoints = [Vector3.ZeroReadOnly as Vector3, Vector3.ZeroReadOnly as Vector3, Vector3.ZeroReadOnly as Vector3, Vector3.ZeroReadOnly as Vector3, Vector3.ZeroReadOnly as Vector3];
+        this._nearLinesPoints = [
+            Vector3.ZeroReadOnly as Vector3,
+            Vector3.ZeroReadOnly as Vector3,
+            Vector3.ZeroReadOnly as Vector3,
+            Vector3.ZeroReadOnly as Vector3,
+            Vector3.ZeroReadOnly as Vector3,
+        ];
         const nearLines = CreateLines("nearlines", { updatable: true, points: this._nearLinesPoints }, this._scene);
         nearLines.parent = this._rootNode;
         nearLines.alwaysSelectAsActiveMesh = true;
 
-        this._farLinesPoints = [Vector3.ZeroReadOnly as Vector3, Vector3.ZeroReadOnly as Vector3, Vector3.ZeroReadOnly as Vector3, Vector3.ZeroReadOnly as Vector3, Vector3.ZeroReadOnly as Vector3];
+        this._farLinesPoints = [
+            Vector3.ZeroReadOnly as Vector3,
+            Vector3.ZeroReadOnly as Vector3,
+            Vector3.ZeroReadOnly as Vector3,
+            Vector3.ZeroReadOnly as Vector3,
+            Vector3.ZeroReadOnly as Vector3,
+        ];
         const farLines = CreateLines("farlines", { updatable: true, points: this._farLinesPoints }, this._scene);
         farLines.parent = this._rootNode;
         farLines.alwaysSelectAsActiveMesh = true;

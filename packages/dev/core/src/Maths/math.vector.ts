@@ -531,19 +531,18 @@ export class Vector {
         return this.vector.every((val, i) => val == floats[i]);
     }
 
-	/**
-	 * Alias for equalsToFloats
+    /**
+     * Alias for equalsToFloats
      * @param floats defines the coordinates to compare against
      * @returns true if both vectors are equal
-	 */
-	public equalsFloats(x: number, y: number): boolean;
+     */
+    public equalsFloats(x: number, y: number): boolean;
     public equalsFloats(x: number, y: number, z: number): boolean;
     public equalsFloats(x: number, y: number, z: number, w: number): boolean;
     public equalsFloats(...floats: number[]): boolean;
     public equalsFloats(...floats: number[]): boolean {
         return this.equalsToFloats(...floats);
     }
-
 
     /**
      * Gets a new Vector from current Vector floored values
@@ -1304,9 +1303,9 @@ export class Vector3 extends Vector {
         this.vector[2] = +value;
     }
 
-	/**
+    /**
      * the first coordinate of the vector
-	 * @deprecated use without underscore
+     * @deprecated use without underscore
      */
     public get _x(): number {
         return +this.vector[0];
@@ -1314,7 +1313,7 @@ export class Vector3 extends Vector {
 
     /**
      * the second coordinate of the vector
-	 * @deprecated use without underscore
+     * @deprecated use without underscore
      */
     public get _y(): number {
         return +this.vector[1];
@@ -1322,7 +1321,7 @@ export class Vector3 extends Vector {
 
     /**
      * the third coordinate of the vector
-	 * @deprecated use without underscore
+     * @deprecated use without underscore
      */
     public get _z(): number {
         return +this.vector[2];
@@ -1330,7 +1329,7 @@ export class Vector3 extends Vector {
 
     /**
      * the first coordinate of the vector
-	 * @deprecated use without underscore
+     * @deprecated use without underscore
      */
     public set _x(value: number) {
         this.vector[0] = +value;
@@ -1338,7 +1337,7 @@ export class Vector3 extends Vector {
 
     /**
      * the second coordinate of the vector
-	 * @deprecated use without underscore
+     * @deprecated use without underscore
      */
     public set _y(value: number) {
         this.vector[1] = +value;
@@ -1346,7 +1345,7 @@ export class Vector3 extends Vector {
 
     /**
      * the third coordinate of the vector
-	 * @deprecated use without underscore
+     * @deprecated use without underscore
      */
     public set _z(value: number) {
         this.vector[2] = +value;
