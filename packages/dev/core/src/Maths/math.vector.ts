@@ -168,6 +168,10 @@ export class Vector {
      * Sets the Vector coordinates with the given floats
      * @returns the current updated Vector
      */
+	public set(x: number, y: number): this;
+	public set(x: number, y: number, z: number): this;
+	public set(x: number, y: number, z: number, w: number): this;
+	public set(...coordinates: number[]): this;
     public set(...coordinates: number[]): this {
         return this.copyFromFloats(...coordinates);
     }
@@ -222,6 +226,10 @@ export class Vector {
 	 * @param floats the floats to add
 	 * @returns the current updated Vector
 	 */
+	public addInPlaceFromFloats(x: number, y: number): this;
+	public addInPlaceFromFloats(x: number, y: number, z: number): this;
+	public addInPlaceFromFloats(x: number, y: number, z: number, w: number): this;
+	public addInPlaceFromFloats(...floats: number[]): this;
 	public addInPlaceFromFloats(...floats: number[]): this {
 		this.vector.forEach((val, i) => {
 			this.vector[i] += floats[i];
@@ -270,6 +278,10 @@ export class Vector {
      * @param floats the coordinates to subtract
      * @returns the resulting Vector
      */
+	public subtractFromFloats(x: number, y: number): this;
+	public subtractFromFloats(x: number, y: number, z: number): this;
+	public subtractFromFloats(x: number, y: number, z: number, w: number): this;
+	public subtractFromFloats(...floats: number[]): this;
     public subtractFromFloats(...floats: number[]): this {
         const ref = new (this.constructor as VectorConstructor<this>)();
 		this.subtractFromFloatsToRef(...floats, ref);
@@ -282,6 +294,10 @@ export class Vector {
      * @param args the coordinates to subtract with the last element as the result
      * @returns the result
      */
+    public subtractFromFloatsToRef<T extends Vector>(x: number, y: number, result: T): T;
+    public subtractFromFloatsToRef<T extends Vector>(x: number, y: number, z: number, result: T): T;
+    public subtractFromFloatsToRef<T extends Vector>(x: number, y: number, z: number, w: number, result: T): T;
+    public subtractFromFloatsToRef<T extends Vector>(...args: [...number[], T]): T;
     public subtractFromFloatsToRef<T extends Vector>(...args: [...number[], T]): T {
 		const result = args.pop() as T;
 		const floats = args as number[];
@@ -331,6 +347,10 @@ export class Vector {
      * Gets a new Vector set with the Vector coordinates multiplied by the given floats
      * @returns a new Vector
      */
+	public multiplyByFloats(x: number, y: number): this;
+	public multiplyByFloats(x: number, y: number, z: number): this;
+	public multiplyByFloats(x: number, y: number, z: number, w: number): this;
+	public multiplyByFloats(...floats: number[]): this;
     public multiplyByFloats(...floats: number[]): this {
         const result = new (this.constructor as VectorConstructor<this>)();
 		this.vector.forEach((val, i) => {
@@ -394,6 +414,10 @@ export class Vector {
 	 * @param floats defines the floats to compare against
 	 * @returns this current updated Vector
 	 */
+	public minimizeInPlaceFromFloats(x: number, y: number): this;
+	public minimizeInPlaceFromFloats(x: number, y: number, z: number): this;
+	public minimizeInPlaceFromFloats(x: number, y: number, z: number, w: number): this;
+	public minimizeInPlaceFromFloats(...floats: number[]): this;
 	public minimizeInPlaceFromFloats(...floats: number[]): this {
 		this.vector.forEach((val, i) => {
 			if(floats[i] < val){
@@ -422,6 +446,10 @@ export class Vector {
 	 * @param floats defines the floats to compare against
 	 * @returns this current updated Vector
 	 */
+	public maximizeInPlaceFromFloats(x: number, y: number): this;
+	public maximizeInPlaceFromFloats(x: number, y: number, z: number): this;
+	public maximizeInPlaceFromFloats(x: number, y: number, z: number, w: number): this;
+	public maximizeInPlaceFromFloats(...floats: number[]): this;
 	public maximizeInPlaceFromFloats(...floats: number[]): this {
 		this.vector.forEach((val, i) => {
 			if(floats[i] > val){
@@ -539,6 +567,10 @@ export class Vector {
      * @param floats defines the coordinates to compare against
      * @returns true if both vectors are equal
      */
+	public equalsToFloats(x: number, y: number): boolean;
+	public equalsToFloats(x: number, y: number, z: number): boolean;
+	public equalsToFloats(x: number, y: number, z: number, w: number): boolean;
+	public equalsToFloats(...floats: number[]): boolean;
     public equalsToFloats(...floats: number[]): boolean {
         return this.vector.every((val, i) => val == floats[i]);
     }
@@ -728,6 +760,10 @@ export class Vector {
      * Sets the given vector "result" with the given floats.
      * @param args defines the coordinates of the source with the last paramater being the result
      */
+	public static FromFloatsToRef<T extends Vector>(x: number, y: number, result: T): T;
+    public static FromFloatsToRef<T extends Vector>(x: number, y: number, z: number, result: T): T;
+    public static FromFloatsToRef<T extends Vector>(x: number, y: number, z: number, w: number, result: T): T;
+    public static FromFloatsToRef<T extends Vector>(...args: [...number[], T]): T;
     public static FromFloatsToRef<T extends Vector>(...args: [...number[], T]): T {
 		const result = args.pop() as T;
 		const floats = args as number[];
