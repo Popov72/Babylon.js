@@ -72,9 +72,9 @@ export class Vector {
      * @returns the current Vector
      */
     public toArray(array: FloatArray, index: number = 0): this {
-        this.vector.forEach((val, i) => {
-            array[index + i] = val;
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            array[index + i] = this.vector[i];
+        }
         return this;
     }
 
@@ -114,9 +114,9 @@ export class Vector {
      * @returns the current updated Vector
      */
     public copyFromFloats(...floats: number[]): this {
-        floats.forEach((val, i) => {
-            this.vector[i] = val;
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            this.vector[i] = floats[i];
+        }
         return this;
     }
 
@@ -159,9 +159,9 @@ export class Vector {
      * @returns result input
      */
     public addToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
-        this.vector.forEach((val, i) => {
-            result.vector[i] = val + otherVector.vector[i];
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] = this.vector[i] + otherVector.vector[i];
+        }
         return result;
     }
 
@@ -171,9 +171,9 @@ export class Vector {
      * @returns the current updated Vector
      */
     public addInPlace(otherVector: DeepImmutable<Vector>): this {
-        this.vector.forEach((val, i) => {
+        for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] += otherVector.vector[i];
-        });
+        }
         return this;
     }
 
@@ -187,9 +187,9 @@ export class Vector {
     public addInPlaceFromFloats(x: number, y: number, z: number, w: number): this;
     public addInPlaceFromFloats(...floats: number[]): this;
     public addInPlaceFromFloats(...floats: number[]): this {
-        this.vector.forEach((val, i) => {
+        for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] += floats[i];
-        });
+        }
         return this;
     }
 
@@ -211,9 +211,9 @@ export class Vector {
      * @returns result input
      */
     public subtractToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
-        this.vector.forEach((val, i) => {
-            result.vector[i] = val - otherVector.vector[i];
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] = this.vector[i] - otherVector.vector[i];
+        }
         return result;
     }
 
@@ -223,9 +223,9 @@ export class Vector {
      * @returns the current updated Vector
      */
     public subtractInPlace(otherVector: DeepImmutable<Vector>): this {
-        this.vector.forEach((val, i) => {
+        for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] -= otherVector.vector[i];
-        });
+        }
         return this;
     }
 
@@ -257,9 +257,9 @@ export class Vector {
     public subtractFromFloatsToRef<T extends Vector>(...args: [...number[], T]): T {
         const result = args.pop() as T;
         const floats = args as number[];
-        this.vector.forEach((val, i) => {
-            result.vector[i] = val - floats[i];
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] = this.vector[i] - floats[i];
+        }
         return result;
     }
 
@@ -281,9 +281,9 @@ export class Vector {
      * @returns result input
      */
     public multiplyToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
-        this.vector.forEach((val, i) => {
-            result.vector[i] = val * otherVector.vector[i];
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] = this.vector[i] * otherVector.vector[i];
+        }
         return result;
     }
 
@@ -293,9 +293,9 @@ export class Vector {
      * @returns the current updated Vector
      */
     public multiplyInPlace(otherVector: DeepImmutable<Vector>): this {
-        this.vector.forEach((val, i) => {
+        for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] *= otherVector.vector[i];
-        });
+        }
         return this;
     }
 
@@ -309,9 +309,9 @@ export class Vector {
     public multiplyByFloats(...floats: number[]): this;
     public multiplyByFloats(...floats: number[]): this {
         const result = new (this.constructor as VectorConstructor<this>)();
-        this.vector.forEach((val, i) => {
-            result.vector[i] = val * floats[i];
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] = this.vector[i] * floats[i];
+        }
         return result;
     }
 
@@ -333,9 +333,9 @@ export class Vector {
      * @returns result input
      */
     public divideToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
-        this.vector.forEach((val, i) => {
-            result.vector[i] = val / otherVector.vector[i];
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] = this.vector[i] / otherVector.vector[i];
+        }
         return result;
     }
 
@@ -345,9 +345,9 @@ export class Vector {
      * @returns the current updated Vector
      */
     public divideInPlace(otherVector: DeepImmutable<Vector>): this {
-        this.vector.forEach((val, i) => {
+        for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] /= otherVector.vector[i];
-        });
+        }
         return this;
     }
 
@@ -357,11 +357,11 @@ export class Vector {
      * @returns this current updated Vector
      */
     public minimizeInPlace(otherVector: DeepImmutable<Vector>): this {
-        this.vector.forEach((val, i) => {
-            if (otherVector.vector[i] < val) {
+        for (let i = 0; i < this.vector.length; i++) {
+            if (otherVector.vector[i] < this.vector[i]) {
                 this.vector[i] = otherVector.vector[i];
             }
-        });
+        }
         return this;
     }
 
@@ -375,11 +375,11 @@ export class Vector {
     public minimizeInPlaceFromFloats(x: number, y: number, z: number, w: number): this;
     public minimizeInPlaceFromFloats(...floats: number[]): this;
     public minimizeInPlaceFromFloats(...floats: number[]): this {
-        this.vector.forEach((val, i) => {
-            if (floats[i] < val) {
+        for (let i = 0; i < this.vector.length; i++) {
+            if (floats[i] < this.vector[i]) {
                 this.vector[i] = floats[i];
             }
-        });
+        }
         return this;
     }
 
@@ -389,11 +389,11 @@ export class Vector {
      * @returns this current updated Vector
      */
     public maximizeInPlace(otherVector: DeepImmutable<Vector>): this {
-        this.vector.forEach((val, i) => {
-            if (otherVector.vector[i] > val) {
+        for (let i = 0; i < this.vector.length; i++) {
+            if (otherVector.vector[i] > this.vector[i]) {
                 this.vector[i] = otherVector.vector[i];
             }
-        });
+        }
         return this;
     }
 
@@ -407,11 +407,11 @@ export class Vector {
     public maximizeInPlaceFromFloats(x: number, y: number, z: number, w: number): this;
     public maximizeInPlaceFromFloats(...floats: number[]): this;
     public maximizeInPlaceFromFloats(...floats: number[]): this {
-        this.vector.forEach((val, i) => {
-            if (floats[i] > val) {
+        for (let i = 0; i < this.vector.length; i++) {
+            if (floats[i] > this.vector[i]) {
                 this.vector[i] = floats[i];
             }
-        });
+        }
         return this;
     }
 
@@ -430,9 +430,9 @@ export class Vector {
      * @returns this
      */
     public negateInPlace(): this {
-        this.vector.forEach((val, i) => {
-            this.vector[i] = -val;
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            this.vector[i] *= -1;
+        }
         return this;
     }
 
@@ -442,9 +442,9 @@ export class Vector {
      * @returns the result
      */
     public negateToRef<T extends Vector>(result: T): T {
-        this.vector.forEach((val, i) => {
-            result.vector[i] = -val;
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] = -this.vector[i];
+        }
         return result;
     }
 
@@ -454,9 +454,9 @@ export class Vector {
      * @returns the current updated Vector
      */
     public scaleInPlace(scale: number): this {
-        this.vector.forEach((val, i) => {
+        for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] *= scale;
-        });
+        }
         return this;
     }
 
@@ -480,9 +480,9 @@ export class Vector {
      * @returns result input
      */
     public scaleToRef<T extends Vector>(scale: number, result: T): T {
-        this.vector.forEach((val, i) => {
-            result.vector[i] = val * scale;
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] = this.vector[i] * scale;
+        }
         return result;
     }
 
@@ -493,9 +493,9 @@ export class Vector {
      * @returns result input
      */
     public scaleAndAddToRef<T extends Vector>(scale: number, result: T): T {
-        this.vector.forEach((val, i) => {
-            result.vector[i] += val * scale;
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] += this.vector[i] * scale;
+        }
         return result;
     }
 
@@ -505,7 +505,15 @@ export class Vector {
      * @returns true if the given vector coordinates strictly equal the current Vector ones
      */
     public equals(otherVector: DeepImmutable<Vector>): boolean {
-        return this.vector.every((val, i) => val == otherVector.vector[i]);
+        if (!otherVector) {
+            return false;
+        }
+        for (let i = 0; i < this.vector.length; i++) {
+            if (this.vector[i] != otherVector.vector[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -515,7 +523,15 @@ export class Vector {
      * @returns true if the given vector coordinates are close to the current ones by a distance of epsilon.
      */
     public equalsWithEpsilon(otherVector: DeepImmutable<Vector>, epsilon: number = Epsilon): boolean {
-        return otherVector && this.vector.every((val, i) => Scalar.WithinEpsilon(val, otherVector.vector[i], epsilon));
+        if (!otherVector) {
+            return false;
+        }
+        for (let i = 0; i < this.vector.length; i++) {
+            if (!Scalar.WithinEpsilon(this.vector[i], otherVector.vector[i], epsilon)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -528,7 +544,12 @@ export class Vector {
     public equalsToFloats(x: number, y: number, z: number, w: number): boolean;
     public equalsToFloats(...floats: number[]): boolean;
     public equalsToFloats(...floats: number[]): boolean {
-        return this.vector.every((val, i) => val == floats[i]);
+        for (let i = 0; i < this.vector.length; i++) {
+            if (this.vector[i] != floats[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -561,9 +582,9 @@ export class Vector {
      * @returns a new Vector
      */
     public floorToRef<T extends Vector>(result: T): T {
-        this.vector.forEach((val, i) => {
-            result.vector[i] = Math.floor(val);
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] = Math.floor(this.vector[i]);
+        }
         return result;
     }
 
@@ -584,9 +605,9 @@ export class Vector {
      * @returns a new Vector
      */
     public fractToRef<T extends Vector>(result: T): T {
-        this.vector.forEach((val, i) => {
-            result.vector[i] = val - Math.floor(val);
-        });
+        for (let i = 0; i < this.vector.length; i++) {
+            result.vector[i] = this.vector[i] - Math.floor(this.vector[i]);
+        }
         return result;
     }
 
@@ -694,9 +715,9 @@ export class Vector {
      */
     public static RandomToRef(min: number = 0, max: number = 1, result: Vector): Vector {
         const ref = new Vector();
-        result.vector.forEach((val, i) => {
+        for (let i = 0; i < result.vector.length; i++) {
             result.vector[i] = Scalar.RandomRange(min, max);
-        });
+        }
         return ref;
     }
 
@@ -795,11 +816,10 @@ export class Vector {
      * @returns the updated result Vector
      */
     public static ClampToRef<T extends Vector>(value: DeepImmutable<T>, min: DeepImmutable<Vector>, max: DeepImmutable<Vector>, result: T): T {
-        value.vector.forEach((val, i) => {
-            val = val > max.vector[i] ? max.vector[i] : val;
-            val = val < min.vector[i] ? min.vector[i] : val;
-            result.vector[i] = val;
-        });
+        for (let i = 0; i < value.vector.length; i++) {
+            result.vector[i] = value.vector[i] > max.vector[i] ? max.vector[i] : value.vector[i];
+            result.vector[i] = value.vector[i] < min.vector[i] ? min.vector[i] : value.vector[i];
+        }
 
         return result;
     }
@@ -920,9 +940,9 @@ export class Vector {
      * @returns a new Vector
      */
     public static LerpToRef<T extends Vector>(start: DeepImmutable<T>, end: DeepImmutable<Vector>, amount: number, result: T): T {
-        start.vector.forEach((val, i) => {
-            result.vector[i] = val + (end.vector[i] - val) * amount;
-        });
+        for (let i = 0; i < start.vector.length; i++) {
+            result.vector[i] = start.vector[i] + (end.vector[i] - start.vector[i]) * amount;
+        }
         return result;
     }
 
@@ -960,9 +980,9 @@ export class Vector {
             return result;
         }
 
-        vector.vector.forEach((val, i) => {
-            result.vector[i] = val / len;
-        });
+        for (let i = 0; i < vector.vector.length; i++) {
+            result.vector[i] = vector.vector[i] / len;
+        }
         return result;
     }
 
