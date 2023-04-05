@@ -31,8 +31,7 @@ function colorChannelToGammaSpaceExact(color: number): number {
  * Class used to hold a RGB color
  */
 export class Color3 extends Vector {
-
-	public static Dimension: number = 3;
+    public static Dimension: number = 3;
 
     /**
      * Creates a new Color3 object from red, green, blue values, all between 0 and 1
@@ -430,15 +429,13 @@ export class Color3 extends Vector {
     public static Teal(): Color3 {
         return new Color3(0, 1.0, 1.0);
     }
-
 }
 
 /**
  * Class used to hold a RBGA color
  */
 export class Color4 extends Vector {
-
-	public static Dimension: number = 4;
+    public static Dimension: number = 4;
 
     /**
      * Creates a new Color4 object from red, green, blue values, all between 0 and 1

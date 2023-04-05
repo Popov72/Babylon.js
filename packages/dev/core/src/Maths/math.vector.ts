@@ -1212,7 +1212,7 @@ export class Vector {
 export class Vector2 extends Vector {
     private static _ZeroReadOnly = Vector2.Zero() as DeepImmutable<Vector2>;
 
-	public static readonly Dimension: number = 2;
+    public static readonly Dimension: number = 2;
 
     /**
      * Creates a new Vector2 from the given x and y coordinates
@@ -1378,7 +1378,7 @@ export class Vector3 extends Vector {
     private static _ZeroReadOnly = Vector3.Zero() as DeepImmutable<Vector3>;
     private static _OneReadOnly = Vector3.One() as DeepImmutable<Vector3>;
 
-	public static readonly Dimension: number = 3;
+    public static readonly Dimension: number = 3;
 
     /**
      * Creates a new Vector3 object from the given x, y, z (floats) coordinates.
@@ -2505,7 +2505,7 @@ export class Vector3 extends Vector {
 export class Vector4 extends Vector {
     private static _ZeroReadOnly = Vector4.Zero() as DeepImmutable<Vector4>;
 
-	public static readonly Dimension: number = 4;
+    public static readonly Dimension: number = 4;
 
     /**
      * Creates a Vector4 object from the given floats.
