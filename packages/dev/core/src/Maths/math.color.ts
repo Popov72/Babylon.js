@@ -102,6 +102,16 @@ export class Color3 extends Vector {
     // Operators
 
     /**
+     * Determines equality between Color3 objects
+     * @param otherColor defines the second operand
+     * @returns true if the rgb values are equal to the given ones
+	 * @todo fix so it works with Vector.equals
+     */
+    public equals(otherColor: DeepImmutable<Color3>): boolean {
+        return otherColor && this.r === otherColor.r && this.g === otherColor.g && this.b === otherColor.b;
+    }
+
+    /**
      * Returns a new Color4 object from the current Color3 and the given alpha
      * @param alpha defines the alpha component on the new Color4 object (default is 1)
      * @returns a new Color4 object
