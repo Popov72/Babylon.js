@@ -32,6 +32,109 @@ export class Vector {
      */
     public vector: number[];
 
+    /** @internal */
+    public _isDirty = true;
+
+    /**
+     * Gets or sets the first coordinate of the vector
+     */
+    public get x(): number {
+        return +this.vector[0];
+    }
+
+    public set x(value: number) {
+        this.vector[0] = +value;
+    }
+
+    /**
+     * @deprecated use without underscore
+     */
+    public get _x(): number {
+        return +this.vector[0];
+    }
+
+    /**
+     * @deprecated use without underscore
+     */
+    public set _x(value: number) {
+        this.vector[0] = +value;
+    }
+
+    /**
+     * Gets or sets the second coordinate of the vector
+     */
+    public get y(): number {
+        return +this.vector[1];
+    }
+
+    public set y(value: number) {
+        this.vector[1] = +value;
+    }
+
+    /**
+     * @deprecated use without underscore
+     */
+    public get _y(): number {
+        return +this.vector[1];
+    }
+
+    /**
+     * @deprecated use without underscore
+     */
+    public set _y(value: number) {
+        this.vector[1] = +value;
+    }
+
+    /**
+     * Gets or sets the third coordinate of the vector
+     */
+    public get z(): number {
+        return +this.vector[2];
+    }
+
+    public set z(value: number) {
+        this.vector[2] = +value;
+    }
+
+    /**
+     * @deprecated use without underscore
+     */
+    public get _z(): number {
+        return +this.vector[2];
+    }
+
+    /**
+     * @deprecated use without underscore
+     */
+    public set _z(value: number) {
+        this.vector[2] = +value;
+    }
+
+    /**
+     * Gets or sets the fourth coordinate of the vector
+     */
+    public get w(): number {
+        return +this.vector[3];
+    }
+
+    public set w(value: number) {
+        this.vector[3] = +value;
+    }
+
+    /**
+     * @deprecated use without underscore
+     */
+    public get _w(): number {
+        return +this.vector[3];
+    }
+
+    /**
+     * @deprecated use without underscore
+     */
+    public set _w(value: number) {
+        this.vector[3] = +value;
+    }
+
     /**
      * Creates a new Vector from the given coordinates
      */
@@ -633,7 +736,11 @@ export class Vector {
      * @returns the vector squared length (float)
      */
     public lengthSquared(): number {
-        return this.vector.reduce((sum, val) => sum + val ** 2, 0);
+        let sum = 0;
+        for (let i = 0; i < this.vector.length; i++) {
+            sum += this.vector[i] ** 2;
+        }
+        return sum;
     }
 
     // Methods
@@ -644,7 +751,6 @@ export class Vector {
      */
     public normalize(): this {
         return this.normalizeFromLength(this.length());
-        return this;
     }
 
     /**
@@ -1086,34 +1192,6 @@ export class Vector2 extends Vector {
     }
 
     /**
-     * the first coordinate of the vector
-     */
-    public get x(): number {
-        return +this.vector[0];
-    }
-
-    /**
-     * the second coordinate of the vector
-     */
-    public get y(): number {
-        return +this.vector[1];
-    }
-
-    /**
-     * the first coordinate of the vector
-     */
-    public set x(value: number) {
-        this.vector[0] = +value;
-    }
-
-    /**
-     * the second coordinate of the vector
-     */
-    public set y(value: number) {
-        this.vector[1] = +value;
-    }
-
-    /**
      * Gets a string with the Vector2 coordinates
      * @returns a string with the Vector2 coordinates
      */
@@ -1268,9 +1346,6 @@ export class Vector3 extends Vector {
     private static _ZeroReadOnly = Vector3.Zero() as DeepImmutable<Vector3>;
     private static _OneReadOnly = Vector3.One() as DeepImmutable<Vector3>;
 
-    /** @internal */
-    public _isDirty = true;
-
     /**
      * Creates a new Vector3 object from the given x, y, z (floats) coordinates.
      * @param x defines the first coordinates (on X axis)
@@ -1279,96 +1354,6 @@ export class Vector3 extends Vector {
      */
     constructor(x: number = 0, y: number = 0, z: number = 0) {
         super(x, y, z);
-    }
-
-    /**
-     * the first coordinate of the vector
-     */
-    public get x(): number {
-        return +this.vector[0];
-    }
-
-    /**
-     * the second coordinate of the vector
-     */
-    public get y(): number {
-        return +this.vector[1];
-    }
-
-    /**
-     * the third coordinate of the vector
-     */
-    public get z(): number {
-        return +this.vector[2];
-    }
-
-    /**
-     * the first coordinate of the vector
-     */
-    public set x(value: number) {
-        this.vector[0] = +value;
-    }
-
-    /**
-     * the second coordinate of the vector
-     */
-    public set y(value: number) {
-        this.vector[1] = +value;
-    }
-
-    /**
-     * the third coordinate of the vector
-     */
-    public set z(value: number) {
-        this.vector[2] = +value;
-    }
-
-    /**
-     * the first coordinate of the vector
-     * @deprecated use without underscore
-     */
-    public get _x(): number {
-        return +this.vector[0];
-    }
-
-    /**
-     * the second coordinate of the vector
-     * @deprecated use without underscore
-     */
-    public get _y(): number {
-        return +this.vector[1];
-    }
-
-    /**
-     * the third coordinate of the vector
-     * @deprecated use without underscore
-     */
-    public get _z(): number {
-        return +this.vector[2];
-    }
-
-    /**
-     * the first coordinate of the vector
-     * @deprecated use without underscore
-     */
-    public set _x(value: number) {
-        this.vector[0] = +value;
-    }
-
-    /**
-     * the second coordinate of the vector
-     * @deprecated use without underscore
-     */
-    public set _y(value: number) {
-        this.vector[1] = +value;
-    }
-
-    /**
-     * the third coordinate of the vector
-     * @deprecated use without underscore
-     */
-    public set _z(value: number) {
-        this.vector[2] = +value;
     }
 
     /**
@@ -2495,62 +2480,6 @@ export class Vector4 extends Vector {
      */
     constructor(x: number = 0, y: number = 0, z: number = 0, w: number = 0) {
         super(x, y, z, w);
-    }
-
-    /**
-     * the first coordinate of the vector
-     */
-    public get x(): number {
-        return +this.vector[0];
-    }
-
-    /**
-     * the second coordinate of the vector
-     */
-    public get y(): number {
-        return +this.vector[1];
-    }
-
-    /**
-     * the third coordinate of the vector
-     */
-    public get z(): number {
-        return +this.vector[2];
-    }
-
-    /**
-     * the fourth coordinate of the vector
-     */
-    public get w(): number {
-        return +this.vector[3];
-    }
-
-    /**
-     * the first coordinate of the vector
-     */
-    public set x(value: number) {
-        this.vector[0] = +value;
-    }
-
-    /**
-     * the second coordinate of the vector
-     */
-    public set y(value: number) {
-        this.vector[1] = +value;
-    }
-
-    /**
-     * the third coordinate of the vector
-     */
-    public set z(value: number) {
-        this.vector[2] = +value;
-    }
-
-    /**
-     * the fourth coordinate of the vector
-     */
-    public set w(value: number) {
-        this.vector[3] = +value;
     }
 
     /**
