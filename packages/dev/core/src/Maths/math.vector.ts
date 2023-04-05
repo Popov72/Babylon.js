@@ -643,7 +643,7 @@ export class Vector {
      * @returns the current updated Vector
      */
     public normalize(): this {
-        Vector.NormalizeToRef(this, this);
+        return this.normalizeFromLength(this.length());
         return this;
     }
 
@@ -976,7 +976,7 @@ export class Vector {
     public static NormalizeToRef<T extends Vector>(vector: DeepImmutable<Vector>, result: T): T {
         const len = vector.length();
 
-        if (len === 0) {
+        if (len === 0 || len === 1) {
             return result;
         }
 
