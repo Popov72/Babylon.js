@@ -44,6 +44,7 @@ export class Vector {
 
     public set x(value: number) {
         this.vector[0] = +value;
+        this._isDirty = true;
     }
 
     /**
@@ -58,6 +59,7 @@ export class Vector {
      */
     public set _x(value: number) {
         this.vector[0] = +value;
+        this._isDirty = true;
     }
 
     /**
@@ -69,6 +71,7 @@ export class Vector {
 
     public set y(value: number) {
         this.vector[1] = +value;
+        this._isDirty = true;
     }
 
     /**
@@ -83,6 +86,7 @@ export class Vector {
      */
     public set _y(value: number) {
         this.vector[1] = +value;
+        this._isDirty = true;
     }
 
     /**
@@ -94,6 +98,7 @@ export class Vector {
 
     public set z(value: number) {
         this.vector[2] = +value;
+        this._isDirty = true;
     }
 
     /**
@@ -108,6 +113,7 @@ export class Vector {
      */
     public set _z(value: number) {
         this.vector[2] = +value;
+        this._isDirty = true;
     }
 
     /**
@@ -119,6 +125,7 @@ export class Vector {
 
     public set w(value: number) {
         this.vector[3] = +value;
+        this._isDirty = true;
     }
 
     /**
@@ -133,6 +140,7 @@ export class Vector {
      */
     public set _w(value: number) {
         this.vector[3] = +value;
+        this._isDirty = true;
     }
 
     /**
@@ -220,6 +228,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] = floats[i];
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -241,6 +250,7 @@ export class Vector {
      */
     public setAll(value: number): this {
         this.vector.fill(value);
+        this._isDirty = true;
         return this;
     }
 
@@ -277,6 +287,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] += otherVector.vector[i];
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -293,6 +304,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] += floats[i];
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -329,6 +341,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] -= otherVector.vector[i];
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -363,6 +376,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] = this.vector[i] - floats[i];
         }
+        this._isDirty = true;
         return result;
     }
 
@@ -399,6 +413,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] *= otherVector.vector[i];
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -415,6 +430,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] = this.vector[i] * floats[i];
         }
+        this._isDirty = true;
         return result;
     }
 
@@ -451,6 +467,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] /= otherVector.vector[i];
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -465,6 +482,7 @@ export class Vector {
                 this.vector[i] = otherVector.vector[i];
             }
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -483,6 +501,7 @@ export class Vector {
                 this.vector[i] = floats[i];
             }
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -497,6 +516,7 @@ export class Vector {
                 this.vector[i] = otherVector.vector[i];
             }
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -515,6 +535,7 @@ export class Vector {
                 this.vector[i] = floats[i];
             }
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -536,6 +557,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] *= -1;
         }
+        this._isDirty = true;
         return this;
     }
 
@@ -560,6 +582,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             this.vector[i] *= scale;
         }
+        this._isDirty = true;
         return this;
     }
 
