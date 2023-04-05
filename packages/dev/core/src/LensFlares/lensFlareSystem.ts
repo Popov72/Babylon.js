@@ -407,7 +407,7 @@ export class LensFlareSystem {
             LensFlare.AddFlare(
                 parsedFlare.size,
                 parsedFlare.position,
-                Color3.FromArray(parsedFlare.color),
+                Color3.FromArray<Color3>(parsedFlare.color),
                 parsedFlare.textureName ? rootUrl + parsedFlare.textureName : "",
                 lensFlareSystem
             );

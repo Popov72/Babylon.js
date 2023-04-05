@@ -140,7 +140,7 @@ export class FireProceduralTexture extends ProceduralTexture {
 
         const colors: Color3[] = [];
         for (let i = 0; i < parsedTexture.fireColors.length; i++) {
-            colors.push(Color3.FromArray(parsedTexture.fireColors[i]));
+            colors.push(Color3.FromArray<Color3>(parsedTexture.fireColors[i]));
         }
 
         texture.fireColors = colors;

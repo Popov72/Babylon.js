@@ -785,7 +785,7 @@ export class Skeleton implements IAnimatable {
     public static Parse(parsedSkeleton: any, scene: Scene): Skeleton {
         const skeleton = new Skeleton(parsedSkeleton.name, parsedSkeleton.id, scene);
         if (parsedSkeleton.dimensionsAtRest) {
-            skeleton.dimensionsAtRest = Vector3.FromArray(parsedSkeleton.dimensionsAtRest);
+            skeleton.dimensionsAtRest = Vector3.FromArray<Vector3>(parsedSkeleton.dimensionsAtRest);
         }
 
         skeleton.needInitialSkinMatrix = parsedSkeleton.needInitialSkinMatrix;

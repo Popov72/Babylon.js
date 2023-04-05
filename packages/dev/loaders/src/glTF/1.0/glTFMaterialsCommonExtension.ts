@@ -96,7 +96,7 @@ export class GLTFMaterialsCommonExtension extends GLTFLoaderExtension {
                         const ambientLight = new HemisphericLight(light.name, new Vector3(0, 1, 0), gltfRuntime.scene);
                         const ambient = light.ambient;
                         if (ambient) {
-                            ambientLight.diffuse = Color3.FromArray(ambient.color || [1, 1, 1]);
+                            ambientLight.diffuse = Color3.FromArray<Color3>(ambient.color || [1, 1, 1]);
                         }
                         break;
                     }
@@ -104,7 +104,7 @@ export class GLTFMaterialsCommonExtension extends GLTFLoaderExtension {
                         const pointLight = new PointLight(light.name, new Vector3(10, 10, 10), gltfRuntime.scene);
                         const point = light.point;
                         if (point) {
-                            pointLight.diffuse = Color3.FromArray(point.color || [1, 1, 1]);
+                            pointLight.diffuse = Color3.FromArray<Color3>(point.color || [1, 1, 1]);
                         }
                         break;
                     }
@@ -112,7 +112,7 @@ export class GLTFMaterialsCommonExtension extends GLTFLoaderExtension {
                         const dirLight = new DirectionalLight(light.name, new Vector3(0, -1, 0), gltfRuntime.scene);
                         const directional = light.directional;
                         if (directional) {
-                            dirLight.diffuse = Color3.FromArray(directional.color || [1, 1, 1]);
+                            dirLight.diffuse = Color3.FromArray<Color3>(directional.color || [1, 1, 1]);
                         }
                         break;
                     }
@@ -127,7 +127,7 @@ export class GLTFMaterialsCommonExtension extends GLTFLoaderExtension {
                                 spot.fallOffExponent || 0.0,
                                 gltfRuntime.scene
                             );
-                            spotLight.diffuse = Color3.FromArray(spot.color || [1, 1, 1]);
+                            spotLight.diffuse = Color3.FromArray<Color3>(spot.color || [1, 1, 1]);
                         }
                         break;
                     }
@@ -167,28 +167,28 @@ export class GLTFMaterialsCommonExtension extends GLTFLoaderExtension {
         if (typeof extension.values.ambient === "string") {
             this._loadTexture(gltfRuntime, extension.values.ambient, standardMaterial, "ambientTexture", onError);
         } else {
-            standardMaterial.ambientColor = Color3.FromArray(extension.values.ambient || [0, 0, 0]);
+            standardMaterial.ambientColor = Color3.FromArray<Color3>(extension.values.ambient || [0, 0, 0]);
         }
 
         // Diffuse
         if (typeof extension.values.diffuse === "string") {
             this._loadTexture(gltfRuntime, extension.values.diffuse, standardMaterial, "diffuseTexture", onError);
         } else {
-            standardMaterial.diffuseColor = Color3.FromArray(extension.values.diffuse || [0, 0, 0]);
+            standardMaterial.diffuseColor = Color3.FromArray<Color3>(extension.values.diffuse || [0, 0, 0]);
         }
 
         // Emission
         if (typeof extension.values.emission === "string") {
             this._loadTexture(gltfRuntime, extension.values.emission, standardMaterial, "emissiveTexture", onError);
         } else {
-            standardMaterial.emissiveColor = Color3.FromArray(extension.values.emission || [0, 0, 0]);
+            standardMaterial.emissiveColor = Color3.FromArray<Color3>(extension.values.emission || [0, 0, 0]);
         }
 
         // Specular
         if (typeof extension.values.specular === "string") {
             this._loadTexture(gltfRuntime, extension.values.specular, standardMaterial, "specularTexture", onError);
         } else {
-            standardMaterial.specularColor = Color3.FromArray(extension.values.specular || [0, 0, 0]);
+            standardMaterial.specularColor = Color3.FromArray<Color3>(extension.values.specular || [0, 0, 0]);
         }
 
         return true;

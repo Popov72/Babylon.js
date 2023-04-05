@@ -87,9 +87,9 @@ export function CreateGoldbergVertexData(options: GoldbergVertexDataOption, gold
     let index: number = 0;
     for (let f = 0; f < goldbergData.face.length; f++) {
         const verts = goldbergData.face[f];
-        const a = Vector3.FromArray(goldbergData.vertex[verts[0]]);
-        const b = Vector3.FromArray(goldbergData.vertex[verts[2]]);
-        const c = Vector3.FromArray(goldbergData.vertex[verts[1]]);
+        const a = Vector3.FromArray<Vector3>(goldbergData.vertex[verts[0]]);
+        const b = Vector3.FromArray<Vector3>(goldbergData.vertex[verts[2]]);
+        const c = Vector3.FromArray<Vector3>(goldbergData.vertex[verts[1]]);
         const ba = b.subtract(a);
         const ca = c.subtract(a);
         const norm = Vector3.Cross(ca, ba).normalize();
@@ -166,7 +166,7 @@ export function CreateGoldberg(name: string, options: GoldbergCreationOption, sc
     goldberg.goldbergData.nbFaces = goldberg.goldbergData.nbSharedFaces + goldberg.goldbergData.nbUnsharedFaces;
     goldberg.goldbergData.nbFacesAtPole = (goldberg.goldbergData.nbUnsharedFaces - 12) / 12;
     for (let f = 0; f < geodesicData.vertex.length; f++) {
-        goldberg.goldbergData.faceCenters.push(Vector3.FromArray(geodesicData.vertex[f]));
+        goldberg.goldbergData.faceCenters.push(Vector3.FromArray<Vector3>(geodesicData.vertex[f]));
         goldberg.goldbergData.faceCenters[f].x *= sizeX;
         goldberg.goldbergData.faceCenters[f].y *= sizeY;
         goldberg.goldbergData.faceCenters[f].z *= sizeZ;
@@ -175,9 +175,9 @@ export function CreateGoldberg(name: string, options: GoldbergCreationOption, sc
 
     for (let f = 0; f < goldbergData.face.length; f++) {
         const verts = goldbergData.face[f];
-        const a = Vector3.FromArray(goldbergData.vertex[verts[0]]);
-        const b = Vector3.FromArray(goldbergData.vertex[verts[2]]);
-        const c = Vector3.FromArray(goldbergData.vertex[verts[1]]);
+        const a = Vector3.FromArray<Vector3>(goldbergData.vertex[verts[0]]);
+        const b = Vector3.FromArray<Vector3>(goldbergData.vertex[verts[2]]);
+        const c = Vector3.FromArray<Vector3>(goldbergData.vertex[verts[1]]);
         const ba = b.subtract(a);
         const ca = c.subtract(a);
         const norm = Vector3.Cross(ca, ba).normalize();

@@ -64,7 +64,7 @@ export class KHR_materials_unlit implements IGLTFLoaderExtension {
         const properties = material.pbrMetallicRoughness;
         if (properties) {
             if (properties.baseColorFactor) {
-                babylonMaterial.albedoColor = Color3.FromArray(properties.baseColorFactor);
+                babylonMaterial.albedoColor = Color3.FromArray<Color3>(properties.baseColorFactor);
                 babylonMaterial.alpha = properties.baseColorFactor[3];
             } else {
                 babylonMaterial.albedoColor = Color3.White();

@@ -69,7 +69,7 @@ export class KHR_materials_specular implements IGLTFLoaderExtension {
         }
 
         if (properties.specularColorFactor !== undefined) {
-            babylonMaterial.metallicReflectanceColor = Color3.FromArray(properties.specularColorFactor);
+            babylonMaterial.metallicReflectanceColor = Color3.FromArray<Color3>(properties.specularColorFactor);
         }
 
         if (properties.specularTexture) {

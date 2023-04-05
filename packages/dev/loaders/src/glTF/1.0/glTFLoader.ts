@@ -296,7 +296,7 @@ const loadAnimations = (gltfRuntime: IGLTFRuntime) => {
                     arrayOffset += 4;
                 } else {
                     // Position and scaling are VEC3
-                    value = Vector3.FromArray([bufferOutput[arrayOffset], bufferOutput[arrayOffset + 1], bufferOutput[arrayOffset + 2]]);
+                    value = Vector3.FromArray<Vector3>([bufferOutput[arrayOffset], bufferOutput[arrayOffset + 1], bufferOutput[arrayOffset + 2]]);
                     arrayOffset += 3;
                 }
 
@@ -358,9 +358,9 @@ const configureBoneTransformation = (node: IGLTFNode): Matrix => {
     let mat: Nullable<Matrix> = null;
 
     if (node.translation || node.rotation || node.scale) {
-        const scale = Vector3.FromArray(node.scale || [1, 1, 1]);
+        const scale = Vector3.FromArray<Vector3>(node.scale || [1, 1, 1]);
         const rotation = Quaternion.FromArray(node.rotation || [0, 0, 0, 1]);
-        const position = Vector3.FromArray(node.translation || [0, 0, 0]);
+        const position = Vector3.FromArray<Vector3>(node.translation || [0, 0, 0]);
 
         mat = Matrix.Compose(scale, rotation, position);
     } else {
@@ -868,7 +868,7 @@ const configureNodeFromMatrix = (newNode: Mesh, node: IGLTFNode) => {
 
         configureNode(newNode, position, rotation, scaling);
     } else if (node.translation && node.rotation && node.scale) {
-        configureNode(newNode, Vector3.FromArray(node.translation), Quaternion.FromArray(node.rotation), Vector3.FromArray(node.scale));
+        configureNode(newNode, Vector3.FromArray<Vector3>(node.translation), Quaternion.FromArray(node.rotation), Vector3.FromArray<Vector3>(node.scale));
     }
 
     newNode.computeWorldMatrix(true);
@@ -925,7 +925,7 @@ const importNode = (gltfRuntime: IGLTFRuntime, node: IGLTFNode, id: string): Nul
                 hemiLight.name = node.name || "";
 
                 if (ambienLight.color) {
-                    hemiLight.diffuse = Color3.FromArray(ambienLight.color);
+                    hemiLight.diffuse = Color3.FromArray<Color3>(ambienLight.color);
                 }
 
                 lastNode = hemiLight;
@@ -935,7 +935,7 @@ const importNode = (gltfRuntime: IGLTFRuntime, node: IGLTFNode, id: string): Nul
                 dirLight.name = node.name || "";
 
                 if (directionalLight.color) {
-                    dirLight.diffuse = Color3.FromArray(directionalLight.color);
+                    dirLight.diffuse = Color3.FromArray<Color3>(directionalLight.color);
                 }
 
                 lastNode = dirLight;
@@ -945,7 +945,7 @@ const importNode = (gltfRuntime: IGLTFRuntime, node: IGLTFNode, id: string): Nul
                 ptLight.name = node.name || "";
 
                 if (pointLight.color) {
-                    ptLight.diffuse = Color3.FromArray(pointLight.color);
+                    ptLight.diffuse = Color3.FromArray<Color3>(pointLight.color);
                 }
 
                 lastNode = ptLight;
@@ -955,7 +955,7 @@ const importNode = (gltfRuntime: IGLTFRuntime, node: IGLTFNode, id: string): Nul
                 spLight.name = node.name || "";
 
                 if (spotLight.color) {
-                    spLight.diffuse = Color3.FromArray(spotLight.color);
+                    spLight.diffuse = Color3.FromArray<Color3>(spotLight.color);
                 }
 
                 if (spotLight.fallOfAngle) {
@@ -1031,7 +1031,7 @@ const importNode = (gltfRuntime: IGLTFRuntime, node: IGLTFNode, id: string): Nul
             const translation = node.translation || [0, 0, 0];
             const rotation = node.rotation || [0, 0, 0, 1];
             const scale = node.scale || [1, 1, 1];
-            configureNode(lastNode, Vector3.FromArray(translation), Quaternion.FromArray(rotation), Vector3.FromArray(scale));
+            configureNode(lastNode, Vector3.FromArray<Vector3>(translation), Quaternion.FromArray(rotation), Vector3.FromArray<Vector3>(scale));
         }
 
         lastNode.updateCache(true);

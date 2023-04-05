@@ -140,8 +140,8 @@ export class MeshPropertyGridComponent extends React.Component<
 
         const lines = [];
         for (let i = 0; i < normals!.length; i += 3) {
-            const v1 = Vector3.FromArray(positions!, i);
-            const v2 = v1.add(Vector3.FromArray(normals!, i).scaleInPlace(size));
+            const v1 = Vector3.FromArray<Vector3>(positions!, i);
+            const v2 = v1.add(Vector3.FromArray<Vector3>(normals!, i).scaleInPlace(size));
             lines.push([v1, v2]);
         }
 

@@ -180,9 +180,9 @@ export class PickingInfo {
             return null;
         }
 
-        let uv0 = Vector2.FromArray(uvs, indices[this.faceId * 3] * 2);
-        let uv1 = Vector2.FromArray(uvs, indices[this.faceId * 3 + 1] * 2);
-        let uv2 = Vector2.FromArray(uvs, indices[this.faceId * 3 + 2] * 2);
+        let uv0 = Vector2.FromArray<Vector2>(uvs, indices[this.faceId * 3] * 2);
+        let uv1 = Vector2.FromArray<Vector2>(uvs, indices[this.faceId * 3 + 1] * 2);
+        let uv2 = Vector2.FromArray<Vector2>(uvs, indices[this.faceId * 3 + 2] * 2);
 
         uv0 = uv0.scale(this.bu);
         uv1 = uv1.scale(this.bv);

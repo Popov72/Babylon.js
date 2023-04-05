@@ -268,7 +268,7 @@ export class LinesMesh extends Mesh {
     public static Parse(parsedMesh: any, scene: Scene): LinesMesh {
         const result = new LinesMesh(parsedMesh.name, scene);
 
-        result.color = Color3.FromArray(parsedMesh.color);
+        result.color = Color3.FromArray<Color3>(parsedMesh.color);
         result.alpha = parsedMesh.alpha;
 
         return result;

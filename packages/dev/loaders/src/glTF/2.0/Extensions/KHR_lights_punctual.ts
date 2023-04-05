@@ -101,7 +101,7 @@ export class KHR_lights implements IGLTFLoaderExtension {
                 light._babylonLight = babylonLight;
 
                 babylonLight.falloffType = Light.FALLOFF_GLTF;
-                babylonLight.diffuse = light.color ? Color3.FromArray(light.color) : Color3.White();
+                babylonLight.diffuse = light.color ? Color3.FromArray<Color3>(light.color) : Color3.White();
                 babylonLight.intensity = light.intensity == undefined ? 1 : light.intensity;
                 babylonLight.range = light.range == undefined ? Number.MAX_VALUE : light.range;
                 babylonLight.parent = babylonMesh;

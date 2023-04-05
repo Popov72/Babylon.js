@@ -1216,13 +1216,13 @@ export class Sound {
         }
 
         if (parsedSound.position) {
-            const soundPosition = Vector3.FromArray(parsedSound.position);
+            const soundPosition = Vector3.FromArray<Vector3>(parsedSound.position);
             newSound.setPosition(soundPosition);
         }
         if (parsedSound.isDirectional) {
             newSound.setDirectionalCone(parsedSound.coneInnerAngle || 360, parsedSound.coneOuterAngle || 360, parsedSound.coneOuterGain || 0);
             if (parsedSound.localDirectionToMesh) {
-                const localDirectionToMesh = Vector3.FromArray(parsedSound.localDirectionToMesh);
+                const localDirectionToMesh = Vector3.FromArray<Vector3>(parsedSound.localDirectionToMesh);
                 newSound.setLocalDirectionToMesh(localDirectionToMesh);
             }
         }

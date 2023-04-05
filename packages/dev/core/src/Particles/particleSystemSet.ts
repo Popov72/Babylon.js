@@ -172,7 +172,7 @@ export class ParticleSystemSet implements IDisposable {
                         {
                             diameter: options.diameter,
                             segments: options.segments,
-                            color: Color3.FromArray(options.color),
+                            color: Color3.FromArray<Color3>(options.color),
                         },
                         data.emitter.renderingGroupId,
                         scene

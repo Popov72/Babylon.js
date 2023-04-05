@@ -3079,9 +3079,9 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
             indices[index + 1] = index + 1;
             indices[index + 2] = index + 2;
 
-            const p1 = Vector3.FromArray(positions, index * 3);
-            const p2 = Vector3.FromArray(positions, (index + 1) * 3);
-            const p3 = Vector3.FromArray(positions, (index + 2) * 3);
+            const p1 = Vector3.FromArray<Vector3>(positions, index * 3);
+            const p2 = Vector3.FromArray<Vector3>(positions, (index + 1) * 3);
+            const p3 = Vector3.FromArray<Vector3>(positions, (index + 2) * 3);
 
             const p1p2 = p1.subtract(p2);
             const p3p2 = p3.subtract(p2);
@@ -3568,7 +3568,7 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
 
         const vectorPositions = new Array<Vector3>();
         for (let pos = 0; pos < positions.length; pos = pos + 3) {
-            vectorPositions.push(Vector3.FromArray(positions, pos));
+            vectorPositions.push(Vector3.FromArray<Vector3>(positions, pos));
         }
         const dupes = new Array<number>();
 
@@ -3942,7 +3942,7 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
             Tags.AddTagsTo(mesh, parsedMesh.tags);
         }
 
-        mesh.position = Vector3.FromArray(parsedMesh.position);
+        mesh.position = Vector3.FromArray<Vector3>(parsedMesh.position);
 
         if (parsedMesh.metadata !== undefined) {
             mesh.metadata = parsedMesh.metadata;
@@ -3951,10 +3951,10 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
         if (parsedMesh.rotationQuaternion) {
             mesh.rotationQuaternion = Quaternion.FromArray(parsedMesh.rotationQuaternion);
         } else if (parsedMesh.rotation) {
-            mesh.rotation = Vector3.FromArray(parsedMesh.rotation);
+            mesh.rotation = Vector3.FromArray<Vector3>(parsedMesh.rotation);
         }
 
-        mesh.scaling = Vector3.FromArray(parsedMesh.scaling);
+        mesh.scaling = Vector3.FromArray<Vector3>(parsedMesh.scaling);
 
         if (parsedMesh.localMatrix) {
             mesh.setPreTransformMatrix(Matrix.FromArray(parsedMesh.localMatrix));
@@ -4025,7 +4025,7 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
         }
 
         if (parsedMesh.overlayColor !== undefined) {
-            mesh.overlayColor = Color3.FromArray(parsedMesh.overlayColor);
+            mesh.overlayColor = Color3.FromArray<Color3>(parsedMesh.overlayColor);
         }
 
         if (parsedMesh.renderOverlay !== undefined) {
@@ -4039,7 +4039,7 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
         if (parsedMesh.delayLoadingFile) {
             mesh.delayLoadState = Constants.DELAYLOADSTATE_NOTLOADED;
             mesh.delayLoadingFile = rootUrl + parsedMesh.delayLoadingFile;
-            mesh.buildBoundingInfo(Vector3.FromArray(parsedMesh.boundingBoxMinimum), Vector3.FromArray(parsedMesh.boundingBoxMaximum));
+            mesh.buildBoundingInfo(Vector3.FromArray<Vector3>(parsedMesh.boundingBoxMinimum), Vector3.FromArray<Vector3>(parsedMesh.boundingBoxMaximum));
 
             if (parsedMesh._binaryInfo) {
                 mesh._binaryInfo = parsedMesh._binaryInfo;
@@ -4166,7 +4166,7 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
                     }
                 }
 
-                instance.position = Vector3.FromArray(parsedInstance.position);
+                instance.position = Vector3.FromArray<Vector3>(parsedInstance.position);
 
                 if (parsedInstance.metadata !== undefined) {
                     instance.metadata = parsedInstance.metadata;
@@ -4195,10 +4195,10 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
                 if (parsedInstance.rotationQuaternion) {
                     instance.rotationQuaternion = Quaternion.FromArray(parsedInstance.rotationQuaternion);
                 } else if (parsedInstance.rotation) {
-                    instance.rotation = Vector3.FromArray(parsedInstance.rotation);
+                    instance.rotation = Vector3.FromArray<Vector3>(parsedInstance.rotation);
                 }
 
-                instance.scaling = Vector3.FromArray(parsedInstance.scaling);
+                instance.scaling = Vector3.FromArray<Vector3>(parsedInstance.scaling);
 
                 if (parsedInstance.checkCollisions != undefined && parsedInstance.checkCollisions != null) {
                     instance.checkCollisions = parsedInstance.checkCollisions;

@@ -466,10 +466,10 @@ export class CubeTexture extends BaseTexture {
 
         // Local Cubemaps
         if (parsedTexture.boundingBoxPosition) {
-            texture.boundingBoxPosition = Vector3.FromArray(parsedTexture.boundingBoxPosition);
+            texture.boundingBoxPosition = Vector3.FromArray<Vector3>(parsedTexture.boundingBoxPosition);
         }
         if (parsedTexture.boundingBoxSize) {
-            texture.boundingBoxSize = Vector3.FromArray(parsedTexture.boundingBoxSize);
+            texture.boundingBoxSize = Vector3.FromArray<Vector3>(parsedTexture.boundingBoxSize);
         }
 
         // Animations

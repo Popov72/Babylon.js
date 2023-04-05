@@ -539,18 +539,18 @@ export class _Exporter {
                     case VertexBuffer.NormalKind: {
                         for (let x = submesh.verticesStart; x < submesh.verticesStart + submesh.verticesCount; x = x + 3) {
                             index = x * stride;
-                            (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index));
-                            (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index + 2 * stride));
-                            (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index + stride));
+                            (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index));
+                            (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index + 2 * stride));
+                            (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index + stride));
                         }
                         break;
                     }
                     case VertexBuffer.TangentKind: {
                         for (let x = submesh.verticesStart; x < submesh.verticesStart + submesh.verticesCount; x = x + 3) {
                             index = x * stride;
-                            (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index));
-                            (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index + 2 * stride));
-                            (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index + stride));
+                            (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index));
+                            (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index + 2 * stride));
+                            (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index + stride));
                         }
                         break;
                     }
@@ -559,13 +559,13 @@ export class _Exporter {
                         for (let x = submesh.verticesStart; x < submesh.verticesStart + submesh.verticesCount; x = x + size) {
                             index = x * stride;
                             if (size === 4) {
-                                (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index));
-                                (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index + 2 * stride));
-                                (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index + stride));
+                                (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index));
+                                (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index + 2 * stride));
+                                (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index + stride));
                             } else {
-                                (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index));
-                                (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index + 2 * stride));
-                                (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index + stride));
+                                (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index));
+                                (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index + 2 * stride));
+                                (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index + stride));
                             }
                         }
                         break;
@@ -574,9 +574,9 @@ export class _Exporter {
                     case VertexBuffer.UV2Kind: {
                         for (let x = submesh.verticesStart; x < submesh.verticesStart + submesh.verticesCount; x = x + 3) {
                             index = x * stride;
-                            (vertexData as Vector2[]).push(Vector2.FromArray(meshAttributeArray, index));
-                            (vertexData as Vector2[]).push(Vector2.FromArray(meshAttributeArray, index + 2 * stride));
-                            (vertexData as Vector2[]).push(Vector2.FromArray(meshAttributeArray, index + stride));
+                            (vertexData as Vector2[]).push(Vector2.FromArray<Vector2>(meshAttributeArray, index));
+                            (vertexData as Vector2[]).push(Vector2.FromArray<Vector2>(meshAttributeArray, index + 2 * stride));
+                            (vertexData as Vector2[]).push(Vector2.FromArray<Vector2>(meshAttributeArray, index + stride));
                         }
                         break;
                     }
@@ -611,14 +611,14 @@ export class _Exporter {
                 case VertexBuffer.PositionKind:
                 case VertexBuffer.NormalKind: {
                     index = submesh.verticesStart;
-                    (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index + 2 * stride));
-                    (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index + stride));
+                    (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index + 2 * stride));
+                    (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index + stride));
                     break;
                 }
                 case VertexBuffer.TangentKind: {
                     for (let x = submesh.verticesStart + submesh.verticesCount - 1; x >= submesh.verticesStart; --x) {
                         index = x * stride;
-                        (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index));
+                        (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index));
                     }
                     break;
                 }
@@ -626,8 +626,8 @@ export class _Exporter {
                     for (let x = submesh.verticesStart + submesh.verticesCount - 1; x >= submesh.verticesStart; --x) {
                         index = x * stride;
                         vertexBuffer.getSize() === 4
-                            ? (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index))
-                            : (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index));
+                            ? (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index))
+                            : (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index));
                     }
                     break;
                 }
@@ -635,7 +635,7 @@ export class _Exporter {
                 case VertexBuffer.UV2Kind: {
                     for (let x = submesh.verticesStart + submesh.verticesCount - 1; x >= submesh.verticesStart; --x) {
                         index = x * stride;
-                        (vertexData as Vector2[]).push(Vector2.FromArray(meshAttributeArray, index));
+                        (vertexData as Vector2[]).push(Vector2.FromArray<Vector2>(meshAttributeArray, index));
                     }
                     break;
                 }
@@ -670,24 +670,24 @@ export class _Exporter {
                 case VertexBuffer.NormalKind: {
                     for (let x = submesh.verticesStart + submesh.verticesCount - 1; x >= submesh.verticesStart; --x) {
                         index = x * stride;
-                        (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index));
+                        (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index));
                     }
                     break;
                 }
                 case VertexBuffer.TangentKind: {
                     for (let x = submesh.verticesStart + submesh.verticesCount - 1; x >= submesh.verticesStart; --x) {
                         index = x * stride;
-                        (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index));
+                        (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index));
                     }
                     break;
                 }
                 case VertexBuffer.ColorKind: {
                     for (let x = submesh.verticesStart + submesh.verticesCount - 1; x >= submesh.verticesStart; --x) {
                         index = x * stride;
-                        (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index));
+                        (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index));
                         vertexBuffer.getSize() === 4
-                            ? (vertexData as Vector4[]).push(Vector4.FromArray(meshAttributeArray, index))
-                            : (vertexData as Vector3[]).push(Vector3.FromArray(meshAttributeArray, index));
+                            ? (vertexData as Vector4[]).push(Vector4.FromArray<Vector4>(meshAttributeArray, index))
+                            : (vertexData as Vector3[]).push(Vector3.FromArray<Vector3>(meshAttributeArray, index));
                     }
                     break;
                 }
@@ -695,7 +695,7 @@ export class _Exporter {
                 case VertexBuffer.UV2Kind: {
                     for (let x = submesh.verticesStart + submesh.verticesCount - 1; x >= submesh.verticesStart; --x) {
                         index = x * stride;
-                        (vertexData as Vector2[]).push(Vector2.FromArray(meshAttributeArray, index));
+                        (vertexData as Vector2[]).push(Vector2.FromArray<Vector2>(meshAttributeArray, index));
                     }
                     break;
                 }
@@ -813,7 +813,7 @@ export class _Exporter {
             case VertexBuffer.MatricesIndicesExtraKind: {
                 for (let k = 0, length = meshAttributeArray.length / stride; k < length; ++k) {
                     index = k * stride;
-                    const vertexData = Vector4.FromArray(meshAttributeArray, index);
+                    const vertexData = Vector4.FromArray<Vector4>(meshAttributeArray, index);
                     vertexAttributes.push(vertexData.asArray());
                 }
                 break;
@@ -822,7 +822,7 @@ export class _Exporter {
             case VertexBuffer.MatricesWeightsExtraKind: {
                 for (let k = 0, length = meshAttributeArray.length / stride; k < length; ++k) {
                     index = k * stride;
-                    const vertexData = Vector4.FromArray(meshAttributeArray, index);
+                    const vertexData = Vector4.FromArray<Vector4>(meshAttributeArray, index);
                     vertexAttributes.push(vertexData.asArray());
                 }
                 break;
@@ -896,8 +896,8 @@ export class _Exporter {
             case VertexBuffer.PositionKind: {
                 for (let k = meshPrimitive.verticesStart; k < meshPrimitive.verticesCount; ++k) {
                     index = meshPrimitive.indexStart + k * stride;
-                    const vertexData = Vector3.FromArray(meshAttributeArray, index);
-                    const morphData = Vector3.FromArray(morphTargetAttributeArray, index);
+                    const vertexData = Vector3.FromArray<Vector3>(meshAttributeArray, index);
+                    const morphData = Vector3.FromArray<Vector3>(morphTargetAttributeArray, index);
                     difference = morphData.subtractToRef(vertexData, difference);
                     if (minMax) {
                         minMax.min.copyFromFloats(Math.min(difference.x, minMax.min.x), Math.min(difference.y, minMax.min.y), Math.min(difference.z, minMax.min.z));
@@ -920,9 +920,9 @@ export class _Exporter {
             case VertexBuffer.TangentKind: {
                 for (let k = meshPrimitive.verticesStart; k < meshPrimitive.verticesCount; ++k) {
                     index = meshPrimitive.indexStart + k * (stride + 1);
-                    const vertexData = Vector4.FromArray(meshAttributeArray, index);
+                    const vertexData = Vector4.FromArray<Vector4>(meshAttributeArray, index);
                     _GLTFUtilities._NormalizeTangentFromRef(vertexData);
-                    const morphData = Vector4.FromArray(morphTargetAttributeArray, index);
+                    const morphData = Vector4.FromArray<Vector4>(morphTargetAttributeArray, index);
                     _GLTFUtilities._NormalizeTangentFromRef(morphData);
                     difference4 = morphData.subtractToRef(vertexData, difference4);
                     vertexAttributes.push([difference4.x, difference4.y, difference4.z]);

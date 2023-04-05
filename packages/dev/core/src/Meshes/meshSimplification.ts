@@ -520,7 +520,7 @@ export class QuadraticErrorSimplification implements ISimplifier {
             }
 
             const offset = i + submesh.verticesStart;
-            const position = Vector3.FromArray(positionData, offset * 3);
+            const position = Vector3.FromArray<Vector3>(positionData, offset * 3);
 
             const vertex = findInVertices(position) || new DecimationVertex(position, this._vertices.length);
             vertex.originalOffsets.push(offset);

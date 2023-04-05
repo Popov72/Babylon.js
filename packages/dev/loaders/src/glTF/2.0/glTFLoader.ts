@@ -1247,13 +1247,13 @@ export class GLTFLoader implements IGLTFLoader {
             matrix.decompose(scaling, rotation, position);
         } else {
             if (node.translation) {
-                position = Vector3.FromArray(node.translation);
+                position = Vector3.FromArray<Vector3>(node.translation);
             }
             if (node.rotation) {
                 rotation = Quaternion.FromArray(node.rotation);
             }
             if (node.scale) {
-                scaling = Vector3.FromArray(node.scale);
+                scaling = Vector3.FromArray<Vector3>(node.scale);
             }
         }
 
@@ -1425,9 +1425,9 @@ export class GLTFLoader implements IGLTFLoader {
         return node.matrix
             ? Matrix.FromArray(node.matrix)
             : Matrix.Compose(
-                  node.scale ? Vector3.FromArray(node.scale) : Vector3.One(),
+                  node.scale ? Vector3.FromArray<Vector3>(node.scale) : Vector3.One(),
                   node.rotation ? Quaternion.FromArray(node.rotation) : Quaternion.Identity(),
-                  node.translation ? Vector3.FromArray(node.translation) : Vector3.Zero()
+                  node.translation ? Vector3.FromArray<Vector3>(node.translation) : Vector3.Zero()
               );
     }
 
@@ -2011,7 +2011,7 @@ export class GLTFLoader implements IGLTFLoader {
 
         if (properties) {
             if (properties.baseColorFactor) {
-                babylonMaterial.albedoColor = Color3.FromArray(properties.baseColorFactor);
+                babylonMaterial.albedoColor = Color3.FromArray<Color3>(properties.baseColorFactor);
                 babylonMaterial.alpha = properties.baseColorFactor[3];
             } else {
                 babylonMaterial.albedoColor = Color3.White();
@@ -2176,7 +2176,7 @@ export class GLTFLoader implements IGLTFLoader {
 
         const promises = new Array<Promise<any>>();
 
-        babylonMaterial.emissiveColor = material.emissiveFactor ? Color3.FromArray(material.emissiveFactor) : new Color3(0, 0, 0);
+        babylonMaterial.emissiveColor = material.emissiveFactor ? Color3.FromArray<Color3>(material.emissiveFactor) : new Color3(0, 0, 0);
         if (material.doubleSided) {
             babylonMaterial.backFaceCulling = false;
             babylonMaterial.twoSidedLighting = true;

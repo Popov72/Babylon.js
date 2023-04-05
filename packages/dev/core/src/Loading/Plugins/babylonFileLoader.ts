@@ -929,13 +929,13 @@ SceneLoader.RegisterPlugin({
                 scene.autoClear = parsedData.autoClear;
             }
             if (parsedData.clearColor !== undefined && parsedData.clearColor !== null) {
-                scene.clearColor = Color4.FromArray(parsedData.clearColor);
+                scene.clearColor = Color4.FromArray<Color4>(parsedData.clearColor);
             }
             if (parsedData.ambientColor !== undefined && parsedData.ambientColor !== null) {
-                scene.ambientColor = Color3.FromArray(parsedData.ambientColor);
+                scene.ambientColor = Color3.FromArray<Color3>(parsedData.ambientColor);
             }
             if (parsedData.gravity !== undefined && parsedData.gravity !== null) {
-                scene.gravity = Vector3.FromArray(parsedData.gravity);
+                scene.gravity = Vector3.FromArray<Vector3>(parsedData.gravity);
             }
 
             if (parsedData.useRightHandedSystem !== undefined) {
@@ -945,7 +945,7 @@ SceneLoader.RegisterPlugin({
             // Fog
             if (parsedData.fogMode && parsedData.fogMode !== 0) {
                 scene.fogMode = parsedData.fogMode;
-                scene.fogColor = Color3.FromArray(parsedData.fogColor);
+                scene.fogColor = Color3.FromArray<Color3>(parsedData.fogColor);
                 scene.fogStart = parsedData.fogStart;
                 scene.fogEnd = parsedData.fogEnd;
                 scene.fogDensity = parsedData.fogDensity;
@@ -976,7 +976,7 @@ SceneLoader.RegisterPlugin({
                 }
                 log = "\tPhysics engine " + (parsedData.physicsEngine ? parsedData.physicsEngine : "oimo") + " enabled\n";
                 //else - default engine, which is currently oimo
-                const physicsGravity = parsedData.physicsGravity ? Vector3.FromArray(parsedData.physicsGravity) : null;
+                const physicsGravity = parsedData.physicsGravity ? Vector3.FromArray<Vector3>(parsedData.physicsGravity) : null;
                 scene.enablePhysics(physicsGravity, physicsPlugin);
             }
 

@@ -914,7 +914,7 @@ export class HighlightLayer extends EffectLayer {
             const mesh = scene.getMeshById(highlightedMesh.meshId);
 
             if (mesh) {
-                hl.addMesh(<Mesh>mesh, Color3.FromArray(highlightedMesh.color), highlightedMesh.glowEmissiveOnly);
+                hl.addMesh(<Mesh>mesh, Color3.FromArray<Color3>(highlightedMesh.color), highlightedMesh.glowEmissiveOnly);
             }
         }
 
