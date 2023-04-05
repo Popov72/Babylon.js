@@ -11,10 +11,14 @@ import { PerformanceConfigurator } from "../Engines/performanceConfigurator";
 import { EngineStore } from "../Engines/engineStore";
 import type { TransformNode } from "../Meshes/transformNode";
 
-export type VectorConstructor<T extends Vector> = new (...args: ConstructorParameters<typeof Vector>) => T;
-export type Vector2Constructor<T extends Vector2> = new (...args: ConstructorParameters<typeof Vector2>) => T;
-export type Vector3Constructor<T extends Vector3> = new (...args: ConstructorParameters<typeof Vector3>) => T;
-export type Vector4Constructor<T extends Vector4> = new (...args: ConstructorParameters<typeof Vector4>) => T;
+export type VectorConstructor<T extends Vector> = {
+    new (...args: ConstructorParameters<typeof Vector>): T;
+    Dimension: number;
+    Random(min: number, max: number): T;
+    RandomToRef(min: number, max: number, result: T): T;
+    FromArray(array: DeepImmutable<ArrayLike<number>>, offset: number): T;
+    FromArrayToRef(array: DeepImmutable<ArrayLike<number>>, offset: number, result: T): T;
+};
 export type QuaternionConstructor<T extends Quaternion> = new (...args: ConstructorParameters<typeof Quaternion>) => T;
 export type MatrixConstructor<T extends Matrix> = new () => T;
 
@@ -24,13 +28,15 @@ const _ExtractAsInt = (value: number) => {
 };
 
 /**
- * Reprents a vector in space
+ * Represents a vector in space
  */
 export class Vector {
     /**
      * The coordinates of the vector
      */
     public vector: number[];
+
+    public static readonly Dimension: number = 0;
 
     /** @internal */
     public _isDirty = true;
@@ -829,8 +835,8 @@ export class Vector {
      * @param dim the dimension of the random Vector
      * @returns a Vector with random values between min and max
      */
-    public static Random(min: number = 0, max: number = 1, dim: number = 3): Vector {
-        const ref = new Vector(...new Array(dim).fill(0));
+    public static Random<T extends Vector>(this: VectorConstructor<T>, min: number = 0, max: number = 1): T {
+        const ref = new this(...new Array(this.Dimension).fill(0));
         this.RandomToRef(min, max, ref);
         return ref;
     }
@@ -842,12 +848,11 @@ export class Vector {
      * @param result the result to store the random values in
      * @returns the updated result Vector
      */
-    public static RandomToRef(min: number = 0, max: number = 1, result: Vector): Vector {
-        const ref = new Vector();
+    public static RandomToRef<T extends Vector>(min: number = 0, max: number = 1, result: T): T {
         for (let i = 0; i < result.vector.length; i++) {
             result.vector[i] = Scalar.RandomRange(min, max);
         }
-        return ref;
+        return result;
     }
 
     /**
@@ -856,9 +861,10 @@ export class Vector {
      * @param offset defines the offset in the data source
      * @returns a new Vector
      */
-    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: DeepImmutable<ArrayLike<number>>, offset: number = 0, length: number = 2): T {
-        const vector = Array.from(array).slice(offset, offset + length - 1);
-        return new this(...vector);
+    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: DeepImmutable<ArrayLike<number>>, offset: number = 0): T {
+        const ref = new this();
+        this.FromArrayToRef(array, offset, ref);
+        return ref as T;
     }
 
     /**
@@ -869,9 +875,10 @@ export class Vector {
      * @returns result input
      */
     public static FromArrayToRef<T extends Vector>(array: DeepImmutable<ArrayLike<number>>, offset: number, result: T): T {
-        const dim = result.dimension;
-        const vector = Array.from(array).slice(offset, offset + dim - 1);
-        result.set(...vector);
+        for (let i = 0; i < this.Dimension; i++) {
+            result.vector[i] = array[i + offset];
+        }
+
         return result;
     }
 
@@ -1205,6 +1212,8 @@ export class Vector {
 export class Vector2 extends Vector {
     private static _ZeroReadOnly = Vector2.Zero() as DeepImmutable<Vector2>;
 
+	public static readonly Dimension: number = 2;
+
     /**
      * Creates a new Vector2 from the given x and y coordinates
      * @param x defines the first coordinate
@@ -1290,7 +1299,7 @@ export class Vector2 extends Vector {
      * @returns a new Vector2
      */
     public static Transform<T extends Vector2>(vector: DeepImmutable<T>, transformation: DeepImmutable<Matrix>): T {
-        const result = new (vector.constructor as Vector2Constructor<T>)();
+        const result = new (vector.constructor as VectorConstructor<T>)();
         Vector2.TransformToRef(vector, transformation, result);
         return result;
     }
@@ -1368,6 +1377,8 @@ export class Vector3 extends Vector {
     private static _LeftReadOnly = Vector3.Left() as DeepImmutable<Vector3>;
     private static _ZeroReadOnly = Vector3.Zero() as DeepImmutable<Vector3>;
     private static _OneReadOnly = Vector3.One() as DeepImmutable<Vector3>;
+
+	public static readonly Dimension: number = 3;
 
     /**
      * Creates a new Vector3 object from the given x, y, z (floats) coordinates.
@@ -1478,7 +1489,7 @@ export class Vector3 extends Vector {
      * @returns a new Vector3
      */
     public applyRotationQuaternion(q: Quaternion): this {
-        return this.applyRotationQuaternionToRef(q, new (this.constructor as Vector3Constructor<this>)());
+        return this.applyRotationQuaternionToRef(q, new (this.constructor as VectorConstructor<this>)());
     }
 
     /**
@@ -1489,7 +1500,7 @@ export class Vector3 extends Vector {
      * @returns the projected vector3
      */
     public projectOnPlane<T extends Vector3>(plane: Plane, origin: Vector3): T {
-        const result = new (this.constructor as Vector3Constructor<T>)();
+        const result = new (this.constructor as VectorConstructor<T>)();
         this.projectOnPlaneToRef(plane, origin, result);
 
         return result;
@@ -1635,7 +1646,7 @@ export class Vector3 extends Vector {
      * @returns the cross product
      */
     public cross(other: Vector3): this {
-        const result = new (this.constructor as Vector3Constructor<this>)();
+        const result = new (this.constructor as VectorConstructor<this>)();
         return Vector3.CrossToRef(this, other, result);
     }
 
@@ -2074,7 +2085,7 @@ export class Vector3 extends Vector {
      * @returns the cross product
      */
     public static Cross<T extends Vector3>(left: DeepImmutable<T>, right: DeepImmutable<Vector3>): T {
-        const result = new (left.constructor as Vector3Constructor<T>)();
+        const result = new (left.constructor as VectorConstructor<T>)();
         Vector3.CrossToRef(left, right, result);
         return result;
     }
@@ -2106,7 +2117,7 @@ export class Vector3 extends Vector {
      * @returns the new Vector3
      */
     public static Project<T extends Vector3>(vector: DeepImmutable<T>, world: DeepImmutable<Matrix>, transform: DeepImmutable<Matrix>, viewport: DeepImmutable<Viewport>): T {
-        const result = new (vector.constructor as Vector3Constructor<T>)();
+        const result = new (vector.constructor as VectorConstructor<T>)();
         Vector3.ProjectToRef(vector, world, transform, viewport, result);
         return result;
     }
@@ -2221,7 +2232,7 @@ export class Vector3 extends Vector {
         view: DeepImmutable<Matrix>,
         projection: DeepImmutable<Matrix>
     ): T {
-        const result = new (source.constructor as Vector3Constructor<T>)();
+        const result = new (source.constructor as VectorConstructor<T>)();
 
         Vector3.UnprojectToRef(source, viewportWidth, viewportHeight, world, view, projection, result);
 
@@ -2466,7 +2477,7 @@ export class Vector3 extends Vector {
      * @see https://doc.babylonjs.com/features/featuresDeepDive/mesh/transforms/center_origin/target_align
      */
     public static RotationFromAxis<T extends Vector3>(axis1: DeepImmutable<T>, axis2: DeepImmutable<Vector3>, axis3: DeepImmutable<Vector3>): T {
-        const rotation = new (axis1.constructor as Vector3Constructor<T>)();
+        const rotation = new (axis1.constructor as VectorConstructor<T>)();
         Vector3.RotationFromAxisToRef(axis1, axis2, axis3, rotation);
         return rotation;
     }
@@ -2493,6 +2504,8 @@ export class Vector3 extends Vector {
  */
 export class Vector4 extends Vector {
     private static _ZeroReadOnly = Vector4.Zero() as DeepImmutable<Vector4>;
+
+	public static readonly Dimension: number = 4;
 
     /**
      * Creates a Vector4 object from the given floats.
@@ -2626,7 +2639,7 @@ export class Vector4 extends Vector {
      * @returns the new vector
      */
     public static TransformNormal<T extends Vector4>(vector: DeepImmutable<T>, transformation: DeepImmutable<Matrix>): T {
-        const result = new (vector.constructor as Vector4Constructor<T>)();
+        const result = new (vector.constructor as VectorConstructor<T>)();
         Vector4.TransformNormalToRef(vector, transformation, result);
         return result;
     }

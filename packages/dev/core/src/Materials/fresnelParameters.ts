@@ -171,8 +171,8 @@ export class FresnelParameters {
     public static Parse(parsedFresnelParameters: IFresnelParametersSerialized): FresnelParameters {
         return new FresnelParameters({
             isEnabled: parsedFresnelParameters.isEnabled,
-            leftColor: Color3.FromArray(parsedFresnelParameters.leftColor),
-            rightColor: Color3.FromArray(parsedFresnelParameters.rightColor),
+            leftColor: Color3.FromArray<Color3>(parsedFresnelParameters.leftColor),
+            rightColor: Color3.FromArray<Color3>(parsedFresnelParameters.rightColor),
             bias: parsedFresnelParameters.bias,
             power: parsedFresnelParameters.power || 1.0,
         });
