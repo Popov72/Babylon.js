@@ -864,7 +864,7 @@ export class Vector {
     public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: DeepImmutable<ArrayLike<number>>, offset: number = 0): T {
         const ref = new this();
         this.FromArrayToRef(array, offset, ref);
-        return ref as T;
+        return ref;
     }
 
     /**
