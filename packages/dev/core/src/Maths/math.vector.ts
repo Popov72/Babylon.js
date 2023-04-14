@@ -45,11 +45,11 @@ export class Vector {
      * Gets or sets the first coordinate of the vector
      */
     public get x(): number {
-        return +this.vector[0];
+        return this.vector[0];
     }
 
     public set x(value: number) {
-        this.vector[0] = +value;
+        this.vector[0] = value;
         this._isDirty = true;
     }
 
@@ -57,25 +57,25 @@ export class Vector {
      * @deprecated use without underscore
      */
     public get _x(): number {
-        return +this.vector[0];
+        return this.vector[0];
     }
 
     /**
      * @deprecated use without underscore
      */
     public set _x(value: number) {
-        this.vector[0] = +value;
+        this.vector[0] = value;
     }
 
     /**
      * Gets or sets the second coordinate of the vector
      */
     public get y(): number {
-        return +this.vector[1];
+        return this.vector[1];
     }
 
     public set y(value: number) {
-        this.vector[1] = +value;
+        this.vector[1] = value;
         this._isDirty = true;
     }
 
@@ -83,25 +83,25 @@ export class Vector {
      * @deprecated use without underscore
      */
     public get _y(): number {
-        return +this.vector[1];
+        return this.vector[1];
     }
 
     /**
      * @deprecated use without underscore
      */
     public set _y(value: number) {
-        this.vector[1] = +value;
+        this.vector[1] = value;
     }
 
     /**
      * Gets or sets the third coordinate of the vector
      */
     public get z(): number {
-        return +this.vector[2];
+        return this.vector[2];
     }
 
     public set z(value: number) {
-        this.vector[2] = +value;
+        this.vector[2] = value;
         this._isDirty = true;
     }
 
@@ -109,25 +109,25 @@ export class Vector {
      * @deprecated use without underscore
      */
     public get _z(): number {
-        return +this.vector[2];
+        return this.vector[2];
     }
 
     /**
      * @deprecated use without underscore
      */
     public set _z(value: number) {
-        this.vector[2] = +value;
+        this.vector[2] = value;
     }
 
     /**
      * Gets or sets the fourth coordinate of the vector
      */
     public get w(): number {
-        return +this.vector[3];
+        return this.vector[3];
     }
 
     public set w(value: number) {
-        this.vector[3] = +value;
+        this.vector[3] = value;
         this._isDirty = true;
     }
 
@@ -135,14 +135,14 @@ export class Vector {
      * @deprecated use without underscore
      */
     public get _w(): number {
-        return +this.vector[3];
+        return this.vector[3];
     }
 
     /**
      * @deprecated use without underscore
      */
     public set _w(value: number) {
-        this.vector[3] = +value;
+        this.vector[3] = value;
     }
 
     /**
@@ -277,7 +277,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] = this.vector[i] + otherVector.vector[i];
         }
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
@@ -332,7 +332,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] = this.vector[i] - otherVector.vector[i];
         }
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
@@ -405,7 +405,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] = this.vector[i] * otherVector.vector[i];
         }
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
@@ -460,7 +460,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] = this.vector[i] / otherVector.vector[i];
         }
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
@@ -576,7 +576,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] = -this.vector[i];
         }
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
@@ -616,7 +616,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] = this.vector[i] * scale;
         }
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
@@ -630,7 +630,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] += this.vector[i] * scale;
         }
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
@@ -720,7 +720,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] = Math.floor(this.vector[i]);
         }
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
@@ -744,7 +744,7 @@ export class Vector {
         for (let i = 0; i < this.vector.length; i++) {
             result.vector[i] = this.vector[i] - Math.floor(this.vector[i]);
         }
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
@@ -821,7 +821,7 @@ export class Vector {
         if (len === 0 || len === 1.0) {
             return reference.copyFromFloats(...this.vector);
         }
-		reference._isDirty = true;
+        reference._isDirty = true;
         return this.scaleToRef(1.0 / len, reference);
     }
 
@@ -883,7 +883,7 @@ export class Vector {
         for (let i = 0; i < this.Dimension; i++) {
             result.vector[i] = array[i + offset];
         }
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
@@ -901,7 +901,7 @@ export class Vector {
         floats.forEach((val, i) => {
             result.vector[i] = val;
         });
-		result._isDirty = true;
+        result._isDirty = true;
         return result;
     }
 
