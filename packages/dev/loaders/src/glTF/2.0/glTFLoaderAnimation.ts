@@ -8,7 +8,7 @@ export type GetValueFn = (target: any, source: Float32Array, offset: number, sca
 
 /** @internal */
 export function getVector3(_target: any, source: Float32Array, offset: number, scale: number): Vector3 {
-    return Vector3.FromArray<Vector3>(source, offset).scaleInPlace(scale);
+    return Vector3.FromArray(source, offset).scaleInPlace(scale);
 }
 
 /** @internal */

@@ -391,7 +391,7 @@ export class CannonJSPlugin implements IPhysicsEnginePlugin {
                 const transformedVertices = new Array<number>();
                 let index: number;
                 for (index = 0; index < rawVerts.length; index += 3) {
-                    Vector3.TransformCoordinates(Vector3.FromArray<Vector3>(rawVerts, index), transform).toArray(transformedVertices, index);
+                    Vector3.TransformCoordinates(Vector3.FromArray(rawVerts, index), transform).toArray(transformedVertices, index);
                 }
 
                 Logger.Warn("MeshImpostor only collides against spheres.");
@@ -437,7 +437,7 @@ export class CannonJSPlugin implements IPhysicsEnginePlugin {
         const transformedVertices = new Array<number>();
         let index: number;
         for (index = 0; index < pos.length; index += 3) {
-            Vector3.TransformCoordinates(Vector3.FromArray<Vector3>(pos, index), transform).toArray(transformedVertices, index);
+            Vector3.TransformCoordinates(Vector3.FromArray(pos, index), transform).toArray(transformedVertices, index);
         }
         pos = transformedVertices;
         const matrix = new Array<Array<any>>();

@@ -393,16 +393,16 @@ export class SerializationHelper {
                         }
                         break;
                     case 2: // Color3
-                        dest[property] = Color3.FromArray<Color3>(sourceProperty);
+                        dest[property] = Color3.FromArray(sourceProperty);
                         break;
                     case 3: // FresnelParameters
                         dest[property] = SerializationHelper._FresnelParametersParser(sourceProperty);
                         break;
                     case 4: // Vector2
-                        dest[property] = Vector2.FromArray<Vector2>(sourceProperty);
+                        dest[property] = Vector2.FromArray(sourceProperty);
                         break;
                     case 5: // Vector3
-                        dest[property] = Vector3.FromArray<Vector3>(sourceProperty);
+                        dest[property] = Vector3.FromArray(sourceProperty);
                         break;
                     case 6: // Mesh reference
                         if (scene) {
@@ -413,7 +413,7 @@ export class SerializationHelper {
                         dest[property] = SerializationHelper._ColorCurvesParser(sourceProperty);
                         break;
                     case 8: // Color 4
-                        dest[property] = Color4.FromArray<Color4>(sourceProperty);
+                        dest[property] = Color4.FromArray(sourceProperty);
                         break;
                     case 9: // Image Processing
                         dest[property] = SerializationHelper._ImageProcessingConfigurationParser(sourceProperty);

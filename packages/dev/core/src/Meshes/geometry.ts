@@ -871,7 +871,7 @@ export class Geometry implements IGetSetVerticesData {
         }
 
         for (let index = this._positionsCache.length * 3, arrayIdx = this._positionsCache.length; index < data.length; index += 3, ++arrayIdx) {
-            this._positionsCache[arrayIdx] = Vector3.FromArray<Vector3>(data, index);
+            this._positionsCache[arrayIdx] = Vector3.FromArray(data, index);
         }
 
         for (let index = 0, arrayIdx = 0; index < data.length; index += 3, ++arrayIdx) {
@@ -1548,8 +1548,8 @@ export class Geometry implements IGetSetVerticesData {
             geometry.delayLoadState = Constants.DELAYLOADSTATE_NOTLOADED;
             geometry.delayLoadingFile = rootUrl + parsedVertexData.delayLoadingFile;
             geometry._boundingInfo = new BoundingInfo(
-                Vector3.FromArray<Vector3>(parsedVertexData.boundingBoxMinimum),
-                Vector3.FromArray<Vector3>(parsedVertexData.boundingBoxMaximum)
+                Vector3.FromArray(parsedVertexData.boundingBoxMinimum),
+                Vector3.FromArray(parsedVertexData.boundingBoxMaximum)
             );
 
             geometry._delayInfo = [];

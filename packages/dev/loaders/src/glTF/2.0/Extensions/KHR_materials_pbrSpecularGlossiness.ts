@@ -69,13 +69,13 @@ export class KHR_materials_pbrSpecularGlossiness implements IGLTFLoaderExtension
         babylonMaterial.roughness = null;
 
         if (properties.diffuseFactor) {
-            babylonMaterial.albedoColor = Color3.FromArray<Color3>(properties.diffuseFactor);
+            babylonMaterial.albedoColor = Color3.FromArray(properties.diffuseFactor);
             babylonMaterial.alpha = properties.diffuseFactor[3];
         } else {
             babylonMaterial.albedoColor = Color3.White();
         }
 
-        babylonMaterial.reflectivityColor = properties.specularFactor ? Color3.FromArray<Color3>(properties.specularFactor) : Color3.White();
+        babylonMaterial.reflectivityColor = properties.specularFactor ? Color3.FromArray(properties.specularFactor) : Color3.White();
         babylonMaterial.microSurface = properties.glossinessFactor == undefined ? 1 : properties.glossinessFactor;
 
         if (properties.diffuseTexture) {

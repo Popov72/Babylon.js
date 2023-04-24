@@ -129,8 +129,8 @@ export class RemapBlock extends NodeMaterialBlock {
     public _deserialize(serializationObject: any, scene: Scene, rootUrl: string) {
         super._deserialize(serializationObject, scene, rootUrl);
 
-        this.sourceRange = Vector2.FromArray<Vector2>(serializationObject.sourceRange);
-        this.targetRange = Vector2.FromArray<Vector2>(serializationObject.targetRange);
+        this.sourceRange = Vector2.FromArray(serializationObject.sourceRange);
+        this.targetRange = Vector2.FromArray(serializationObject.targetRange);
     }
 }
 

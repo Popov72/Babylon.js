@@ -136,7 +136,7 @@ export class Sandbox extends React.Component<ISandboxProps, { isFooterVisible: b
                         break;
                     }
                     case "cameraPosition": {
-                        this._cameraPosition = Vector3.FromArray<Vector3>(
+                        this._cameraPosition = Vector3.FromArray(
                             value.split(",").map(function (component) {
                                 return +component;
                             })

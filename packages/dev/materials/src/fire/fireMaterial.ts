@@ -393,7 +393,7 @@ export class FireMaterial extends PushMaterial {
     public static Parse(source: any, scene: Scene, rootUrl: string): FireMaterial {
         const material = new FireMaterial(source.name, scene);
 
-        material.diffuseColor = Color3.FromArray<Color3>(source.diffuseColor);
+        material.diffuseColor = Color3.FromArray(source.diffuseColor);
         material.speed = source.speed;
 
         material.alpha = source.alpha;

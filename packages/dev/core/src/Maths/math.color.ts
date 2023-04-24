@@ -271,6 +271,13 @@ export class Color3 extends Vector {
 
     private static _BlackReadOnly = Color3.Black() as DeepImmutable<Color3>;
 
+	/**
+	 * @see Vector.FromArray
+	 */
+	public static FromArray(array: ArrayLike<number>, offset: number = 0): Color3 {
+		return super.FromArray<Color3>(array, offset) as Color3;
+	}
+
     /**
      * Converts Hue, saturation and value to a Color3 (RGB)
      * @param hue defines the hue
@@ -618,6 +625,12 @@ export class Color4 extends Vector {
     }
 
     // Statics
+	/**
+	 * @see Vector.FromArray
+	 */
+	public static FromArray(array: ArrayLike<number>, offset: number = 0): Color4 {
+		return super.FromArray<Color4>(array, offset) as Color4;
+	}
 
     /**
      * Creates a new Color4 from the string containing valid hexadecimal values.

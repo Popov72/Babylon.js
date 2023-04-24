@@ -690,7 +690,7 @@ export class SolidParticleSystem implements IDisposable {
     protected _posToShape(positions: number[] | Float32Array): Vector3[] {
         const shape = [];
         for (let i = 0; i < positions.length; i += 3) {
-            shape.push(Vector3.FromArray<Vector3>(positions, i));
+            shape.push(Vector3.FromArray(positions, i));
         }
         return shape;
     }

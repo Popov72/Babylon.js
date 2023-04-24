@@ -69,7 +69,7 @@ export class KHR_materials_sheen implements IGLTFLoaderExtension {
         babylonMaterial.sheen.intensity = 1;
 
         if (properties.sheenColorFactor != undefined) {
-            babylonMaterial.sheen.color = Color3.FromArray<Color3>(properties.sheenColorFactor);
+            babylonMaterial.sheen.color = Color3.FromArray(properties.sheenColorFactor);
         } else {
             babylonMaterial.sheen.color = Color3.Black();
         }

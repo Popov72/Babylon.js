@@ -83,13 +83,13 @@ export class GLTFUtils {
                 shaderMaterial.setFloat(uniform, value);
                 return true;
             case EParameterType.FLOAT_VEC2:
-                shaderMaterial.setVector2(uniform, Vector2.FromArray<Vector2>(value));
+                shaderMaterial.setVector2(uniform, Vector2.FromArray(value));
                 return true;
             case EParameterType.FLOAT_VEC3:
-                shaderMaterial.setVector3(uniform, Vector3.FromArray<Vector3>(value));
+                shaderMaterial.setVector3(uniform, Vector3.FromArray(value));
                 return true;
             case EParameterType.FLOAT_VEC4:
-                shaderMaterial.setVector4(uniform, Vector4.FromArray<Vector4>(value));
+                shaderMaterial.setVector4(uniform, Vector4.FromArray(value));
                 return true;
             default:
                 return false;

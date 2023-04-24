@@ -365,9 +365,9 @@ export class _PrimaryIsoTriangle {
         const aidx = F[1];
         const bidx = F[0];
 
-        const O = Vector3.FromArray<Vector3>(this.IDATA.vertex[oidx]);
-        const A = Vector3.FromArray<Vector3>(this.IDATA.vertex[aidx]);
-        const B = Vector3.FromArray<Vector3>(this.IDATA.vertex[bidx]);
+        const O = Vector3.FromArray(this.IDATA.vertex[oidx]);
+        const A = Vector3.FromArray(this.IDATA.vertex[aidx]);
+        const B = Vector3.FromArray(this.IDATA.vertex[bidx]);
 
         const OA = A.subtract(O);
         const OB = B.subtract(O);

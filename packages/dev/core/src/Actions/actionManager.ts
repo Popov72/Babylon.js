@@ -476,19 +476,19 @@ export class ActionManager extends AbstractActionManager {
             }
 
             if (target instanceof Vector3) {
-                return Vector3.FromArray<Vector3>(split);
+                return Vector3.FromArray(split);
             }
 
             if (target instanceof Vector4) {
-                return Vector4.FromArray<Vector4>(split);
+                return Vector4.FromArray(split);
             }
 
             if (target instanceof Color3) {
-                return Color3.FromArray<Color3>(split);
+                return Color3.FromArray(split);
             }
 
             if (target instanceof Color4) {
-                return Color4.FromArray<Color4>(split);
+                return Color4.FromArray(split);
             }
 
             return parseFloat(values[0]);

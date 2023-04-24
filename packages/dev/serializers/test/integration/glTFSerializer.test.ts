@@ -441,7 +441,7 @@ describe("Babylon glTF Serializer", () => {
                 (intensity, red) => {
                     const pointLight = new BABYLON.PointLight("pointLight", new BABYLON.Vector3(4, 4, 0), window.scene!);
                     pointLight.intensity = intensity;
-                    const diffuseColor = BABYLON.Color3.FromArray<Color3>(red);
+                    const diffuseColor = BABYLON.Color3.FromArray(red);
                     pointLight.diffuse = diffuseColor;
 
                     return BABYLON.GLTF2Export.GLTFAsync(window.scene!, "test").then((glTFData) => {
@@ -470,7 +470,7 @@ describe("Babylon glTF Serializer", () => {
                     const spotLight = new BABYLON.SpotLight("spotLight", new BABYLON.Vector3(-4, 4, 0), new BABYLON.Vector3(0, angle, 0), angle, 2, window.scene!);
                     spotLight.intensity = intensity;
                     spotLight.innerAngle = innerAngle;
-                    const diffuseColor = BABYLON.Color3.FromArray<Color3>(red);
+                    const diffuseColor = BABYLON.Color3.FromArray(red);
                     spotLight.diffuse = diffuseColor;
 
                     return BABYLON.GLTF2Export.GLTFAsync(window.scene!, "test").then((glTFData) => {
@@ -499,7 +499,7 @@ describe("Babylon glTF Serializer", () => {
             const assertionData = await page.evaluate(
                 (intensity, red) => {
                     const directionalLight = new BABYLON.DirectionalLight("directionalLight", BABYLON.Vector3.Forward(), window.scene!);
-                    const diffuseColor = BABYLON.Color3.FromArray<Color3>(red);
+                    const diffuseColor = BABYLON.Color3.FromArray(red);
                     directionalLight.diffuse = diffuseColor;
                     directionalLight.intensity = intensity;
 

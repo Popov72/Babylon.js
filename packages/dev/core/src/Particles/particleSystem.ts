@@ -2657,7 +2657,7 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
         } else if (parsedParticleSystem.emitterId && scene) {
             particleSystem.emitter = scene.getLastMeshById(parsedParticleSystem.emitterId);
         } else {
-            particleSystem.emitter = Vector3.FromArray<Vector3>(parsedParticleSystem.emitter);
+            particleSystem.emitter = Vector3.FromArray(parsedParticleSystem.emitter);
         }
 
         particleSystem.isLocal = !!parsedParticleSystem.isLocal;
@@ -2733,13 +2733,13 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
         particleSystem.minEmitPower = parsedParticleSystem.minEmitPower;
         particleSystem.maxEmitPower = parsedParticleSystem.maxEmitPower;
         particleSystem.emitRate = parsedParticleSystem.emitRate;
-        particleSystem.gravity = Vector3.FromArray<Vector3>(parsedParticleSystem.gravity);
+        particleSystem.gravity = Vector3.FromArray(parsedParticleSystem.gravity);
         if (parsedParticleSystem.noiseStrength) {
-            particleSystem.noiseStrength = Vector3.FromArray<Vector3>(parsedParticleSystem.noiseStrength);
+            particleSystem.noiseStrength = Vector3.FromArray(parsedParticleSystem.noiseStrength);
         }
-        particleSystem.color1 = Color4.FromArray<Color4>(parsedParticleSystem.color1);
-        particleSystem.color2 = Color4.FromArray<Color4>(parsedParticleSystem.color2);
-        particleSystem.colorDead = Color4.FromArray<Color4>(parsedParticleSystem.colorDead);
+        particleSystem.color1 = Color4.FromArray(parsedParticleSystem.color1);
+        particleSystem.color2 = Color4.FromArray(parsedParticleSystem.color2);
+        particleSystem.colorDead = Color4.FromArray(parsedParticleSystem.colorDead);
         particleSystem.updateSpeed = parsedParticleSystem.updateSpeed;
         particleSystem.targetStopDuration = parsedParticleSystem.targetStopDuration;
         particleSystem.blendMode = parsedParticleSystem.blendMode;
@@ -2748,15 +2748,15 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
             for (const colorGradient of parsedParticleSystem.colorGradients) {
                 particleSystem.addColorGradient(
                     colorGradient.gradient,
-                    Color4.FromArray<Color4>(colorGradient.color1),
-                    colorGradient.color2 ? Color4.FromArray<Color4>(colorGradient.color2) : undefined
+                    Color4.FromArray(colorGradient.color1),
+                    colorGradient.color2 ? Color4.FromArray(colorGradient.color2) : undefined
                 );
             }
         }
 
         if (parsedParticleSystem.rampGradients) {
             for (const rampGradient of parsedParticleSystem.rampGradients) {
-                particleSystem.addRampGradient(rampGradient.gradient, Color3.FromArray<Color3>(rampGradient.color));
+                particleSystem.addRampGradient(rampGradient.gradient, Color3.FromArray(rampGradient.color));
             }
             particleSystem.useRampGradients = parsedParticleSystem.useRampGradients;
         }
@@ -2967,7 +2967,7 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
         ParticleSystem._Parse(parsedParticleSystem, particleSystem, sceneOrEngine, rootUrl);
 
         if (parsedParticleSystem.textureMask) {
-            particleSystem.textureMask = Color4.FromArray<Color4>(parsedParticleSystem.textureMask);
+            particleSystem.textureMask = Color4.FromArray(parsedParticleSystem.textureMask);
         }
 
         // Auto start

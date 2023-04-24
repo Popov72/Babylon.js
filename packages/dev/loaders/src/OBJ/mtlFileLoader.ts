@@ -83,7 +83,7 @@ export class MTLFileLoader {
                 color = <number[]>value.split(delimiter_pattern, 3).map(parseFloat);
                 //color = [r,g,b]
                 //Set tghe color into the material
-                material.diffuseColor = Color3.FromArray<Color3>(color);
+                material.diffuseColor = Color3.FromArray(color);
             } else if (key === "ka" && material) {
                 // Ambient color (color under shadow) using RGB values
 
@@ -91,7 +91,7 @@ export class MTLFileLoader {
                 color = <number[]>value.split(delimiter_pattern, 3).map(parseFloat);
                 //color = [r,g,b]
                 //Set tghe color into the material
-                material.ambientColor = Color3.FromArray<Color3>(color);
+                material.ambientColor = Color3.FromArray(color);
             } else if (key === "ks" && material) {
                 // Specular color (color when light is reflected from shiny surface) using RGB values
 
@@ -99,11 +99,11 @@ export class MTLFileLoader {
                 color = <number[]>value.split(delimiter_pattern, 3).map(parseFloat);
                 //color = [r,g,b]
                 //Set the color into the material
-                material.specularColor = Color3.FromArray<Color3>(color);
+                material.specularColor = Color3.FromArray(color);
             } else if (key === "ke" && material) {
                 // Emissive color using RGB values
                 color = value.split(delimiter_pattern, 3).map(parseFloat);
-                material.emissiveColor = Color3.FromArray<Color3>(color);
+                material.emissiveColor = Color3.FromArray(color);
             } else if (key === "ns" && material) {
                 //value = "Integer"
                 material.specularPower = parseFloat(value);

@@ -381,10 +381,10 @@ export class HDRCubeTexture extends BaseTexture {
         }
         if (texture) {
             if (parsedTexture.boundingBoxPosition) {
-                (<any>texture).boundingBoxPosition = Vector3.FromArray<Vector3>(parsedTexture.boundingBoxPosition);
+                (<any>texture).boundingBoxPosition = Vector3.FromArray(parsedTexture.boundingBoxPosition);
             }
             if (parsedTexture.boundingBoxSize) {
-                (<any>texture).boundingBoxSize = Vector3.FromArray<Vector3>(parsedTexture.boundingBoxSize);
+                (<any>texture).boundingBoxSize = Vector3.FromArray(parsedTexture.boundingBoxSize);
             }
             if (parsedTexture.rotationY) {
                 (<any>texture).rotationY = parsedTexture.rotationY;

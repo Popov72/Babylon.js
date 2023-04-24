@@ -199,8 +199,8 @@ export class Sprite extends ThinSprite implements IAnimatable {
     public static Parse(parsedSprite: any, manager: SpriteManager): Sprite {
         const sprite = new Sprite(parsedSprite.name, manager);
 
-        sprite.position = Vector3.FromArray<Vector3>(parsedSprite.position);
-        sprite.color = Color4.FromArray<Color4>(parsedSprite.color);
+        sprite.position = Vector3.FromArray(parsedSprite.position);
+        sprite.color = Color4.FromArray(parsedSprite.color);
         sprite.width = parsedSprite.width;
         sprite.height = parsedSprite.height;
         sprite.angle = parsedSprite.angle;

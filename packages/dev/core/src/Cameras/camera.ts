@@ -1450,19 +1450,19 @@ export class Camera extends Node {
         }
 
         if (parsedCamera.upVector) {
-            camera.upVector = Vector3.FromArray<Vector3>(parsedCamera.upVector); // need to force the upVector
+            camera.upVector = Vector3.FromArray(parsedCamera.upVector); // need to force the upVector
         }
 
         if ((<any>camera).setPosition) {
             // need to force position
             camera.position.copyFromFloats(0, 0, 0);
-            (<any>camera).setPosition(Vector3.FromArray<Vector3>(parsedCamera.position));
+            (<any>camera).setPosition(Vector3.FromArray(parsedCamera.position));
         }
 
         // Target
         if (parsedCamera.target) {
             if ((<any>camera).setTarget) {
-                (<any>camera).setTarget(Vector3.FromArray<Vector3>(parsedCamera.target));
+                (<any>camera).setTarget(Vector3.FromArray(parsedCamera.target));
             }
         }
 

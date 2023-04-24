@@ -287,11 +287,11 @@ export class GoldbergMesh extends Mesh {
      */
     public static Parse(parsedMesh: any, scene: Scene): GoldbergMesh {
         const goldbergData = parsedMesh.goldbergData;
-        goldbergData.faceColors = goldbergData.faceColors.map((el: number[]) => Color4.FromArray<Color4>(el));
-        goldbergData.faceCenters = goldbergData.faceCenters.map((el: number[]) => Vector3.FromArray<Vector3>(el));
-        goldbergData.faceZaxis = goldbergData.faceZaxis.map((el: number[]) => Vector3.FromArray<Vector3>(el));
-        goldbergData.faceXaxis = goldbergData.faceXaxis.map((el: number[]) => Vector3.FromArray<Vector3>(el));
-        goldbergData.faceYaxis = goldbergData.faceYaxis.map((el: number[]) => Vector3.FromArray<Vector3>(el));
+        goldbergData.faceColors = goldbergData.faceColors.map((el: number[]) => Color4.FromArray(el));
+        goldbergData.faceCenters = goldbergData.faceCenters.map((el: number[]) => Vector3.FromArray(el));
+        goldbergData.faceZaxis = goldbergData.faceZaxis.map((el: number[]) => Vector3.FromArray(el));
+        goldbergData.faceXaxis = goldbergData.faceXaxis.map((el: number[]) => Vector3.FromArray(el));
+        goldbergData.faceYaxis = goldbergData.faceYaxis.map((el: number[]) => Vector3.FromArray(el));
 
         const goldberg = new GoldbergMesh(parsedMesh.name, scene);
         goldberg.goldbergData = goldbergData;

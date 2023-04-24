@@ -2,7 +2,7 @@
 import { Scalar } from "./math.scalar";
 import { Epsilon } from "./math.constants";
 import type { Viewport } from "./math.viewport";
-import type { DeepImmutable, Nullable, FloatArray, float } from "../types";
+import type { DeepImmutable, Nullable, FloatArray, float, DeepImmutableObject } from "../types";
 import { ArrayTools } from "../Misc/arrayTools";
 import type { IPlaneLike } from "./math.like";
 import { RegisterClass } from "../Misc/typeStore";
@@ -10,6 +10,7 @@ import type { Plane } from "./math.plane";
 import { PerformanceConfigurator } from "../Engines/performanceConfigurator";
 import { EngineStore } from "../Engines/engineStore";
 import type { TransformNode } from "../Meshes/transformNode";
+import type { Color3, Color4 } from "./math.color";
 
 export type VectorConstructor<T extends Vector> = {
     new (...args: ConstructorParameters<typeof Vector>): T;
@@ -19,6 +20,7 @@ export type VectorConstructor<T extends Vector> = {
     FromArray(array: DeepImmutable<ArrayLike<number>>, offset: number): T;
     FromArrayToRef(array: DeepImmutable<ArrayLike<number>>, offset: number, result: T): T;
 };
+export type GenericVector = Vector | Vector2 | Vector3 | Vector4 | Color3 | Color4;
 export type QuaternionConstructor<T extends Quaternion> = new (...args: ConstructorParameters<typeof Quaternion>) => T;
 export type MatrixConstructor<T extends Matrix> = new () => T;
 
@@ -866,7 +868,7 @@ export class Vector {
      * @param offset defines the offset in the data source
      * @returns a new Vector
      */
-    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: DeepImmutable<ArrayLike<number>>, offset: number = 0): T {
+    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: ArrayLike<number>, offset: number = 0): GenericVector {
         const ref = new this();
         this.FromArrayToRef(array, offset, ref);
         return ref;
@@ -1297,6 +1299,13 @@ export class Vector2 extends Vector {
         return Vector2._ZeroReadOnly;
     }
 
+	/**
+	 * @see Vector.FromArray
+	 */
+	public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector2 {
+		return super.FromArray<Vector2>(array, offset) as Vector2;
+	}
+
     /**
      * Gets a new Vector2 set with the transformed coordinates of the given vector by the given transformation matrix
      * Example Playground https://playground.babylonjs.com/#QYBWV4#17
@@ -1657,6 +1666,12 @@ export class Vector3 extends Vector {
     }
 
     // Statics
+	/**
+	 * @see Vector.FromArray
+	 */
+	public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector3 {
+		return super.FromArray<Vector3>(array, offset) as Vector3;
+	}
 
     /**
      * Get the clip factor between two vectors
@@ -2549,6 +2564,13 @@ export class Vector4 extends Vector {
     public toVector3(): Vector3 {
         return new Vector3(this.x, this.y, this.z);
     }
+
+	/**
+	 * @see Vector.FromArray
+	 */
+	public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector4 {
+		return super.FromArray<Vector4>(array, offset) as Vector4;
+	}
 
     /**
      * Updates the given vector "result" from the starting index of the given Float32Array.

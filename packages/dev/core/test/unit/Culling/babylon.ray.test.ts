@@ -48,8 +48,8 @@ describe("Babylon Ray", function () {
 
             const direction = Vector3.Forward();
             for (const index of vertexData.indices) {
-                const position = Vector3.FromArray<Vector3>(vertexData.positions, index * 3);
-                const normal = Vector3.FromArray<Vector3>(vertexData.normals, index * 3).normalize();
+                const position = Vector3.FromArray(vertexData.positions, index * 3);
+                const normal = Vector3.FromArray(vertexData.normals, index * 3).normalize();
                 const origin = new Vector3(position.x, position.y, position.z - 1);
                 const ray = new Ray(origin, direction);
                 const hit = scene.pickWithRay(ray);

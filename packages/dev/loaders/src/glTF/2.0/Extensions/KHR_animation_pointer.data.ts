@@ -7,7 +7,7 @@ import { AnimationPropertyInfo, nodeAnimationData } from "../glTFLoaderAnimation
 import { Color3 } from "core/Maths/math.color";
 
 function getColor3(_target: any, source: Float32Array, offset: number, scale: number): Color3 {
-    return Color3.FromArray<Color3>(source, offset).scale(scale);
+    return Color3.FromArray(source, offset).scale(scale);
 }
 
 function getAlpha(_target: any, source: Float32Array, offset: number, scale: number): number {

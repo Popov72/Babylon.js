@@ -1517,7 +1517,7 @@ export class GraphFrame {
         newFrame.width = serializationData.width;
         newFrame.height = serializationData.height;
         newFrame.name = serializationData.name;
-        newFrame.color = Color3.FromArray<Color3>(serializationData.color);
+        newFrame.color = Color3.FromArray(serializationData.color);
         newFrame.comments = serializationData.comments;
 
         if (serializationData.blocks && map) {

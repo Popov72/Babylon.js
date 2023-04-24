@@ -1627,7 +1627,7 @@ export class ShaderMaterial extends PushMaterial {
 
         // Color3
         for (name in source.colors3) {
-            material.setColor3(name, Color3.FromArray<Color3>(source.colors3[name]));
+            material.setColor3(name, Color3.FromArray(source.colors3[name]));
         }
 
         // Color3 arrays
@@ -1641,13 +1641,13 @@ export class ShaderMaterial extends PushMaterial {
                     }
                     return arr;
                 }, [])
-                .map((color: ArrayLike<number>) => Color3.FromArray<Color3>(color));
+                .map((color: ArrayLike<number>) => Color3.FromArray(color));
             material.setColor3Array(name, colors);
         }
 
         // Color4
         for (name in source.colors4) {
-            material.setColor4(name, Color4.FromArray<Color4>(source.colors4[name]));
+            material.setColor4(name, Color4.FromArray(source.colors4[name]));
         }
 
         // Color4 arrays
@@ -1661,23 +1661,23 @@ export class ShaderMaterial extends PushMaterial {
                     }
                     return arr;
                 }, [])
-                .map((color: ArrayLike<number>) => Color4.FromArray<Color4>(color));
+                .map((color: ArrayLike<number>) => Color4.FromArray(color));
             material.setColor4Array(name, colors);
         }
 
         // Vector2
         for (name in source.vectors2) {
-            material.setVector2(name, Vector2.FromArray<Vector2>(source.vectors2[name]));
+            material.setVector2(name, Vector2.FromArray(source.vectors2[name]));
         }
 
         // Vector3
         for (name in source.vectors3) {
-            material.setVector3(name, Vector3.FromArray<Vector3>(source.vectors3[name]));
+            material.setVector3(name, Vector3.FromArray(source.vectors3[name]));
         }
 
         // Vector4
         for (name in source.vectors4) {
-            material.setVector4(name, Vector4.FromArray<Vector4>(source.vectors4[name]));
+            material.setVector4(name, Vector4.FromArray(source.vectors4[name]));
         }
 
         // Quaternion
