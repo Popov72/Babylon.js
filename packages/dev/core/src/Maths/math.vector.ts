@@ -1299,12 +1299,12 @@ export class Vector2 extends Vector {
         return Vector2._ZeroReadOnly;
     }
 
-	/**
-	 * @see Vector.FromArray
-	 */
-	public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector2 {
-		return super.FromArray<Vector2>(array, offset) as Vector2;
-	}
+    /**
+     * @see Vector.FromArray
+     */
+    public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector2 {
+        return super.FromArray<Vector2>(array, offset) as Vector2;
+    }
 
     /**
      * Gets a new Vector2 set with the transformed coordinates of the given vector by the given transformation matrix
@@ -1666,12 +1666,12 @@ export class Vector3 extends Vector {
     }
 
     // Statics
-	/**
-	 * @see Vector.FromArray
-	 */
-	public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector3 {
-		return super.FromArray<Vector3>(array, offset) as Vector3;
-	}
+    /**
+     * @see Vector.FromArray
+     */
+    public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector3 {
+        return super.FromArray<Vector3>(array, offset) as Vector3;
+    }
 
     /**
      * Get the clip factor between two vectors
@@ -2565,12 +2565,12 @@ export class Vector4 extends Vector {
         return new Vector3(this.x, this.y, this.z);
     }
 
-	/**
-	 * @see Vector.FromArray
-	 */
-	public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector4 {
-		return super.FromArray<Vector4>(array, offset) as Vector4;
-	}
+    /**
+     * @see Vector.FromArray
+     */
+    public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector4 {
+        return super.FromArray<Vector4>(array, offset) as Vector4;
+    }
 
     /**
      * Updates the given vector "result" from the starting index of the given Float32Array.

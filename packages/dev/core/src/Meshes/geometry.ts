@@ -1547,10 +1547,7 @@ export class Geometry implements IGetSetVerticesData {
         if (parsedVertexData.delayLoadingFile) {
             geometry.delayLoadState = Constants.DELAYLOADSTATE_NOTLOADED;
             geometry.delayLoadingFile = rootUrl + parsedVertexData.delayLoadingFile;
-            geometry._boundingInfo = new BoundingInfo(
-                Vector3.FromArray(parsedVertexData.boundingBoxMinimum),
-                Vector3.FromArray(parsedVertexData.boundingBoxMaximum)
-            );
+            geometry._boundingInfo = new BoundingInfo(Vector3.FromArray(parsedVertexData.boundingBoxMinimum), Vector3.FromArray(parsedVertexData.boundingBoxMaximum));
 
             geometry._delayInfo = [];
             if (parsedVertexData.hasUVs) {
