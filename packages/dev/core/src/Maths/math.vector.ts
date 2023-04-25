@@ -2,7 +2,7 @@
 import { Scalar } from "./math.scalar";
 import { Epsilon } from "./math.constants";
 import type { Viewport } from "./math.viewport";
-import type { DeepImmutable, Nullable, FloatArray, float, DeepImmutableObject } from "../types";
+import type { DeepImmutable, Nullable, FloatArray, float } from "../types";
 import { ArrayTools } from "../Misc/arrayTools";
 import type { IPlaneLike } from "./math.like";
 import { RegisterClass } from "../Misc/typeStore";
@@ -866,7 +866,7 @@ export class Vector {
      * @param offset defines the offset in the data source
      * @returns a new Vector
      */
-    public static FromArray<T extends Vector>(array: ArrayLike<number>, offset: number = 0): T {
+    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: ArrayLike<number>, offset: number = 0): T {
         const ref = new this();
         this.FromArrayToRef(array, offset, ref);
         return ref;
@@ -879,7 +879,7 @@ export class Vector {
      * @param result defines the target vector
      * @returns result input
      */
-    public static FromArrayToRef<T extends Vector>(array: DeepImmutable<ArrayLike<number>>, offset: number, result: T): T {
+    public static FromArrayToRef<T extends Vector>(array: ArrayLike<number>, offset: number, result: T): T {
         for (let i = 0; i < this.Dimension; i++) {
             result.vector[i] = array[i + offset];
         }
