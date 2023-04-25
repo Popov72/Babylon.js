@@ -865,11 +865,13 @@ export class Vector {
      * @param array defines the data source
      * @param offset defines the offset in the data source
      * @returns a new Vector
+	 * 
+	 * @remarks
+	 * Subclasses must implement their own FromArray method due to TypeScript types.
+	 * It is recommend to use FromArrayToRef for subclass implementations.
      */
-    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: ArrayLike<number>, offset: number = 0): Vector {
-        const ref = new this();
-        this.FromArrayToRef(array, offset, ref);
-        return ref;
+    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: ArrayLike<number>, offset: number = 0): T {
+        return this.FromArrayToRef(array, offset, new this());
     }
 
     /**
@@ -1301,7 +1303,7 @@ export class Vector2 extends Vector {
      * @see Vector.FromArray
      */
     public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector2 {
-        return super.FromArray<Vector2>(array, offset) as Vector2;
+        return super.FromArrayToRef(array, offset, new Vector2());
     }
 
     /**
@@ -1668,7 +1670,7 @@ export class Vector3 extends Vector {
      * @see Vector.FromArray
      */
     public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector3 {
-        return super.FromArray<Vector3>(array, offset) as Vector3;
+        return super.FromArrayToRef(array, offset, new Vector3());
     }
 
     /**
@@ -2567,7 +2569,7 @@ export class Vector4 extends Vector {
      * @see Vector.FromArray
      */
     public static FromArray(array: ArrayLike<number>, offset: number = 0): Vector4 {
-        return super.FromArray<Vector4>(array, offset) as Vector4;
+        return super.FromArrayToRef(array, offset, new Vector4());
     }
 
     /**

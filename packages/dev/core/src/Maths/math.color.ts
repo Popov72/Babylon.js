@@ -275,7 +275,7 @@ export class Color3 extends Vector {
      * @see Vector.FromArray
      */
     public static FromArray(array: ArrayLike<number>, offset: number = 0): Color3 {
-        return super.FromArray<Color3>(array, offset) as Color3;
+        return super.FromArrayToRef(array, offset, new Color3());
     }
 
     /**
@@ -629,7 +629,7 @@ export class Color4 extends Vector {
      * @see Vector.FromArray
      */
     public static FromArray(array: ArrayLike<number>, offset: number = 0): Color4 {
-        return super.FromArray<Color4>(array, offset) as Color4;
+        return super.FromArrayToRef(array, offset, new Color4());
     }
 
     /**
