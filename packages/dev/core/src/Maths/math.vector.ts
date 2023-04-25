@@ -10,17 +10,15 @@ import type { Plane } from "./math.plane";
 import { PerformanceConfigurator } from "../Engines/performanceConfigurator";
 import { EngineStore } from "../Engines/engineStore";
 import type { TransformNode } from "../Meshes/transformNode";
-import type { Color3, Color4 } from "./math.color";
 
 export type VectorConstructor<T extends Vector> = {
     new (...args: ConstructorParameters<typeof Vector>): T;
     Dimension: number;
     Random(min: number, max: number): T;
     RandomToRef(min: number, max: number, result: T): T;
-    FromArray(array: DeepImmutable<ArrayLike<number>>, offset: number): T;
-    FromArrayToRef(array: DeepImmutable<ArrayLike<number>>, offset: number, result: T): T;
+    FromArray(array: ArrayLike<number>, offset: number): T;
+    FromArrayToRef(array: ArrayLike<number>, offset: number, result: T): T;
 };
-export type GenericVector = Vector | Vector2 | Vector3 | Vector4 | Color3 | Color4;
 export type QuaternionConstructor<T extends Quaternion> = new (...args: ConstructorParameters<typeof Quaternion>) => T;
 export type MatrixConstructor<T extends Matrix> = new () => T;
 
@@ -868,7 +866,7 @@ export class Vector {
      * @param offset defines the offset in the data source
      * @returns a new Vector
      */
-    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: ArrayLike<number>, offset: number = 0): GenericVector {
+    public static FromArray<T extends Vector>(array: ArrayLike<number>, offset: number = 0): T {
         const ref = new this();
         this.FromArrayToRef(array, offset, ref);
         return ref;
