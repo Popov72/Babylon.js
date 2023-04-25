@@ -12,7 +12,7 @@ import { EngineStore } from "../Engines/engineStore";
 import type { TransformNode } from "../Meshes/transformNode";
 
 export type VectorConstructor<T extends Vector> = {
-    new (...args: ConstructorParameters<Vector>): T;
+    new (...args: ConstructorParameters<typeof Vector>): T;
     Dimension: number;
     Random(min: number, max: number): T;
     RandomToRef(min: number, max: number, result: T): T;
