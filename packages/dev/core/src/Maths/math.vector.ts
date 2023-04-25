@@ -870,7 +870,7 @@ export class Vector {
 	 * Subclasses must implement their own FromArray method due to TypeScript types.
 	 * It is recommend to use FromArrayToRef for subclass implementations.
      */
-    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: ArrayLike<number>, offset: number = 0): T {
+    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: ArrayLike<number>, offset: number = 0): Vector {
         return this.FromArrayToRef(array, offset, new this());
     }
 
