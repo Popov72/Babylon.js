@@ -866,7 +866,7 @@ export class Vector {
      * @param offset defines the offset in the data source
      * @returns a new Vector
      */
-    public static FromArray<T extends Vector>(this: VectorConstructor<T>, array: ArrayLike<number>, offset: number = 0): T {
+    public static FromArray<T extends Vector>(this: typeof T, array: ArrayLike<number>, offset: number = 0): T {
         const ref = new this();
         this.FromArrayToRef(array, offset, ref);
         return ref;
