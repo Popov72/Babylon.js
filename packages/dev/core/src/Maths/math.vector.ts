@@ -560,11 +560,7 @@ export class Vector {
      * @returns this
      */
     public negateInPlace(): this {
-        for (let i = 0; i < this.vector.length; i++) {
-            this.vector[i] *= -1;
-        }
-        this._isDirty = true;
-        return this;
+        return this.negateToRef(this);
     }
 
     /**
