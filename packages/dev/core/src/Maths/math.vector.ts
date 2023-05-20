@@ -287,11 +287,7 @@ export class Vector {
      * @returns the current updated Vector
      */
     public addInPlace(otherVector: DeepImmutable<Vector>): this {
-        for (let i = 0; i < this.vector.length; i++) {
-            this.vector[i] += otherVector.vector[i];
-        }
-        this._isDirty = true;
-        return this;
+        return this.addToRef(otherVector, this);
     }
 
     /**
@@ -342,11 +338,7 @@ export class Vector {
      * @returns the current updated Vector
      */
     public subtractInPlace(otherVector: DeepImmutable<Vector>): this {
-        for (let i = 0; i < this.vector.length; i++) {
-            this.vector[i] -= otherVector.vector[i];
-        }
-        this._isDirty = true;
-        return this;
+        return this.subtractToRef(otherVector, this);
     }
 
     /**
@@ -415,11 +407,7 @@ export class Vector {
      * @returns the current updated Vector
      */
     public multiplyInPlace(otherVector: DeepImmutable<Vector>): this {
-        for (let i = 0; i < this.vector.length; i++) {
-            this.vector[i] *= otherVector.vector[i];
-        }
-        this._isDirty = true;
-        return this;
+        return this.multiplyToRef(otherVector, this);
     }
 
     /**
@@ -470,11 +458,7 @@ export class Vector {
      * @returns the current updated Vector
      */
     public divideInPlace(otherVector: DeepImmutable<Vector>): this {
-        for (let i = 0; i < this.vector.length; i++) {
-            this.vector[i] /= otherVector.vector[i];
-        }
-        this._isDirty = true;
-        return this;
+        return this.divideToRef(otherVector, this);
     }
 
     /**
@@ -582,11 +566,7 @@ export class Vector {
      * @returns the current updated Vector
      */
     public scaleInPlace(scale: number): this {
-        for (let i = 0; i < this.vector.length; i++) {
-            this.vector[i] *= scale;
-        }
-        this._isDirty = true;
-        return this;
+        return this.scaleToRef(scale, this);
     }
 
     /**
