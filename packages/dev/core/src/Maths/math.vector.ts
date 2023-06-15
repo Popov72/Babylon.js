@@ -770,7 +770,7 @@ export class Vector {
      * @returns the current updated Vector
      */
     public normalizeFromLength(len: number): this {
-        if (len === 0 || len === 1.0) {
+        if (len === 0) {
             return this;
         }
 
@@ -794,7 +794,7 @@ export class Vector {
      */
     public normalizeToRef<T extends Vector>(reference: T): T {
         const len = this.length();
-        if (len === 0 || len === 1.0) {
+        if (len === 0) {
             return reference.copyFromFloats(...this.vector);
         }
         reference._isDirty = true;
@@ -1096,7 +1096,7 @@ export class Vector {
     public static NormalizeToRef<T extends Vector>(vector: DeepImmutable<Vector>, result: T): T {
         const len = vector.length();
 
-        if (len === 0 || len === 1) {
+        if (len === 0) {
             return result;
         }
 
