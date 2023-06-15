@@ -770,7 +770,7 @@ export class Vector {
      * @returns the current updated Vector
      */
     public normalizeFromLength(len: number): this {
-        if (len === 0) {
+        if (len === 0 || len === 1.0) {
             return this;
         }
 
