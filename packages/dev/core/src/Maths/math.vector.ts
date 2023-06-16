@@ -899,7 +899,7 @@ export class Vector {
         value4: DeepImmutable<Vector>,
         amount: number
     ): T {
-		const vector = new (value1.constructor as VectorConstructor<T>)();
+        const vector = new (value1.constructor as VectorConstructor<T>)();
         for (let i = 0; i < value1.vector.length; i++) {
             vector.vector[i] =
                 0.5 * 2.0 * value2.vector[i] +
