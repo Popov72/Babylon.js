@@ -899,13 +899,16 @@ export class Vector {
         value4: DeepImmutable<Vector>,
         amount: number
     ): T {
-        const vector = new (value1.constructor as VectorConstructor<T>)();
+        const vector = new (value1.constructor as VectorConstructor<T>)(),
+            squared = amount ** 2,
+            cubed = squared * amount;
         for (let i = 0; i < value1.vector.length; i++) {
             vector.vector[i] =
-                0.5 * 2.0 * value2.vector[i] +
-                (-value1.vector[i] + value3.vector[i]) * amount +
-                (2.0 * value1.vector[i] - 5.0 * value2.vector[i] + 4.0 * value3.vector[i] - value4.vector[i]) * amount ** 2 +
-                (-value1.vector[i] + 3.0 * value2.vector[i] - 3.0 * value3.vector[i] + value4.vector[i]) * amount ** 3;
+                0.5 *
+                (2.0 * value2.vector[i] +
+                    (-value1.vector[i] + value3.vector[i]) * amount +
+                    (2.0 * value1.vector[i] - 5.0 * value2.vector[i] + 4.0 * value3.vector[i] - value4.vector[i]) * squared +
+                    (-value1.vector[i] + 3.0 * value2.vector[i] - 3.0 * value3.vector[i] + value4.vector[i]) * cubed);
         }
 
         return vector;
@@ -973,20 +976,15 @@ export class Vector {
         amount: number
     ): T {
         const vector = new (value1.constructor as VectorConstructor<T>)(),
-            squard = amount ** 2,
-            cubed = squard * amount;
+            squared = amount ** 2,
+            cubed = squared * amount;
+
         for (let i = 0; i < value1.vector.length; i++) {
             vector.vector[i] =
-                value1.vector[i] * 2.0 * cubed -
-                3.0 * squard +
-                1.0 +
-                value2.vector[i] * -2.0 * cubed +
-                3.0 * squard +
-                tangent1.vector[i] * cubed -
-                2.0 * squard +
-                amount +
-                tangent2.vector[i] * cubed -
-                squard;
+                value1.vector[i] * (2.0 * cubed - 3.0 * squared + 1.0) +
+                value2.vector[i] * (-2.0 * cubed + 3.0 * squared) +
+                tangent1.vector[i] * (cubed - 2.0 * squared + amount) +
+                tangent2.vector[i] * (cubed - squared);
         }
 
         return vector;
