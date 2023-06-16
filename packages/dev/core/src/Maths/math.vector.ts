@@ -858,7 +858,7 @@ export class Vector {
      * @returns result input
      */
     public static FromArrayToRef<T extends Vector>(array: ArrayLike<number>, offset: number, result: T): T {
-        for (let i = 0; i < this.Dimension; i++) {
+        for (let i = 0; i < result.vector.length; i++) {
             result.vector[i] = array[i + offset];
         }
         result._isDirty = true;
@@ -899,15 +899,16 @@ export class Vector {
         value4: DeepImmutable<Vector>,
         amount: number
     ): T {
-        const vector = value1.vector.map(
-            (v, i) =>
+		const vector = new (value1.constructor as VectorConstructor<T>)();
+        for (let i = 0; i < value1.vector.length; i++) {
+            vector.vector[i] =
                 0.5 * 2.0 * value2.vector[i] +
                 (-value1.vector[i] + value3.vector[i]) * amount +
                 (2.0 * value1.vector[i] - 5.0 * value2.vector[i] + 4.0 * value3.vector[i] - value4.vector[i]) * amount ** 2 +
-                (-value1.vector[i] + 3.0 * value2.vector[i] - 3.0 * value3.vector[i] + value4.vector[i]) * amount ** 3
-        );
+                (-value1.vector[i] + 3.0 * value2.vector[i] - 3.0 * value3.vector[i] + value4.vector[i]) * amount ** 3;
+        }
 
-        return new (value1.constructor as VectorConstructor<T>)(...vector);
+        return vector;
     }
 
     /**
@@ -971,22 +972,24 @@ export class Vector {
         tangent2: DeepImmutable<Vector>,
         amount: number
     ): T {
-        const vector = value1.vector.map((v, i) => {
-            return (
-                value1.vector[i] * 2.0 * amount ** 3 -
-                3.0 * amount ** 2 +
+        const vector = new (value1.constructor as VectorConstructor<T>)(),
+            squard = amount ** 2,
+            cubed = squard * amount;
+        for (let i = 0; i < value1.vector.length; i++) {
+            vector.vector[i] =
+                value1.vector[i] * 2.0 * cubed -
+                3.0 * squard +
                 1.0 +
-                value2.vector[i] * -2.0 * amount ** 3 +
-                3.0 * amount ** 2 +
-                tangent1.vector[i] * amount ** 3 -
-                2.0 * amount ** 2 +
+                value2.vector[i] * -2.0 * cubed +
+                3.0 * squard +
+                tangent1.vector[i] * cubed -
+                2.0 * squard +
                 amount +
-                tangent2.vector[i] * amount ** 3 -
-                amount ** 2
-            );
-        });
+                tangent2.vector[i] * cubed -
+                squard;
+        }
 
-        return new (value1.constructor as VectorConstructor<T>)(...vector);
+        return vector;
     }
 
     /**
@@ -1030,13 +1033,13 @@ export class Vector {
         time: number,
         result: T
     ): T {
-        value1.vector.forEach((v, i) => {
+        for (let i = 0; i < value1.vector.length; i++) {
             result.vector[i] =
                 (time ** 2 - time) * 6 * value1.vector[i] +
                 (3 * time ** 2 - 4 * time + 1) * tangent1.vector[i] +
                 (-(time ** 2) + time) * 6 * value2.vector[i] +
                 (3 * time ** 2 - 2 * time) * tangent2.vector[i];
-        });
+        }
         return result;
     }
 
