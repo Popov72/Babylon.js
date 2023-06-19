@@ -38,7 +38,7 @@ import "../Shaders/particles.fragment";
 import "../Shaders/particles.vertex";
 import type { DataBuffer } from "../Buffers/dataBuffer";
 import { Color4, Color3, TmpColors } from "../Maths/math.color";
-import type { ISize } from "../Maths/math.size";
+//import type { ISize } from "../Maths/math.size";
 import type { BaseTexture } from "../Materials/Textures/baseTexture";
 import { ThinEngine } from "../Engines/thinEngine";
 import { MaterialHelper } from "../Materials/materialHelper";
@@ -50,6 +50,11 @@ declare type AbstractMesh = import("../Meshes/abstractMesh").AbstractMesh;
 declare type ProceduralTexture = import("../Materials/Textures/Procedurals/proceduralTexture").ProceduralTexture;
 declare type Scene = import("../scene").Scene;
 declare type Engine = import("../Engines/engine").Engine;
+
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-var
+declare var SharedStructType: any;
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-var
+declare var SharedArray: any;
 
 /**
  * This represents a particle system in Babylon.
@@ -332,6 +337,42 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
     ) {
         super(name);
 
+        const workerContent = `(${workerFunc})()`;
+        const workerBlobUrl = URL.createObjectURL(new Blob([workerContent], { type: "application/javascript" }));
+
+        const worker = new Worker(workerBlobUrl);
+
+        const s = new SharedStructType(['test']);
+        s.test = new Color4(1,1,1,1);
+        console.log(s.test);
+
+        const onError = (error: ErrorEvent) => {
+            console.error("Error in worker!");
+            console.error(error);
+        };
+
+        const onMessage = (message: MessageEvent) => {
+            console.log("Message from worker");
+            console.log(message);
+        };
+
+        worker.addEventListener("error", onError);
+        worker.addEventListener("message", onMessage);
+
+        worker.postMessage({
+            action: "init",
+        });
+
+        const sharedArray = new SharedArray(10);
+
+        worker.postMessage({ action: "test", data: sharedArray });
+
+        //sharedArray[0] = new Color4(0.5,1,0.3,1);
+        //sharedArray[0] = [0.5, 1, 0.3, 1];
+        sharedArray[0] = new SharedArray(4);
+        sharedArray[0][0] = 0.5;
+        console.log("from main:", sharedArray[0]);
+
         this._capacity = capacity;
 
         this._epsilon = epsilon;
@@ -366,10 +407,10 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
 
         // Default emitter type
         this.particleEmitterType = new BoxParticleEmitter();
-        let noiseTextureData: Nullable<Uint8Array> = null;
+        //let noiseTextureData: Nullable<Uint8Array> = null;
 
         // Update
-        this.updateFunction = (particles: Particle[]): void => {
+        /*this.updateFunction = (particles: Particle[]): void => {
             let noiseTextureSize: Nullable<ISize> = null;
 
             if (this.noiseTexture) {
@@ -581,6 +622,67 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
                         });
                         particle._attachedSubEmitters = null;
                     }
+                    this.recycleParticle(particle);
+                    index--;
+                    continue;
+                }
+            }
+        };*/
+
+        this.updateFunction = (particles: Particle[]): void => {
+            for (let index = 0; index < particles.length; index++) {
+                const particle = particles[index];
+
+                let scaledUpdateSpeed = this._scaledUpdateSpeed;
+                const previousAge = particle.age;
+                particle.age += scaledUpdateSpeed;
+
+                // Evaluate step to death
+                if (particle.age > particle.lifeTime) {
+                    const diff = particle.age - previousAge;
+                    const oldDiff = particle.lifeTime - previousAge;
+
+                    scaledUpdateSpeed = (oldDiff * scaledUpdateSpeed) / diff;
+
+                    particle.age = particle.lifeTime;
+                }
+
+                // Color
+                particle.colorStep.scaleToRef(scaledUpdateSpeed, this._scaledColorStep);
+                particle.color.addInPlace(this._scaledColorStep);
+
+                if (particle.color.a < 0) {
+                    particle.color.a = 0;
+                }
+
+                particle.angle += particle.angularSpeed * scaledUpdateSpeed;
+
+                // Direction
+                const directionScale = scaledUpdateSpeed;
+
+                /// Velocity
+                particle.direction.scaleToRef(directionScale, this._scaledDirection);
+
+                /// Drag
+                particle.position.addInPlace(this._scaledDirection);
+
+                // Gravity
+                this.gravity.scaleToRef(scaledUpdateSpeed, this._scaledGravity);
+                particle.direction.addInPlace(this._scaledGravity);
+
+                // Update the position of the attached sub-emitters to match their attached particle
+                //particle._inheritParticleInfoToSubEmitters();
+
+                if (particle.age >= particle.lifeTime) {
+                    // Recycle by swapping with last particle
+                    //this._emitFromParticle(particle);
+                    /*if (particle._attachedSubEmitters) {
+                        particle._attachedSubEmitters.forEach((subEmitter) => {
+                            subEmitter.particleSystem.disposeOnStop = true;
+                            subEmitter.particleSystem.stop();
+                        });
+                        particle._attachedSubEmitters = null;
+                    }*/
                     this.recycleParticle(particle);
                     index--;
                     continue;
@@ -1057,7 +1159,7 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
         this._drawWrappers = [];
     }
 
-    private _fetchR(u: number, v: number, width: number, height: number, pixels: Uint8Array): number {
+    /*private _fetchR(u: number, v: number, width: number, height: number, pixels: Uint8Array): number {
         u = Math.abs(u) * 0.5 + 0.5;
         v = Math.abs(v) * 0.5 + 0.5;
 
@@ -1066,7 +1168,7 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
 
         const position = (wrappedU + wrappedV * width) * 4;
         return pixels[position] / 255;
-    }
+    }*/
 
     protected _reset() {
         this._resetEffect();
@@ -1467,7 +1569,7 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
         this._rootParticleSystem = null;
     }
 
-    private _emitFromParticle: (particle: Particle) => void = (particle) => {
+    /*private _emitFromParticle: (particle: Particle) => void = (particle) => {
         if (!this._subEmitters || this._subEmitters.length === 0) {
             return;
         }
@@ -1482,7 +1584,7 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
                 subSystem.particleSystem.start();
             }
         });
-    };
+    };*/
 
     // End of sub system methods
 
@@ -2984,3 +3086,27 @@ export class ParticleSystem extends BaseParticleSystem implements IDisposable, I
 }
 
 SubEmitter._ParseParticleSystem = ParticleSystem.Parse;
+
+//declare function importScripts(...urls: string[]): void;
+//declare function postMessage(message: any, transfer?: any[]): void;
+
+function workerFunc(): void {
+    onmessage = (event) => {
+        if (!event.data) {
+            return;
+        }
+        switch (event.data.action) {
+            case "init": {
+                console.log("from thread:", event.data);
+                //const urls = event.data.urls;
+                //importScripts(urls.jsDecoderModule);
+                //postMessage({ action: "init" });
+                break;
+            }
+            case "test": {
+                console.log("from thread:", event.data.data[0], event);
+                break;
+            }
+        }
+    };
+}

@@ -85,6 +85,9 @@ module.exports = (env) => {
             liveReload: (env.enableLiveReload !== undefined || process.env.ENABLE_LIVE_RELOAD === "true") && !production ? true : false,
             headers: {
                 "Access-Control-Allow-Origin": "*",
+                "Cross-Origin-Opener-Policy": "same-origin",
+                "Cross-Origin-Embedder-Policy": "require-corp",
+                "Cross-Origin-Resource-Policy": "same-site",
             },
         },
         plugins: [
