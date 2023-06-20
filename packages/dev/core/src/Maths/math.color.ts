@@ -47,42 +47,42 @@ export class Color3 extends Vector {
      * Gets the red component (between 0 and 1)
      */
     public get r(): number {
-        return +this.vector[0];
+        return this[0];
     }
 
     /**
      * Gets the green component (between 0 and 1)
      */
     public get g(): number {
-        return +this.vector[1];
+        return this[1];
     }
 
     /**
      * Gets the blue component (between 0 and 1)
      */
     public get b(): number {
-        return +this.vector[2];
+        return this[2];
     }
 
     /**
      * Sets the red component (between 0 and 1)
      */
     public set r(value: number) {
-        this.vector[0] = +value;
+        this[0] = value;
     }
 
     /**
      * Sets the green component (between 0 and 1)
      */
     public set g(value: number) {
-        this.vector[1] = +value;
+        this[1] = value;
     }
 
     /**
      * Sets the blue component (between 0 and 1)
      */
     public set b(value: number) {
-        this.vector[2] = +value;
+        this[2] = value;
     }
 
     /**
@@ -459,56 +459,56 @@ export class Color4 extends Vector {
      * Gets the red component (between 0 and 1)
      */
     public get r(): number {
-        return +this.vector[0];
+        return this[0];
     }
 
     /**
      * Gets the green component (between 0 and 1)
      */
     public get g(): number {
-        return +this.vector[1];
+        return this[1];
     }
 
     /**
      * Gets the blue component (between 0 and 1)
      */
     public get b(): number {
-        return +this.vector[2];
+        return this[2];
     }
 
     /**
      * Gets the alpha component (between 0 and 1)
      */
     public get a(): number {
-        return +this.vector[3];
+        return this[3];
     }
 
     /**
      * Sets the red component (between 0 and 1)
      */
     public set r(value: number) {
-        this.vector[0] = +value;
+        this[0] = value;
     }
 
     /**
      * Sets the green component (between 0 and 1)
      */
     public set g(value: number) {
-        this.vector[1] = +value;
+        this[1] = value;
     }
 
     /**
      * Sets the blue component (between 0 and 1)
      */
     public set b(value: number) {
-        this.vector[2] = +value;
+        this[2] = value;
     }
 
     /**
      * Sets the alpha component (between 0 and 1)
      */
     public set a(value: number) {
-        this.vector[3] = +value;
+        this[3] = value;
     }
 
     // Operators
