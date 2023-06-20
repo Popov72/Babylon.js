@@ -320,9 +320,9 @@ export function CreateText(
     if (newMesh) {
         // Move pivot to center
         const bbox = newMesh?.getBoundingInfo();
-        newMesh.position.x = -bbox?.boundingBox.extendSizeWorld._x;
-        newMesh.position.y = -bbox?.boundingBox.extendSizeWorld._y;
-        newMesh.position.z = -bbox?.boundingBox.extendSizeWorld._z;
+        newMesh.position.x = -bbox?.boundingBox.extendSizeWorld[0];
+        newMesh.position.y = -bbox?.boundingBox.extendSizeWorld[1];
+        newMesh.position.z = -bbox?.boundingBox.extendSizeWorld[2];
         newMesh.name = name;
 
         newMesh.rotation.x = -Math.PI / 2;

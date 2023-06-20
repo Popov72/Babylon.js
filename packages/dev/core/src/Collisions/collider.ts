@@ -149,7 +149,7 @@ export class Collider {
         this._velocitySquaredLength = this._velocity.lengthSquared();
         const len = Math.sqrt(this._velocitySquaredLength);
         if (len === 0 || len === 1.0) {
-            this._normalizedVelocity.copyFromFloats(dir.vector[0], dir.vector[1], dir.vector[2]);
+            this._normalizedVelocity.copyFromFloats(dir[0], dir[1], dir[2]);
         } else {
             dir.scaleToRef(1.0 / len, this._normalizedVelocity);
         }
