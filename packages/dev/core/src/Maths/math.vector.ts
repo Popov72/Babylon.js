@@ -808,7 +808,7 @@ export class Vector extends Array<number> {
      * @returns a new Vector
      */
     public clone(): this {
-		const ref = new (this.constructor as VectorConstructor<this>)();
+        const ref = new (this.constructor as VectorConstructor<this>)();
         return ref.copyFrom(this);
     }
 
