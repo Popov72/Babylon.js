@@ -875,10 +875,9 @@ export class Vector {
     public static FromFloatsToRef<T extends Vector>(...args: [...number[], T]): T;
     public static FromFloatsToRef<T extends Vector>(...args: [...number[], T]): T {
         const result = args.pop() as T;
-        const floats = args as number[];
-        floats.forEach((val, i) => {
-            result.vector[i] = val;
-        });
+        for (let i = 0; i < args.length; i++) {
+            result.vector[i] = args[i] as number;
+        }
         result._isDirty = true;
         return result;
     }
