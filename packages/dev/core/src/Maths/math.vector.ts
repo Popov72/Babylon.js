@@ -816,7 +816,6 @@ export class Vector extends Array<number> {
      * Returns a new Vector with random values between min and max
      * @param min the minimum random value
      * @param max the maximum random value
-     * @param dim the dimension of the random Vector
      * @returns a Vector with random values between min and max
      */
     public static Random<T extends Vector>(this: VectorConstructor<T>, min: number = 0, max: number = 1): T {
