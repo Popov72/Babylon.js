@@ -859,7 +859,7 @@ export class Vector {
      */
     public static FromArrayToRef<T extends Vector>(array: ArrayLike<number>, offset: number, result: T): T {
         for (let i = 0; i < result.vector.length; i++) {
-            result.vector[i] = array[i + offset] ?? result.vector[i + offset];
+            result.vector[i] = array[i + offset] ?? result.vector[i];
         }
         result._isDirty = true;
         return result;
