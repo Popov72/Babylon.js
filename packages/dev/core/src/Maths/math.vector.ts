@@ -2181,7 +2181,7 @@ export class Vector3 extends Vector {
      * @param normal defines the normal - Must be normalized
      * @returns the resulting vector
      */
-    public static Reflect<T extends Vector3>(inDirection: DeepImmutable<Vector3>, normal: DeepImmutable<Vector3>): Vector3 {
+    public static Reflect(inDirection: DeepImmutable<Vector3>, normal: DeepImmutable<Vector3>): Vector3 {
         return this.ReflectToRef(inDirection, normal, new Vector3());
     }
 
