@@ -3,7 +3,7 @@ import { Scalar } from "./math.scalar";
 import { ToLinearSpace, ToGammaSpace } from "./math.constants";
 import { ArrayTools } from "../Misc/arrayTools";
 import { RegisterClass } from "../Misc/typeStore";
-import { Vector } from "./math";
+import { Vector } from "./math.vector";
 
 function colorChannelToLinearSpace(color: number): number {
     return Math.pow(color, ToLinearSpace);
@@ -31,8 +31,6 @@ function colorChannelToGammaSpaceExact(color: number): number {
  * Class used to hold a RGB color
  */
 export class Color3 extends Vector {
-    public static Dimension: number = 3;
-
     /**
      * Creates a new Color3 object from red, green, blue values, all between 0 and 1
      * @param r defines the red component (between 0 and 1, default is 0)
@@ -442,8 +440,6 @@ export class Color3 extends Vector {
  * Class used to hold a RBGA color
  */
 export class Color4 extends Vector {
-    public static Dimension: number = 4;
-
     /**
      * Creates a new Color4 object from red, green, blue values, all between 0 and 1
      * @param r defines the red component (between 0 and 1, default is 0)

@@ -13,7 +13,6 @@ import type { TransformNode } from "../Meshes/transformNode";
 
 export type VectorConstructor<T extends Vector> = {
     new (...args: ConstructorParameters<typeof Vector>): T;
-    Dimension: number;
     Random(min: number, max: number): T;
     RandomToRef(min: number, max: number, result: T): T;
     FromArray(array: ArrayLike<number>, offset: number): T;
@@ -30,8 +29,10 @@ const _ExtractAsInt = (value: number) => {
 /**
  * Represents a vector in space
  */
-export class Vector extends Array<number> {
-    public static readonly Dimension: number = 0;
+export class Vector {
+    [key: number]: number;
+
+    protected _length: number;
 
     /** @internal */
     public _isDirty = true;
@@ -144,7 +145,10 @@ export class Vector extends Array<number> {
      * Creates a new Vector from the given coordinates
      */
     constructor(...coords: number[]) {
-        super(...coords);
+        this._length = coords.length;
+        for (let i = 0; i < coords.length; i++) {
+            this[i] = coords[i];
+        }
     }
 
     /**
@@ -152,7 +156,7 @@ export class Vector extends Array<number> {
      * @returns a string with the Vector coordinates
      */
     public toString(): string {
-        return `(${this.join(", ")})`;
+        return `(${this.asArray().join(", ")})`;
     }
 
     /**
@@ -169,7 +173,7 @@ export class Vector extends Array<number> {
      */
     public getHashCode(): number {
         let hash = 1;
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             hash = (hash * 397) ^ _ExtractAsInt(this[i]);
         }
         return hash;
@@ -184,7 +188,7 @@ export class Vector extends Array<number> {
      * @returns the current Vector
      */
     public toArray(array: FloatArray, index: number = 0): this {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             array[index + i] = this[i];
         }
         return this;
@@ -228,7 +232,7 @@ export class Vector extends Array<number> {
      * @returns the current updated Vector
      */
     public copyFromFloats(...floats: number[]): this {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             this[i] = floats[i];
         }
         this._isDirty = true;
@@ -252,7 +256,9 @@ export class Vector extends Array<number> {
      * @returns the current updated Vector
      */
     public setAll(value: number): this {
-        this.fill(value);
+        for (let i = 0; i < this._length; i++) {
+            this[i] = value;
+        }
         this._isDirty = true;
         return this;
     }
@@ -275,7 +281,7 @@ export class Vector extends Array<number> {
      * @returns result input
      */
     public addToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] = this[i] + otherVector[i];
         }
         result._isDirty = true;
@@ -301,7 +307,7 @@ export class Vector extends Array<number> {
     public addInPlaceFromFloats(x: number, y: number, z: number, w: number): this;
     public addInPlaceFromFloats(...floats: number[]): this;
     public addInPlaceFromFloats(...floats: number[]): this {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             this[i] += floats[i];
         }
         this._isDirty = true;
@@ -326,7 +332,7 @@ export class Vector extends Array<number> {
      * @returns result input
      */
     public subtractToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] = this[i] - otherVector[i];
         }
         result._isDirty = true;
@@ -370,7 +376,7 @@ export class Vector extends Array<number> {
     public subtractFromFloatsToRef<T extends Vector>(...args: [...number[], T]): T {
         const result = args.pop() as T;
         const floats = args as number[];
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] = this[i] - floats[i];
         }
         result._isDirty = true;
@@ -395,7 +401,7 @@ export class Vector extends Array<number> {
      * @returns result input
      */
     public multiplyToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] = this[i] * otherVector[i];
         }
         result._isDirty = true;
@@ -421,7 +427,7 @@ export class Vector extends Array<number> {
     public multiplyByFloats(...floats: number[]): this;
     public multiplyByFloats(...floats: number[]): this {
         const result = new (this.constructor as VectorConstructor<this>)();
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] = this[i] * floats[i];
         }
         result._isDirty = true;
@@ -446,7 +452,7 @@ export class Vector extends Array<number> {
      * @returns result input
      */
     public divideToRef<T extends Vector>(otherVector: DeepImmutable<Vector>, result: T): T {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] = this[i] / otherVector[i];
         }
         result._isDirty = true;
@@ -468,7 +474,7 @@ export class Vector extends Array<number> {
      * @returns this current updated Vector
      */
     public minimizeInPlace(otherVector: DeepImmutable<Vector>): this {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             if (otherVector[i] < this[i]) {
                 this[i] = otherVector[i];
             }
@@ -487,7 +493,7 @@ export class Vector extends Array<number> {
     public minimizeInPlaceFromFloats(x: number, y: number, z: number, w: number): this;
     public minimizeInPlaceFromFloats(...floats: number[]): this;
     public minimizeInPlaceFromFloats(...floats: number[]): this {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             if (floats[i] < this[i]) {
                 this[i] = floats[i];
             }
@@ -502,7 +508,7 @@ export class Vector extends Array<number> {
      * @returns this current updated Vector
      */
     public maximizeInPlace(otherVector: DeepImmutable<Vector>): this {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             if (otherVector[i] > this[i]) {
                 this[i] = otherVector[i];
             }
@@ -521,7 +527,7 @@ export class Vector extends Array<number> {
     public maximizeInPlaceFromFloats(x: number, y: number, z: number, w: number): this;
     public maximizeInPlaceFromFloats(...floats: number[]): this;
     public maximizeInPlaceFromFloats(...floats: number[]): this {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             if (floats[i] > this[i]) {
                 this[i] = floats[i];
             }
@@ -554,7 +560,7 @@ export class Vector extends Array<number> {
      * @returns the result
      */
     public negateToRef<T extends Vector>(result: T): T {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] = -this[i];
         }
         result._isDirty = true;
@@ -590,7 +596,7 @@ export class Vector extends Array<number> {
      * @returns result input
      */
     public scaleToRef<T extends Vector>(scale: number, result: T): T {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] = this[i] * scale;
         }
         result._isDirty = true;
@@ -604,7 +610,7 @@ export class Vector extends Array<number> {
      * @returns result input
      */
     public scaleAndAddToRef<T extends Vector>(scale: number, result: T): T {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] += this[i] * scale;
         }
         result._isDirty = true;
@@ -620,7 +626,7 @@ export class Vector extends Array<number> {
         if (!otherVector) {
             return false;
         }
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             if (this[i] != otherVector[i]) {
                 return false;
             }
@@ -638,7 +644,7 @@ export class Vector extends Array<number> {
         if (!otherVector) {
             return false;
         }
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             if (!Scalar.WithinEpsilon(this[i], otherVector[i], epsilon)) {
                 return false;
             }
@@ -656,7 +662,7 @@ export class Vector extends Array<number> {
     public equalsToFloats(x: number, y: number, z: number, w: number): boolean;
     public equalsToFloats(...floats: number[]): boolean;
     public equalsToFloats(...floats: number[]): boolean {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             if (this[i] != floats[i]) {
                 return false;
             }
@@ -694,7 +700,7 @@ export class Vector extends Array<number> {
      * @returns a new Vector
      */
     public floorToRef<T extends Vector>(result: T): T {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] = Math.floor(this[i]);
         }
         result._isDirty = true;
@@ -718,7 +724,7 @@ export class Vector extends Array<number> {
      * @returns a new Vector
      */
     public fractToRef<T extends Vector>(result: T): T {
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             result[i] = this[i] - Math.floor(this[i]);
         }
         result._isDirty = true;
@@ -731,7 +737,7 @@ export class Vector extends Array<number> {
      * The number of dimensions the vector has (i.e. the length of the coordinate array)
      */
     public get dimension(): number {
-        return <Array<number>["length"]>Reflect.get(Array.prototype, "length", this);
+        return Reflect.get(Array.prototype, "length", this);
     }
 
     /**
@@ -749,7 +755,7 @@ export class Vector extends Array<number> {
      */
     public lengthSquared(): number {
         let sum = 0;
-        for (let i = 0; i < this.dimension; i++) {
+        for (let i = 0; i < this._length; i++) {
             sum += this[i] ** 2;
         }
         return sum;
@@ -819,7 +825,7 @@ export class Vector extends Array<number> {
      * @returns a Vector with random values between min and max
      */
     public static Random<T extends Vector>(this: VectorConstructor<T>, min: number = 0, max: number = 1): T {
-        const ref = new this(...new Array(this.Dimension).fill(0));
+        const ref = new this();
         this.RandomToRef(min, max, ref);
         return ref;
     }
@@ -1216,8 +1222,6 @@ export class Vector extends Array<number> {
 export class Vector2 extends Vector {
     private static _ZeroReadOnly = Vector2.Zero() as DeepImmutable<Vector2>;
 
-    public static readonly Dimension: number = 2;
-
     /**
      * Creates a new Vector2 from the given x and y coordinates
      * @param x defines the first coordinate
@@ -1388,8 +1392,6 @@ export class Vector3 extends Vector {
     private static _LeftReadOnly = Vector3.Left() as DeepImmutable<Vector3>;
     private static _ZeroReadOnly = Vector3.Zero() as DeepImmutable<Vector3>;
     private static _OneReadOnly = Vector3.One() as DeepImmutable<Vector3>;
-
-    public static readonly Dimension: number = 3;
 
     /**
      * Creates a new Vector3 object from the given x, y, z (floats) coordinates.
@@ -2521,8 +2523,6 @@ export class Vector3 extends Vector {
  */
 export class Vector4 extends Vector {
     private static _ZeroReadOnly = Vector4.Zero() as DeepImmutable<Vector4>;
-
-    public static readonly Dimension: number = 4;
 
     /**
      * Creates a Vector4 object from the given floats.
