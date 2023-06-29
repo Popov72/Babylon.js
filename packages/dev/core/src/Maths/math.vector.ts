@@ -737,7 +737,7 @@ export class Vector {
      * The number of dimensions the vector has (i.e. the length of the coordinate array)
      */
     public get dimension(): number {
-        return Reflect.get(Array.prototype, "length", this);
+        return this._length;
     }
 
     /**
