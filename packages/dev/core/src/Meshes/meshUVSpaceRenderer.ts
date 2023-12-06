@@ -10,14 +10,23 @@ import { Constants } from "core/Engines/constants";
 import { ShaderMaterial } from "core/Materials/shaderMaterial";
 import { RenderTargetTexture } from "core/Materials/Textures/renderTargetTexture";
 import { Color4 } from "core/Maths/math.color";
+import { PostProcess } from "core/PostProcesses/postProcess";
 
 import "../Shaders/meshUVSpaceRenderer.vertex";
 import "../Shaders/meshUVSpaceRenderer.fragment";
+
+import "../Shaders/meshUVSpaceRendererMasker.vertex";
+import "../Shaders/meshUVSpaceRendererMasker.fragment";
+
+import "../Shaders/meshUVSpaceRendererFinaliser.fragment";
+import "../Shaders/meshUVSpaceRendererFinaliser.vertex";
 
 declare module "../scene" {
     export interface Scene {
         /** @internal */
         _meshUVSpaceRendererShader: Nullable<ShaderMaterial>;
+        /** @internal */
+        _meshUVSpaceRendererMaskShader: Nullable<ShaderMaterial>;
     }
 }
 
@@ -47,6 +56,10 @@ export interface IMeshUVSpaceRendererOptions {
      * If you plan to use the texture as a decal map and rotate / offset the texture, you should set this to false
      */
     optimizeUVAllocation?: boolean;
+    /**
+     * If true, a post processing will be applied to the texture to fix seams. Default: false
+     */
+    uvEdgeBlending?: boolean;
 }
 
 /**
@@ -58,6 +71,8 @@ export class MeshUVSpaceRenderer {
     private _scene: Scene;
     private _options: Required<IMeshUVSpaceRendererOptions>;
     private _textureCreatedInternally = false;
+    private _maskTexture: Nullable<RenderTargetTexture> = null;
+    private _finalPostProcess: Nullable<PostProcess> = null;
 
     private static _GetShader(scene: Scene): ShaderMaterial {
         if (!scene._meshUVSpaceRendererShader) {
@@ -87,6 +102,33 @@ export class MeshUVSpaceRenderer {
         }
 
         return scene._meshUVSpaceRendererShader;
+    }
+
+    private static _GetMaskShader(scene: Scene): ShaderMaterial {
+        if (!scene._meshUVSpaceRendererMaskShader) {
+            const shader = new ShaderMaterial(
+                "meshUVSpaceRendererMaskShader",
+                scene,
+                {
+                    vertex: "meshUVSpaceRendererMasker",
+                    fragment: "meshUVSpaceRendererMasker",
+                },
+                {
+                    attributes: ["position", "uv"],
+                    uniforms: ["worldViewProjection"],
+                }
+            );
+            shader.backFaceCulling = false;
+            shader.alphaMode = Constants.ALPHA_COMBINE;
+
+            scene.onDisposeObservable.add(() => {
+                scene._meshUVSpaceRendererMaskShader?.dispose();
+                scene._meshUVSpaceRendererMaskShader = null;
+            });
+
+            scene._meshUVSpaceRendererMaskShader = shader;
+        }
+        return scene._meshUVSpaceRendererMaskShader;
     }
 
     private static _IsRenderTargetTexture(texture: ThinTexture | RenderTargetTexture): texture is RenderTargetTexture {
@@ -120,6 +162,7 @@ export class MeshUVSpaceRenderer {
             textureType: Constants.TEXTURETYPE_UNSIGNED_BYTE,
             generateMipMaps: true,
             optimizeUVAllocation: true,
+            uvEdgeBlending: false,
             ...options,
         };
     }
@@ -133,7 +176,11 @@ export class MeshUVSpaceRenderer {
             this._createDiffuseRTT();
         }
 
-        return MeshUVSpaceRenderer._IsRenderTargetTexture(this.texture) ? this.texture.isReadyForRendering() : this.texture.isReady();
+        const textureIsReady = MeshUVSpaceRenderer._IsRenderTargetTexture(this.texture) ? this.texture.isReadyForRendering() : this.texture.isReady();
+        const maskIsReady = this._maskTexture?.isReadyForRendering() ?? true;
+        const postProcessIsReady = this._finalPostProcess?.isReady() ?? true;
+
+        return textureIsReady && maskIsReady && postProcessIsReady;
     }
 
     /**
@@ -174,13 +221,18 @@ export class MeshUVSpaceRenderer {
     }
 
     /**
-     * Disposes of the ressources
+     * Disposes of the resources
      */
     public dispose() {
         if (this._textureCreatedInternally) {
             this.texture.dispose();
             this._textureCreatedInternally = false;
         }
+
+        this._maskTexture?.dispose();
+        this._maskTexture = null;
+        this._finalPostProcess?.dispose();
+        this._finalPostProcess = null;
     }
 
     private _createDiffuseRTT(): void {
@@ -191,6 +243,69 @@ export class MeshUVSpaceRenderer {
         texture.setMaterialForRendering(this._mesh, MeshUVSpaceRenderer._GetShader(this._scene));
 
         this.texture = texture;
+
+        if (this._options.uvEdgeBlending) {
+            this._createMaskTexture();
+            this._createPostProcess();
+
+            texture.addPostProcess(this._finalPostProcess!);
+        }
+    }
+
+    private _createMaskTexture(): void {
+        if (this._maskTexture) {
+            return;
+        }
+
+        this._maskTexture = new RenderTargetTexture(
+            this._mesh.name + "_maskTexture",
+            { width: this._options.width, height: this._options.height },
+            this._scene,
+            false, // No mipmaps for the mask texture
+            true,
+            Constants.TEXTURETYPE_UNSIGNED_BYTE,
+            false,
+            Constants.TEXTURE_BILINEAR_SAMPLINGMODE,
+            undefined,
+            undefined,
+            undefined,
+            Constants.TEXTUREFORMAT_R
+        );
+
+        this._maskTexture.clearColor = new Color4(0, 0, 0, 0);
+
+        // Render the mesh with the mask material to the mask texture
+        this._maskTexture.renderList!.push(this._mesh);
+        this._maskTexture.setMaterialForRendering(this._mesh, MeshUVSpaceRenderer._GetMaskShader(this._scene));
+
+        // Ensure the mask texture is updated
+        this._maskTexture.refreshRate = RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+        this._scene.customRenderTargets.push(this._maskTexture);
+    }
+
+    private _createPostProcess(): void {
+        if (this._finalPostProcess) {
+            return;
+        }
+
+        this._finalPostProcess = new PostProcess(
+            this._mesh.name + "_fixSeamsPostProcess",
+            "meshUVSpaceRendererFinaliser",
+            ["textureSize"],
+            ["textureSampler", "maskTextureSampler"],
+            1.0,
+            null,
+            Constants.TEXTURE_NEAREST_SAMPLINGMODE,
+            this._scene.getEngine(),
+            false,
+            null,
+            this._options.textureType
+        );
+
+        this._finalPostProcess.onApplyObservable.add((effect) => {
+            effect.setTexture("maskTextureSampler", this._maskTexture);
+            effect.setFloat2("textureSize", this._options.width, this._options.height);
+        });
     }
 
     private _createRenderTargetTexture(width: number, height: number): RenderTargetTexture {
