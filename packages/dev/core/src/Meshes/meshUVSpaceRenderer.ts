@@ -1,4 +1,4 @@
-import { Texture } from "core/Materials/Textures/texture";
+import type { Texture } from "core/Materials/Textures/texture";
 import type { Vector3 } from "core/Maths/math.vector";
 import type { Scene } from "core/scene";
 import type { AbstractMesh } from "./abstractMesh";
@@ -57,7 +57,7 @@ export interface IMeshUVSpaceRendererOptions {
      */
     optimizeUVAllocation?: boolean;
     /**
-     * If true, the texture will be blended with the mesh's texture to avoid seams. Default: false
+     * If true, a post processing effect will be applied to the texture to fix seams. Default: false
      */
     uvEdgeBlending?: boolean;
 }
@@ -71,6 +71,7 @@ export class MeshUVSpaceRenderer {
     private _scene: Scene;
     private _options: Required<IMeshUVSpaceRendererOptions>;
     private _textureCreatedInternally = false;
+    private _userCreatedTextureConfigured = false;
     private _maskTexture: Nullable<RenderTargetTexture> = null;
     private _finalPostProcess: Nullable<PostProcess> = null;
 
@@ -162,7 +163,7 @@ export class MeshUVSpaceRenderer {
             textureType: Constants.TEXTURETYPE_UNSIGNED_BYTE,
             generateMipMaps: true,
             optimizeUVAllocation: true,
-            uvEdgeBlending: options?.uvEdgeBlending ?? false,
+            uvEdgeBlending: false,
             ...options,
         };
     }
@@ -194,6 +195,8 @@ export class MeshUVSpaceRenderer {
     public renderTexture(texture: BaseTexture, position: Vector3, normal: Vector3, size: Vector3, angle = 0): void {
         if (!this.texture) {
             this._createDiffuseRTT();
+        } else if (!this._userCreatedTextureConfigured) {
+            this._configureUserCreatedRTT();
         }
 
         if (MeshUVSpaceRenderer._IsRenderTargetTexture(this.texture)) {
@@ -218,6 +221,13 @@ export class MeshUVSpaceRenderer {
             engine.clear(this.clearColor, true, true, true);
             engine.unBindFramebuffer(this.texture.renderTarget);
         }
+        if (this._finalPostProcess?.inputTexture) {
+            const engine = this._scene.getEngine();
+
+            engine.bindFramebuffer(this._finalPostProcess?.inputTexture);
+            engine.clear(this.clearColor, true, true, true);
+            engine.unBindFramebuffer(this._finalPostProcess?.inputTexture);
+        }
     }
 
     /**
@@ -226,9 +236,31 @@ export class MeshUVSpaceRenderer {
     public dispose() {
         if (this._textureCreatedInternally) {
             this.texture.dispose();
-            this._maskTexture?.dispose();
-            this._finalPostProcess?.dispose();
             this._textureCreatedInternally = false;
+        }
+        this._userCreatedTextureConfigured = false;
+        this._maskTexture?.dispose();
+        this._maskTexture = null;
+        this._finalPostProcess?.dispose();
+        this._finalPostProcess = null;
+    }
+
+    private _configureUserCreatedRTT(): void {
+        this._userCreatedTextureConfigured = true;
+        if (MeshUVSpaceRenderer._IsRenderTargetTexture(this.texture)) {
+            this.texture.setMaterialForRendering(this._mesh, MeshUVSpaceRenderer._GetShader(this._scene));
+            this.texture.onClearObservable.addOnce(() => {
+                this._scene.getEngine().clear(this.clearColor, true, true, true);
+                if (MeshUVSpaceRenderer._IsRenderTargetTexture(this.texture)) {
+                    this.texture.onClearObservable.add(() => {});
+                }
+            });
+            this.texture.renderList = [this._mesh];
+            if (this._options.uvEdgeBlending) {
+                this._createMaskTexture();
+                this._createPostProcess();
+                this.texture.addPostProcess(this._finalPostProcess!);
+            }
         }
     }
 
@@ -244,8 +276,9 @@ export class MeshUVSpaceRenderer {
         if (this._options.uvEdgeBlending) {
             this._createMaskTexture();
             this._createPostProcess();
-
-            texture.addPostProcess(this._finalPostProcess!);
+            if (MeshUVSpaceRenderer._IsRenderTargetTexture(this.texture)) {
+                this.texture.addPostProcess(this._finalPostProcess!);
+            }
         }
     }
 
@@ -254,7 +287,6 @@ export class MeshUVSpaceRenderer {
             return;
         }
 
-        // Create a new render target texture for the mask
         this._maskTexture = new RenderTargetTexture(
             this._mesh.name + "_maskTexture",
             { width: this._options.width, height: this._options.height },
@@ -286,7 +318,6 @@ export class MeshUVSpaceRenderer {
             return;
         }
 
-        // Create the post-process only if it hasn't been created already
         this._finalPostProcess = new PostProcess(
             this._mesh.name + "_fixSeamsPostProcess",
             "meshUVSpaceRendererFinaliser",
@@ -294,7 +325,7 @@ export class MeshUVSpaceRenderer {
             ["textureSampler", "maskTextureSampler"],
             1.0,
             null,
-            Texture.NEAREST_SAMPLINGMODE,
+            Constants.TEXTURE_NEAREST_SAMPLINGMODE,
             this._scene.getEngine(),
             false,
             null,
