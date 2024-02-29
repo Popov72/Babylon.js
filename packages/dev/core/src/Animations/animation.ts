@@ -110,6 +110,11 @@ export class Animation {
     public static AllowMatrixDecomposeForInterpolation = true;
 
     /**
+     * Enables layered animations (default: false). In this mode, if a property is updated by several animations, the value calculated for animation n is lerped with the value of animation n-1 using the weight of animation n
+     */
+    public static EnableLayeredAnimations = false;
+
+    /**
      * Gets or sets the unique id of the animation (the uniqueness is solely among other animations)
      */
     public uniqueId: number;
