@@ -1,5 +1,5 @@
 import type { Nullable } from "../types";
-import { Matrix, Quaternion, TmpVectors } from "../Maths/math.vector";
+import { Matrix } from "../Maths/math.vector";
 import type { _IAnimationState } from "./animation";
 import {
     Animation,
@@ -165,6 +165,14 @@ export class RuntimeAnimation {
      */
     public get isAdditive(): boolean {
         return this._host && this._host.isAdditive;
+    }
+
+    /**
+     * Get the index of the layer the runtime animation belongs to (default: 0)
+     * This is the playOrder value of the animatable associated with the runtime animation
+     */
+    public get layerIndex(): number {
+        return this._host ? this._host.playOrder : 0;
     }
 
     /** @internal */
@@ -400,11 +408,7 @@ export class RuntimeAnimation {
         }
 
         if (weight !== -1.0) {
-            if (Animation.EnableLayeredAnimations) {
-                this._lerpCurrentValueWithActiveTarget(targetIndex);
-            } else {
-                this._scene._registerTargetForLateAnimationBinding(this, this._originalValue[targetIndex]);
-            }
+            this._scene._registerTargetForLateAnimationBinding(this, this._originalValue[targetIndex], this.layerIndex);
         } else {
             if (this._animationState.loopMode === Animation.ANIMATIONLOOPMODE_RELATIVE_FROM_CURRENT) {
                 if (this._currentValue.addToRef) {
@@ -419,39 +423,6 @@ export class RuntimeAnimation {
 
         if (target.markAsDirty) {
             target.markAsDirty(this._animation.targetProperty);
-        }
-    }
-
-    private _lerpCurrentValueWithActiveTarget(targetIndex: number): void {
-        const currentTargetValue = this._currentActiveTarget[this._targetPath];
-        const quaternionMode = currentTargetValue.w !== undefined;
-
-        if (quaternionMode) {
-            if (this.isAdditive) {
-                currentTargetValue.multiplyToRef(this._currentValue, TmpVectors.Quaternion[0]);
-                Quaternion.SlerpToRef(currentTargetValue, TmpVectors.Quaternion[0], this._weight, currentTargetValue);
-            } else {
-                Quaternion.SlerpToRef(currentTargetValue, this._currentValue, this._weight, currentTargetValue);
-            }
-        } else {
-            let finalValue = this._currentValue;
-            if (this._animationState.loopMode === Animation.ANIMATIONLOOPMODE_RELATIVE_FROM_CURRENT) {
-                if (this._currentValue.addToRef) {
-                    finalValue.addToRef(this._originalValue[targetIndex], finalValue);
-                } else {
-                    finalValue += this._originalValue[targetIndex];
-                }
-            }
-            if (this._currentValue.scaleAndAddToRef) {
-                const range = this.isAdditive ? finalValue : finalValue.subtract(currentTargetValue);
-                finalValue = currentTargetValue;
-                range.scaleAndAddToRef(this._weight, finalValue);
-            } else {
-                const range = this.isAdditive ? finalValue : finalValue - currentTargetValue;
-                finalValue = currentTargetValue + range * this._weight;
-            }
-
-            this._currentActiveTarget[this._targetPath] = finalValue;
         }
     }
 

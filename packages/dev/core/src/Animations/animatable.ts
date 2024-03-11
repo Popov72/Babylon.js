@@ -480,7 +480,7 @@ export class Animatable {
 declare module "../scene" {
     export interface Scene {
         /** @internal */
-        _registerTargetForLateAnimationBinding(runtimeAnimation: RuntimeAnimation, originalValue: any): void;
+        _registerTargetForLateAnimationBinding(runtimeAnimation: RuntimeAnimation, originalValue: any, layerIndex: number): void;
 
         /** @internal */
         _processLateAnimationBindingsForMatrices(holder: {
@@ -505,6 +505,9 @@ declare module "../scene" {
 
         /** @internal */
         _processLateAnimationBindings(): void;
+
+        /** @internal */
+        _lerpWithTarget(value: any, target: any, targetPath: string, weight: number, isAdditive: boolean): void;
 
         /**
          * Sort active animatables based on their playOrder property
@@ -911,16 +914,37 @@ Scene.prototype.stopAllAnimations = function (): void {
     }
 };
 
-Scene.prototype._registerTargetForLateAnimationBinding = function (runtimeAnimation: RuntimeAnimation, originalValue: any): void {
-    const target = runtimeAnimation.target;
+interface ILateAnimationHolder {
+    _lateAnimationHolders: {
+        [targetPath: string]: Array<{
+            totalWeight: number;
+            totalAdditiveWeight: number;
+            animations: RuntimeAnimation[];
+            additiveAnimations: RuntimeAnimation[];
+            originalValue: any;
+        }>;
+    };
+    [key: string]: any;
+}
+
+Scene.prototype._registerTargetForLateAnimationBinding = function (runtimeAnimation: RuntimeAnimation, originalValue: any, layerIndex: number): void {
+    const target = runtimeAnimation.target as ILateAnimationHolder;
     this._registeredForLateAnimationBindings.pushNoDuplicate(target);
+
+    if (!Animation.EnableLayeredAnimations) {
+        layerIndex = 0;
+    }
 
     if (!target._lateAnimationHolders) {
         target._lateAnimationHolders = {};
     }
 
     if (!target._lateAnimationHolders[runtimeAnimation.targetPath]) {
-        target._lateAnimationHolders[runtimeAnimation.targetPath] = {
+        target._lateAnimationHolders[runtimeAnimation.targetPath] = [];
+    }
+
+    if (!target._lateAnimationHolders[runtimeAnimation.targetPath][layerIndex]) {
+        target._lateAnimationHolders[runtimeAnimation.targetPath][layerIndex] = {
             totalWeight: 0,
             totalAdditiveWeight: 0,
             animations: [],
@@ -930,11 +954,11 @@ Scene.prototype._registerTargetForLateAnimationBinding = function (runtimeAnimat
     }
 
     if (runtimeAnimation.isAdditive) {
-        target._lateAnimationHolders[runtimeAnimation.targetPath].additiveAnimations.push(runtimeAnimation);
-        target._lateAnimationHolders[runtimeAnimation.targetPath].totalAdditiveWeight += runtimeAnimation.weight;
+        target._lateAnimationHolders[runtimeAnimation.targetPath][layerIndex].additiveAnimations.push(runtimeAnimation);
+        target._lateAnimationHolders[runtimeAnimation.targetPath][layerIndex].totalAdditiveWeight += runtimeAnimation.weight;
     } else {
-        target._lateAnimationHolders[runtimeAnimation.targetPath].animations.push(runtimeAnimation);
-        target._lateAnimationHolders[runtimeAnimation.targetPath].totalWeight += runtimeAnimation.weight;
+        target._lateAnimationHolders[runtimeAnimation.targetPath][layerIndex].animations.push(runtimeAnimation);
+        target._lateAnimationHolders[runtimeAnimation.targetPath][layerIndex].totalWeight += runtimeAnimation.weight;
     }
 };
 
@@ -1127,104 +1151,143 @@ Scene.prototype._processLateAnimationBindings = function (): void {
         return;
     }
     for (let index = 0; index < this._registeredForLateAnimationBindings.length; index++) {
-        const target = this._registeredForLateAnimationBindings.data[index];
+        const target = this._registeredForLateAnimationBindings.data[index] as ILateAnimationHolder;
 
         for (const path in target._lateAnimationHolders) {
-            const holder = target._lateAnimationHolders[path];
-            const originalAnimation: RuntimeAnimation = holder.animations[0];
-            const originalValue = holder.originalValue;
-            if (originalValue === undefined || originalValue === null) {
-                continue;
-            }
-            const matrixDecomposeMode = Animation.AllowMatrixDecomposeForInterpolation && originalValue.m; // ie. data is matrix
+            const holders = target._lateAnimationHolders[path];
+            for (const layerIndex in holders) {
+                const holder = holders[layerIndex];
+                const originalAnimation: RuntimeAnimation = holder.animations[0];
+                const originalValue = holder.originalValue;
+                if (originalValue === undefined || originalValue === null) {
+                    continue;
+                }
+                const matrixDecomposeMode = Animation.AllowMatrixDecomposeForInterpolation && originalValue.m; // ie. data is matrix
 
-            let finalValue: any = target[path];
-            if (matrixDecomposeMode) {
-                finalValue = this._processLateAnimationBindingsForMatrices(holder);
-            } else {
-                const quaternionMode = originalValue.w !== undefined;
-                if (quaternionMode) {
-                    finalValue = this._processLateAnimationBindingsForQuaternions(holder, finalValue || Quaternion.Identity());
+                let finalValue: any = target[path];
+                if (Animation.EnableLayeredAnimations) {
+                    if (finalValue.clone) {
+                        finalValue = finalValue.clone();
+                    }
+                }
+                if (matrixDecomposeMode) {
+                    finalValue = this._processLateAnimationBindingsForMatrices(holder);
                 } else {
-                    let startIndex = 0;
-                    let normalizer = 1.0;
+                    const quaternionMode = originalValue.w !== undefined;
+                    if (quaternionMode) {
+                        finalValue = this._processLateAnimationBindingsForQuaternions(holder, finalValue || Quaternion.Identity());
+                    } else {
+                        let startIndex = 0;
+                        let normalizer = 1.0;
 
-                    const originalAnimationIsLoopRelativeFromCurrent =
-                        originalAnimation && originalAnimation._animationState.loopMode === Animation.ANIMATIONLOOPMODE_RELATIVE_FROM_CURRENT;
+                        const originalAnimationIsLoopRelativeFromCurrent =
+                            originalAnimation && originalAnimation._animationState.loopMode === Animation.ANIMATIONLOOPMODE_RELATIVE_FROM_CURRENT;
 
-                    if (holder.totalWeight < 1.0) {
-                        // We need to mix the original value in
-                        if (originalAnimationIsLoopRelativeFromCurrent) {
-                            finalValue = originalValue.clone ? originalValue.clone() : originalValue;
-                        } else if (originalAnimation && originalValue.scale) {
-                            finalValue = originalValue.scale(1.0 - holder.totalWeight);
+                        if (holder.totalWeight < 1.0) {
+                            // We need to mix the original value in
+                            if (originalAnimationIsLoopRelativeFromCurrent) {
+                                finalValue = originalValue.clone ? originalValue.clone() : originalValue;
+                            } else if (originalAnimation && originalValue.scale) {
+                                finalValue = originalValue.scale(1.0 - holder.totalWeight);
+                            } else if (originalAnimation) {
+                                finalValue = originalValue * (1.0 - holder.totalWeight);
+                            } else if (originalValue.clone) {
+                                finalValue = originalValue.clone();
+                            } else {
+                                finalValue = originalValue;
+                            }
                         } else if (originalAnimation) {
-                            finalValue = originalValue * (1.0 - holder.totalWeight);
-                        } else if (originalValue.clone) {
-                            finalValue = originalValue.clone();
-                        } else {
-                            finalValue = originalValue;
-                        }
-                    } else if (originalAnimation) {
-                        // We need to normalize the weights
-                        normalizer = holder.totalWeight;
-                        const scale = originalAnimation.weight / normalizer;
-                        if (scale !== 1) {
-                            if (originalAnimation.currentValue.scale) {
-                                finalValue = originalAnimation.currentValue.scale(scale);
+                            // We need to normalize the weights
+                            normalizer = holder.totalWeight;
+                            const scale = originalAnimation.weight / normalizer;
+                            if (scale !== 1) {
+                                if (originalAnimation.currentValue.scale) {
+                                    finalValue = originalAnimation.currentValue.scale(scale);
+                                } else {
+                                    finalValue = originalAnimation.currentValue * scale;
+                                }
                             } else {
-                                finalValue = originalAnimation.currentValue * scale;
+                                finalValue = originalAnimation.currentValue;
                             }
-                        } else {
-                            finalValue = originalAnimation.currentValue;
+
+                            if (originalAnimationIsLoopRelativeFromCurrent) {
+                                if (finalValue.addToRef) {
+                                    finalValue.addToRef(originalValue, finalValue);
+                                } else {
+                                    finalValue += originalValue;
+                                }
+                            }
+
+                            startIndex = 1;
                         }
 
-                        if (originalAnimationIsLoopRelativeFromCurrent) {
-                            if (finalValue.addToRef) {
-                                finalValue.addToRef(originalValue, finalValue);
+                        // Add up the override animations
+                        for (let animIndex = startIndex; animIndex < holder.animations.length; animIndex++) {
+                            const runtimeAnimation = holder.animations[animIndex];
+                            const scale = runtimeAnimation.weight / normalizer;
+
+                            if (!scale) {
+                                continue;
+                            } else if (runtimeAnimation.currentValue.scaleAndAddToRef) {
+                                runtimeAnimation.currentValue.scaleAndAddToRef(scale, finalValue);
                             } else {
-                                finalValue += originalValue;
+                                finalValue += runtimeAnimation.currentValue * scale;
                             }
                         }
 
-                        startIndex = 1;
-                    }
+                        // Add up the additive animations
+                        for (let animIndex = 0; animIndex < holder.additiveAnimations.length; animIndex++) {
+                            const runtimeAnimation = holder.additiveAnimations[animIndex];
+                            const scale: number = runtimeAnimation.weight;
 
-                    // Add up the override animations
-                    for (let animIndex = startIndex; animIndex < holder.animations.length; animIndex++) {
-                        const runtimeAnimation = holder.animations[animIndex];
-                        const scale = runtimeAnimation.weight / normalizer;
-
-                        if (!scale) {
-                            continue;
-                        } else if (runtimeAnimation.currentValue.scaleAndAddToRef) {
-                            runtimeAnimation.currentValue.scaleAndAddToRef(scale, finalValue);
-                        } else {
-                            finalValue += runtimeAnimation.currentValue * scale;
-                        }
-                    }
-
-                    // Add up the additive animations
-                    for (let animIndex = 0; animIndex < holder.additiveAnimations.length; animIndex++) {
-                        const runtimeAnimation = holder.additiveAnimations[animIndex];
-                        const scale: number = runtimeAnimation.weight;
-
-                        if (!scale) {
-                            continue;
-                        } else if (runtimeAnimation.currentValue.scaleAndAddToRef) {
-                            runtimeAnimation.currentValue.scaleAndAddToRef(scale, finalValue);
-                        } else {
-                            finalValue += runtimeAnimation.currentValue * scale;
+                            if (!scale) {
+                                continue;
+                            } else if (runtimeAnimation.currentValue.scaleAndAddToRef) {
+                                runtimeAnimation.currentValue.scaleAndAddToRef(scale, finalValue);
+                            } else {
+                                finalValue += runtimeAnimation.currentValue * scale;
+                            }
                         }
                     }
                 }
+                const layer = Animation.Layers[layerIndex];
+                if (Animation.EnableLayeredAnimations && layer) {
+                    this._lerpWithTarget(finalValue, target, path, layer.weight, layer.isAdditive);
+                } else {
+                    target[path] = finalValue;
+                }
             }
-            target[path] = finalValue;
         }
 
         target._lateAnimationHolders = {};
     }
     this._registeredForLateAnimationBindings.reset();
+};
+
+Scene.prototype._lerpWithTarget = function (value: any, target: any, targetPath: string, weight: number, isAdditive: boolean): void {
+    const currentTargetValue = target[targetPath];
+    const quaternionMode = currentTargetValue.w !== undefined;
+
+    if (quaternionMode) {
+        if (isAdditive) {
+            currentTargetValue.multiplyToRef(value, TmpVectors.Quaternion[0]);
+            Quaternion.SlerpToRef(currentTargetValue, TmpVectors.Quaternion[0], weight, currentTargetValue);
+        } else {
+            Quaternion.SlerpToRef(currentTargetValue, value, weight, currentTargetValue);
+        }
+    } else {
+        let finalValue = value;
+        if (value.scaleAndAddToRef) {
+            const range = isAdditive ? finalValue : finalValue.subtract(currentTargetValue);
+            finalValue = currentTargetValue;
+            range.scaleAndAddToRef(weight, finalValue);
+        } else {
+            const range = isAdditive ? finalValue : finalValue - currentTargetValue;
+            finalValue = currentTargetValue + range * weight;
+        }
+
+        target[targetPath] = finalValue;
+    }
 };
 
 declare module "../Bones/bone" {
