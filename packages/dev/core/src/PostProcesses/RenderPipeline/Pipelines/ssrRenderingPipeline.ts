@@ -843,8 +843,18 @@ export class SSRRenderingPipeline extends PostProcessRenderPipeline {
 
             if (camera) {
                 this._depthRendererCamera = camera;
-                this._depthRenderer = new DepthRenderer(this._scene, undefined, undefined, undefined, Constants.TEXTURE_NEAREST_SAMPLINGMODE, true, "SSRBackDepth");
-                this._depthRenderer.clearColor.r = 1e8; // "infinity": put a big value because we use the storeCameraSpaceZ mode
+                this._depthRenderer = new DepthRenderer(
+                    this._scene,
+                    undefined,
+                    undefined,
+                    this._useScreenspaceDepth,
+                    Constants.TEXTURE_NEAREST_SAMPLINGMODE,
+                    !this._useScreenspaceDepth,
+                    "SSRBackDepth"
+                );
+                if (!this._useScreenspaceDepth) {
+                    this._depthRenderer.clearColor.r = 1e8; // "infinity": put a big value because we use the storeCameraSpaceZ mode
+                }
                 this._depthRenderer.reverseCulling = true; // we generate depth for the back faces
                 this._depthRenderer.forceDepthWriteTransparentMeshes = this._backfaceForceDepthWriteTransparentMeshes;
 
@@ -1165,6 +1175,10 @@ export class SSRRenderingPipeline extends PostProcessRenderPipeline {
         if (this.useFresnel) {
             defines += "#define SSR_BLEND_WITH_FRESNEL\n";
 
+            if (this._useScreenspaceDepth) {
+                defines += "#define SSRAYTRACE_SCREENSPACE_DEPTH";
+            }
+
             uniformNames.push("projection", "invProjectionMatrix", "nearPlaneZ", "farPlaneZ");
             samplerNames.push("depthSampler", "normalSampler");
         }
@@ -1221,13 +1235,13 @@ export class SSRRenderingPipeline extends PostProcessRenderPipeline {
                 const roughnessIndex = geometryBufferRenderer.getTextureIndex(GeometryBufferRenderer.REFLECTIVITY_TEXTURE_TYPE);
                 effect.setTexture("reflectivitySampler", geometryBufferRenderer.getGBuffer().textures[roughnessIndex]);
                 if (this.useFresnel) {
-                    const camera = this._scene.activeCamera;
-                    if (camera) {
-                        effect.setFloat("nearPlaneZ", camera.minZ);
-                        effect.setFloat("farPlaneZ", camera.maxZ);
-                    }
                     effect.setTexture("normalSampler", geometryBufferRenderer.getGBuffer().textures[1]);
                     if (this._useScreenspaceDepth) {
+                        const camera = this._scene.activeCamera;
+                        if (camera) {
+                            effect.setFloat("nearPlaneZ", camera.minZ);
+                            effect.setFloat("farPlaneZ", camera.maxZ);
+                        }
                         const depthIndex = geometryBufferRenderer.getTextureIndex(GeometryBufferRenderer.SCREENSPACE_DEPTH_TEXTURE_TYPE);
                         effect.setTexture("depthSampler", geometryBufferRenderer.getGBuffer().textures[depthIndex]);
                     } else {
