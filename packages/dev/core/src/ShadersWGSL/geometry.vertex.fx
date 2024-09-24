@@ -54,7 +54,7 @@ varying vViewPos: vec4f;
 varying vPositionW: vec3f;
 #endif
 
-#ifdef VELOCITY
+#if defined(VELOCITY) || defined(VELOCITY_LINEAR)
 uniform previousViewProjection: mat4x4f;
 
 varying vCurrentPosition: vec4f;
@@ -77,7 +77,7 @@ fn main(input : VertexInputs) -> FragmentInputs {
 
 #include<instancesVertex>
 
-	#if defined(VELOCITY) && !defined(BONES_VELOCITY_ENABLED)
+	#if (defined(VELOCITY) || defined(VELOCITY_LINEAR)) && !defined(BONES_VELOCITY_ENABLED)
 	// Compute velocity before bones computation
 	vCurrentPosition = scene.viewProjection * finalWorld * vec4f(positionUpdated, 1.0);
 	vPreviousPosition = uniforms.previousViewProjection * finalPreviousWorld *  vec4f(positionUpdated, 1.0);
@@ -100,7 +100,7 @@ fn main(input : VertexInputs) -> FragmentInputs {
 
 	vertexOutputs.vViewPos = scene.view * worldPos;
 
-	#if defined(VELOCITY) && defined(BONES_VELOCITY_ENABLED)
+	#if (defined(VELOCITY) || defined(VELOCITY_LINEAR)) && defined(BONES_VELOCITY_ENABLED)
 		vertexOutputs.vCurrentPosition = scene.viewProjection * finalWorld *  vec4f(positionUpdated, 1.0);
 
 		#if NUM_BONE_INFLUENCERS > 0
