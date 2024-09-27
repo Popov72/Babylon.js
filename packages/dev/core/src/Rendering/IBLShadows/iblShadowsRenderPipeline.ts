@@ -566,6 +566,22 @@ export class IblShadowsRenderPipeline extends PostProcessRenderPipeline {
     }
 
     /**
+     * Defines the default texture types and formats used by the geometry buffer renderer.
+     */
+    public static GeometryBufferTextureTypesAndFormats: { [key: number]: { textureType: number; textureFormat: number } } = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        0: { textureType: Constants.TEXTURETYPE_FLOAT, textureFormat: Constants.TEXTUREFORMAT_R }, // depth
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        1: { textureType: Constants.TEXTURETYPE_UNSIGNED_INT_2_10_10_10_REV, textureFormat: Constants.TEXTUREFORMAT_RGBA }, // normal
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        2: { textureType: Constants.TEXTURETYPE_HALF_FLOAT, textureFormat: Constants.TEXTUREFORMAT_RGBA }, // position
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        5: { textureType: Constants.TEXTURETYPE_HALF_FLOAT, textureFormat: Constants.TEXTUREFORMAT_R }, // screenspace depth
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        6: { textureType: Constants.TEXTURETYPE_HALF_FLOAT, textureFormat: Constants.TEXTUREFORMAT_RGBA }, // linear velocity
+    };
+
+    /**
      * @param name The rendering pipeline name
      * @param scene The scene linked to this pipeline
      * @param options Options to configure the pipeline
@@ -576,7 +592,7 @@ export class IblShadowsRenderPipeline extends PostProcessRenderPipeline {
         this.scene = scene;
         // If there are specific formats needed per texture, you can create the
         // geometry buffer renderer outside of this pipeline.
-        const geometryBufferRenderer = scene.enableGeometryBufferRenderer();
+        const geometryBufferRenderer = scene.enableGeometryBufferRenderer(undefined, undefined, IblShadowsRenderPipeline.GeometryBufferTextureTypesAndFormats);
         if (!geometryBufferRenderer) {
             Logger.Error("Geometry buffer renderer is required for IBL shadows to work.");
             return;
@@ -678,7 +694,8 @@ export class IblShadowsRenderPipeline extends PostProcessRenderPipeline {
             samplers: ["sceneTexture"],
             samplingMode: Constants.TEXTURE_BILINEAR_SAMPLINGMODE,
             engine: this.scene.getEngine(),
-            textureType: Constants.TEXTURETYPE_UNSIGNED_BYTE,
+            textureFormat: Constants.TEXTUREFORMAT_RG,
+            textureType: Constants.TEXTURETYPE_HALF_FLOAT,
             reusable: false,
             shaderLanguage: isWebGPU ? ShaderLanguage.WGSL : ShaderLanguage.GLSL,
             extraInitializations: (useWebGPU: boolean, list: Promise<any>[]) => {

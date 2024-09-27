@@ -249,7 +249,7 @@ export class _IblShadowsAccumulationPass {
             width: this._engine.getRenderWidth(),
             height: this._engine.getRenderHeight(),
             textureFormat: Constants.TEXTUREFORMAT_RG,
-            textureType: Constants.TEXTURETYPE_HALF_FLOAT,
+            textureType: Constants.TEXTURETYPE_UNSIGNED_BYTE,
             samplingMode: Constants.TEXTURE_NEAREST_SAMPLINGMODE,
             uniforms: ["accumulationParameters"],
             samplers: ["oldAccumulationSampler", "prevLocalPositionSampler", "localPositionSampler", "motionSampler"],

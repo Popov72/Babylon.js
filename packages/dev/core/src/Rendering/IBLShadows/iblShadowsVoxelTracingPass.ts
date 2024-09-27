@@ -258,8 +258,8 @@ export class _IblShadowsVoxelTracingPass {
         const ppOptions: PostProcessOptions = {
             width: this._engine.getRenderWidth(),
             height: this._engine.getRenderHeight(),
-            textureFormat: Constants.TEXTUREFORMAT_RG,
-            textureType: Constants.TEXTURETYPE_UNSIGNED_BYTE,
+            textureFormat: Constants.TEXTUREFORMAT_RGBA,
+            textureType: Constants.TEXTURETYPE_HALF_FLOAT,
             samplingMode: Constants.TEXTURE_NEAREST_SAMPLINGMODE,
             uniforms: ["viewMtx", "projMtx", "invProjMtx", "invViewMtx", "wsNormalizationMtx", "shadowParameters", "offsetDataParameters", "sssParameters", "shadowOpacity"],
             samplers: ["voxelGridSampler", "icdfySampler", "icdfxSampler", "blueNoiseSampler", "worldNormalSampler", "depthSampler", "worldPositionSampler"],
@@ -276,7 +276,6 @@ export class _IblShadowsVoxelTracingPass {
             },
         };
         this._outputPP = new PostProcess("voxelTracingPass", "iblShadowVoxelTracing", ppOptions);
-        this._outputPP.autoClear = false;
         this._outputPP.onApplyObservable.add((effect) => {
             this._updatePostProcess(effect, this._scene.activeCamera!);
         });
