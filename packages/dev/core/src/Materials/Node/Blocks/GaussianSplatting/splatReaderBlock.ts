@@ -4,6 +4,10 @@ import type { NodeMaterialBuildState } from "../../nodeMaterialBuildState";
 import { NodeMaterialBlockTargets } from "../../Enums/nodeMaterialBlockTargets";
 import type { NodeMaterialConnectionPoint } from "../../nodeMaterialBlockConnectionPoint";
 import { RegisterClass } from "../../../../Misc/typeStore";
+import { GaussianSplattingMaterial } from "core/Materials/GaussianSplatting/gaussianSplattingMaterial";
+import type { Effect } from "core/Materials/effect";
+import type { Mesh } from "core/Meshes/mesh";
+import type { NodeMaterial } from "../../nodeMaterial";
 
 /**
  * Block used for Reading components of the Gaussian Splatting
@@ -63,12 +67,24 @@ export class SplatReaderBlock extends NodeMaterialBlock {
         state._excludeVariableName("vPosition");
     }
 
+    public override bind(effect: Effect, nodeMaterial: NodeMaterial, mesh?: Mesh) {
+        if (!mesh) {
+            return;
+        }
+
+        const scene = mesh.getScene();
+
+        GaussianSplattingMaterial.BindEffect(mesh as Mesh, effect, scene);
+    }
+
     protected override _buildBlock(state: NodeMaterialBuildState) {
         super._buildBlock(state);
 
         if (state.target === NodeMaterialBlockTargets.Fragment) {
             return;
         }
+
+        state.sharedData.bindableBlocks.push(this);
 
         // Emit code
         const comments = `//${this.name}`;
