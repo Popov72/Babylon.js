@@ -84,11 +84,19 @@ export class GaussianSplattingMesh extends Mesh {
      */
     public override set material(value: Material) {
         this._material = value;
-
+        this._material.backFaceCulling = true;
+        this._material.cullBackFaces = false;
         this._clearObservable();
         if (value.getClassName() === "NodeMaterial") {
             value.onBindObservable.add(this._materialBindCallback, undefined, undefined, this);
         }
+    }
+
+    /**
+     * get rendering material
+     */
+    public override get material(): Nullable<Material> {
+        return this._material;
     }
 
     private _materialBindCallback(mesh: AbstractMesh | undefined) {
@@ -102,13 +110,6 @@ export class GaussianSplattingMesh extends Mesh {
 
     private _clearObservable(): void {
         this._material?.onBindObservable.removeCallback(this._materialBindCallback);
-    }
-
-    /**
-     * get rendering material
-     */
-    public override get material(): Nullable<Material> {
-        return this._material;
     }
 
     /**
@@ -384,6 +385,8 @@ export class GaussianSplattingMesh extends Mesh {
      * @param doNotRecurse Set to true to not recurse into each children (recurse into each children by default)
      */
     public override dispose(doNotRecurse?: boolean): void {
+        this._clearObservable();
+
         this._covariancesATexture?.dispose();
         this._covariancesBTexture?.dispose();
         this._centersTexture?.dispose();

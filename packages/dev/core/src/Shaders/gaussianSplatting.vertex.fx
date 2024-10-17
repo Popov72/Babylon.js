@@ -25,7 +25,7 @@ uniform sampler2D colorsTexture;
 varying vec4 vColor;
 varying vec2 vPosition;
 
-#include<gaussianSplattingVertexDeclaration>
+#include<gaussianSplatting>
 
 void main () {
     Splat splat = readSplat(splatIndex);
@@ -34,14 +34,10 @@ void main () {
 
     vec4 worldPos = world * vec4(splat.center, 1.0);
 
-    mat4 modelView = view * world;
-    vec4 camspace = view * worldPos;
-    vec4 pos2d = projection * camspace;
-
     vColor = splat.color;
     vPosition = position;
 
-    gl_Position = gaussianSplatting(position, worldPos.xyz, vec3(1.,1.,1.), covA, covB, view, projection);
+    gl_Position = gaussianSplatting(position, worldPos.xyz, vec2(1.,1.), covA, covB, world, view, projection);
 
 #include<clipPlaneVertex>
 #include<fogVertex>
