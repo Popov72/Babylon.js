@@ -14,19 +14,18 @@ var icdfySampler: texture_2d<f32>;
 var voxelGridSamplerSampler: sampler;
 var voxelGridSampler: texture_3d<f32>;
 
-// shadow parameters: var nbDirs: i32, var frameId: i32, var downscale: i32, var envRot: f32
+// shadow parameters: var nbDirs: i32, var frameId: i32, unused, var envRot: f32
 uniform shadowParameters: vec4f;
 
 #define SHADOWdirs uniforms.shadowParameters.x
 #define SHADOWframe uniforms.shadowParameters.y
-#define SHADOWdownscale uniforms.shadowParameters.z
 #define SHADOWenvRot uniforms.shadowParameters.w
 
-// morton code offset, max voxel grid mip
-uniform offsetDataParameters: vec4f;
+// voxel tracing bias parameters (normal bias, direction bias, unused, max
+// mip count)
+uniform voxelBiasParameters : vec4f;
 
-#define PixelOffset uniforms.offsetDataParameters.xy
-#define highestMipLevel uniforms.offsetDataParameters.z
+#define highestMipLevel uniforms.voxelBiasParameters.z
 
 // screen space shadow parameters
 uniform sssParameters: vec4f;
@@ -360,9 +359,10 @@ fn voxelShadow(wsOrigin: vec3f, wsDirection: vec3f, wsNormal: vec3f,
   genTB(wsDirection, &T, &B);
   var DitherXY: vec2f = sqrt(DitherNoise.x) *  vec2f(cos(2.0 * PI * DitherNoise.y),
                                              sin(2.0 * PI * DitherNoise.y));
-  var Dithering: vec3f =
-      (2.0 * wsNormal + 3.0 * wsDirection + DitherXY.x * T + DitherXY.y * B) /
-      vxResolution;
+  var Dithering : vec3f = (uniforms.voxelBiasParameters.x * wsNormal +
+                           uniforms.voxelBiasParameters.y * wsDirection +
+                           DitherXY.x * T + DitherXY.y * B) /
+                          vxResolution;
   var O: vec3f = 0.5 * wsOrigin + 0.5 + Dithering;
 
   var ray_vs = make_ray(O, wsDirection, 0.0, 10.0);
@@ -393,17 +393,15 @@ fn voxelShadow(wsOrigin: vec3f, wsDirection: vec3f, wsNormal: vec3f,
 fn main(input: FragmentInputs) -> FragmentOutputs {
   var nbDirs = u32(SHADOWdirs);
   var frameId = u32(SHADOWframe);
-  var downscale = i32(SHADOWdownscale);
   var envRot: f32 = SHADOWenvRot;
 
   var Resolution: vec2f =  vec2f(textureDimensions(depthSampler, 0));
   var currentPixel = vec2i(fragmentInputs.vUV * Resolution);
-  var PixelCoord = vec2i(vec2f(currentPixel * downscale) + PixelOffset.xy);
   var GlobalIndex =
-      (frameId * u32(Resolution.y) + u32(PixelCoord.y)) * u32(Resolution.x) +
-      u32(PixelCoord.x);
+      (frameId * u32(Resolution.y) + u32(currentPixel.y)) * u32(Resolution.x) +
+      u32(currentPixel.x);
 
-  var N : vec3f = textureLoad(worldNormalSampler, PixelCoord, 0).xyz;
+  var N : vec3f = textureLoad(worldNormalSampler, currentPixel, 0).xyz;
   if (length(N) < 0.01) {
     fragmentOutputs.color = vec4f(1.0, 1.0, 0.0, 1.0);
     return fragmentOutputs;
@@ -412,22 +410,26 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // TODO: Move this matrix into a uniform
   var normalizedRotation: f32 = envRot / (2.0 * PI);
 
-  var depth: f32 = textureLoad(depthSampler, PixelCoord, 0).x;
-  #ifndef IS_NDC_HALF_ZRANGE
-    depth = depth * 2.0 - 1.0;
-  #endif
-  var temp: vec2f = (vec2f(PixelCoord) + vec2f(0.5)) * 2.0 / Resolution - vec2f(1.0);
-  var VP: vec4f = uniforms.invProjMtx * vec4f(temp.x, -temp.y, depth, 1.0);
+  var depth : f32 = textureLoad(depthSampler, currentPixel, 0).x;
+#ifndef IS_NDC_HALF_ZRANGE
+  depth = depth * 2.0 - 1.0;
+#endif
+  var temp : vec2f = (vec2f(currentPixel) + vec2f(0.5)) * 2.0 / Resolution -
+                     vec2f(1.0);
+  var VP : vec4f = uniforms.invProjMtx * vec4f(temp.x, -temp.y, depth, 1.0);
   VP /= VP.w;
 
   N = normalize(N);
-  var noise: vec3f = textureLoad(blueNoiseSampler, PixelCoord & vec2i(0xFF), 0).xyz;
+  var noise
+      : vec3f =
+            textureLoad(blueNoiseSampler, currentPixel & vec2i(0xFF), 0).xyz;
   noise.z = fract(noise.z + goldenSequence(frameId * nbDirs));
 
 #ifdef VOXEL_MARCH_DIAGNOSTIC_INFO_OPTION
   var heat: f32 = 0.0f;
 #endif
   var shadowAccum: f32 = 0.0;
+  var sampleCount : u32 = 0;
   for (var i: u32 = 0; i < nbDirs; i++) {
     var dirId: u32 = nbDirs * GlobalIndex + i;
     var L: vec4f;
@@ -482,16 +484,15 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
                                          abs(2.0 * noise.z - 1.0));
       opacity = max(opacity, ssShadow);
       shadowAccum += min(1.0 - opacity, smoothstep(-0.1, 0.2, cosNL));
-    } else {
-      shadowAccum += min(1.0 - opacity, smoothstep(-0.1, 0.2, cosNL));
+      sampleCount++;
     }
     noise.z = fract(noise.z + GOLD);
   }
 #ifdef VOXEL_MARCH_DIAGNOSTIC_INFO_OPTION
   fragmentOutputs.color =
-       vec4f(shadowAccum /  f32(nbDirs), heat /  f32(nbDirs), 0.0, 1.0);
+      vec4f(shadowAccum / f32(sampleCount), heat / f32(sampleCount), 0.0, 1.0);
 #else
-  fragmentOutputs.color =  vec4f(shadowAccum /  f32(nbDirs), 0.0, 0.0, 1.0);
+  fragmentOutputs.color = vec4f(shadowAccum / f32(sampleCount), 0.0, 0.0, 1.0);
 #endif
   // fragmentOutputs.color =  vec4f(1.0, 1.0, 0.0, 0.0);
 }

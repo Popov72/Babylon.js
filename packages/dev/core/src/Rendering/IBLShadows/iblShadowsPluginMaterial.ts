@@ -22,8 +22,6 @@ class MaterialIBLShadowsRenderDefines extends MaterialDefines {
  * Plugin used to render the global illumination contribution.
  */
 export class IBLShadowsPluginMaterial extends MaterialPluginBase {
-    private _isPBR: boolean;
-
     /**
      * Defines the name of the plugin.
      */
@@ -151,7 +149,7 @@ export class IBLShadowsPluginMaterial extends MaterialPluginBase {
 
                     float computeIndirectShadow() {
                         vec2 uv = gl_FragCoord.xy / renderTargetSize;
-                        float shadowValue = toLinearSpace(texture2D(iblShadowsTexture, uv).r);
+                        float shadowValue = texture2D(iblShadowsTexture, uv).r;
                         return mix(shadowValue, 1.0, 1.0 - shadowOpacity);
                     }
                 #endif
