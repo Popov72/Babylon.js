@@ -142,10 +142,6 @@ export class FragmentOutputBlock extends NodeMaterialBlock {
         if ((this.useLogarithmicDepth || nodeMaterial.useLogarithmicDepth) && mesh) {
             BindLogDepth(undefined, effect, mesh.getScene());
         }
-
-        if (this.additionalColor.connectedPoint) {
-            effect.setFloat("useAdditionalColor", nodeMaterial._useAdditionalColor ? 1.0 : 0.0);
-        }
     }
 
     protected override _buildBlock(state: NodeMaterialBuildState) {
@@ -164,12 +160,6 @@ export class FragmentOutputBlock extends NodeMaterialBlock {
         if (this.useLogarithmicDepth || state.sharedData.nodeMaterial.useLogarithmicDepth) {
             state._emitUniformFromString("logarithmicDepthConstant", NodeMaterialBlockConnectionPointTypes.Float);
             state._emitVaryingFromString("vFragmentDepth", NodeMaterialBlockConnectionPointTypes.Float);
-            registerToBindables = true;
-        }
-
-        if (additionalColor.connectedPoint) {
-            state._excludeVariableName("useAdditionalColor");
-            state._emitUniformFromString("useAdditionalColor", NodeMaterialBlockConnectionPointTypes.Float);
             registerToBindables = true;
         }
 
@@ -196,13 +186,13 @@ export class FragmentOutputBlock extends NodeMaterialBlock {
             if (a.connectedPoint) {
                 aValue = a.associatedVariableName;
             }
-            state.compilationString += `if (useAdditionalColor != 0.){\r\n`;
+            state.compilationString += `#ifdef GENERATE_GLOW_COLOR\r\n`;
             if (additionalColor.connectedPoint.type === NodeMaterialBlockConnectionPointTypes.Float) {
                 state.compilationString += `${outputString}  = ${vec4}(${additionalColor.associatedVariableName}, ${additionalColor.associatedVariableName}, ${additionalColor.associatedVariableName}, ${aValue});\n`;
             } else {
                 state.compilationString += `${outputString}  = ${vec4}(${additionalColor.associatedVariableName}, ${aValue});\n`;
             }
-            state.compilationString += `} else {\r\n`;
+            state.compilationString += `#else\r\n`;
         }
 
         if (rgba.connectedPoint) {
@@ -228,7 +218,7 @@ export class FragmentOutputBlock extends NodeMaterialBlock {
         }
 
         if (additionalColor.connectedPoint) {
-            state.compilationString += `}\r\n`;
+            state.compilationString += `#endif\r\n`;
         }
 
         state.compilationString += `#ifdef ${this._linearDefineName}\n`;

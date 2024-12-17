@@ -126,6 +126,8 @@ export class GlowLayer extends EffectLayer {
      */
     public static DefaultTextureRatio = 0.5;
 
+    public static RenderPassIds: Set<number> = new Set();
+
     /**
      * Sets the kernel size of the blur.
      */
@@ -249,6 +251,16 @@ export class GlowLayer extends EffectLayer {
      */
     public getEffectName(): string {
         return GlowLayer.EffectName;
+    }
+
+    protected override _createMainTexture(): void {
+        super._createMainTexture();
+        GlowLayer.RenderPassIds.add(this._mainTexture.renderPassId);
+    }
+
+    protected override _disposeTextureAndPostProcesses(): void {
+        GlowLayer.RenderPassIds.delete(this._mainTexture.renderPassId);
+        super._disposeTextureAndPostProcesses();
     }
 
     /**
@@ -630,10 +642,6 @@ export class GlowLayer extends EffectLayer {
      */
     protected override _useMeshMaterial(mesh: AbstractMesh): boolean {
         // Specific case of material supporting glow directly
-        if (mesh.material?._supportGlowLayer) {
-            return true;
-        }
-
         if (this._meshesUsingTheirOwnMaterials.length == 0) {
             return false;
         }

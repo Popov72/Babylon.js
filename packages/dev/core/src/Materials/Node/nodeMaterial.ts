@@ -70,6 +70,7 @@ import type { IImageProcessingConfigurationDefines } from "../imageProcessingCon
 import { ShaderLanguage } from "../shaderLanguage";
 import { AbstractEngine } from "../../Engines/abstractEngine";
 import type { LoopBlock } from "./Blocks/loopBlock";
+import { GlowLayer } from "core/Layers/glowLayer";
 
 const onCreatedEffectParameters = { effect: null as unknown as Effect, subMesh: null as unknown as Nullable<SubMesh> };
 
@@ -199,6 +200,8 @@ export class NodeMaterialDefines extends MaterialDefines implements IImageProces
     /** Camera is perspective */
     public CAMERA_PERSPECTIVE = false;
 
+    public GENERATE_GLOW_COLOR = false;
+
     /**
      * Creates a new NodeMaterialDefines
      */
@@ -303,13 +306,6 @@ export class NodeMaterial extends PushMaterial {
     }
 
     private BJSNODEMATERIALEDITOR = this._getGlobalNodeMaterialEditor();
-
-    /** @internal */
-    public _useAdditionalColor = false;
-
-    public override set _glowModeEnabled(value: boolean) {
-        this._useAdditionalColor = value;
-    }
 
     /** Get the inspector from bundle or global
      * @returns the global NME
@@ -708,18 +704,6 @@ export class NodeMaterial extends PushMaterial {
      */
     @serialize()
     public forceAlphaBlending = false;
-
-    public override get _supportGlowLayer() {
-        if (this._fragmentOutputNodes.length === 0) {
-            return false;
-        }
-
-        if (this._fragmentOutputNodes.some((f) => (f as FragmentOutputBlock).additionalColor && (f as FragmentOutputBlock).additionalColor.isConnected)) {
-            return true;
-        }
-
-        return false;
-    }
 
     /**
      * Specifies if the material will require alpha blending
@@ -1582,6 +1566,10 @@ export class NodeMaterial extends PushMaterial {
         this._sharedData.blocksWithDefines.forEach((b) => {
             b.prepareDefines(mesh, this, defines, useInstances, subMesh);
         });
+
+        if (GlowLayer.RenderPassIds.has(scene.getEngine().currentRenderPassId)) {
+            defines.setValue("GENERATE_GLOW_COLOR", true, true);
+        }
 
         // Need to recompile?
         if (defines.isDirty) {

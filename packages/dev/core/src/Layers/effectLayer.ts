@@ -957,9 +957,7 @@ export abstract class EffectLayer {
         this.onBeforeRenderMeshToEffect.notifyObservers(ownerMesh);
 
         if (this._useMeshMaterial(renderingMesh)) {
-            subMesh.getMaterial()!._glowModeEnabled = true;
             renderingMesh.render(subMesh, enableAlphaMode, replacementMesh || undefined);
-            subMesh.getMaterial()!._glowModeEnabled = false;
         } else if (this._isReady(subMesh, hardwareInstancedRendering, this._emissiveTextureAndColor.texture)) {
             const renderingMaterial = effectiveMesh._internalAbstractMeshDataInfo._materialForRenderPass?.[engine.currentRenderPassId];
 
@@ -1099,7 +1097,7 @@ export abstract class EffectLayer {
     /**
      * Dispose only the render target textures and post process.
      */
-    private _disposeTextureAndPostProcesses(): void {
+    protected _disposeTextureAndPostProcesses(): void {
         this._mainTexture.dispose();
 
         for (let i = 0; i < this._postProcesses.length; i++) {
