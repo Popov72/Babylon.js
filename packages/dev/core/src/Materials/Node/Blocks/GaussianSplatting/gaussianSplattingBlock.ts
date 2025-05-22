@@ -9,6 +9,7 @@ import type { GaussianSplattingMesh } from "core/Meshes/GaussianSplatting/gaussi
 import { ShaderLanguage } from "core/Materials/shaderLanguage";
 import type { AbstractMesh } from "core/Meshes/abstractMesh";
 import type { NodeMaterial, NodeMaterialDefines } from "../../nodeMaterial";
+import { Logger } from "core/Misc";
 
 /**
  * Block used for the Gaussian Splatting
@@ -30,6 +31,7 @@ export class GaussianSplattingBlock extends NodeMaterialBlock {
         this.registerInput("world", NodeMaterialBlockConnectionPointTypes.Matrix, false, NodeMaterialBlockTargets.Vertex);
         this.registerInput("view", NodeMaterialBlockConnectionPointTypes.Matrix, false, NodeMaterialBlockTargets.Vertex);
         this.registerInput("projection", NodeMaterialBlockConnectionPointTypes.Matrix, false, NodeMaterialBlockTargets.Vertex);
+        this.registerInput("cameraPosition", NodeMaterialBlockConnectionPointTypes.Vector3, true, NodeMaterialBlockTargets.Vertex);
 
         this.registerOutput("splatVertex", NodeMaterialBlockConnectionPointTypes.Vector4, NodeMaterialBlockTargets.Vertex);
         this.registerOutput("SH", NodeMaterialBlockConnectionPointTypes.Color3, NodeMaterialBlockTargets.Vertex);
@@ -76,6 +78,13 @@ export class GaussianSplattingBlock extends NodeMaterialBlock {
      */
     public get projection(): NodeMaterialConnectionPoint {
         return this._inputs[4];
+    }
+
+    /**
+     * Gets the camera position input component
+     */
+    public get cameraPosition(): NodeMaterialConnectionPoint {
+        return this._inputs[5];
     }
 
     /**
@@ -154,26 +163,33 @@ export class GaussianSplattingBlock extends NodeMaterialBlock {
             uniforms = ", uniforms.focal, uniforms.invViewport, uniforms.kernelSize";
         }
         if (this.SH.isConnected) {
-            state.compilationString += `#if ${this._shDegreeDefineName} > 0\n`;
-
-            if (state.shaderLanguage === ShaderLanguage.WGSL) {
-                state.compilationString += `
-                let worldRot: mat3x3f =  mat3x3f(${world.associatedVariableName}[0].xyz, ${world.associatedVariableName}[1].xyz, ${world.associatedVariableName}[2].xyz);
-                let normWorldRot: mat3x3f = inverseMat3(worldRot);
-                var dir: vec3f = normalize(normWorldRot * (${splatPosition.associatedVariableName}.xyz - scene.vEyePosition.xyz));\n`;
+            if (!this.cameraPosition.isConnected) {
+                Logger.Warn("GaussianSplattingBlock: cameraPosition is not connected, SH will be disabled");
+                state.compilationString += `${state._declareOutput(sh)} = vec3${addF}(0.,0.,0.);\n`;
             } else {
-                state.compilationString += `
-                    mat3 worldRot = mat3(${world.associatedVariableName});
-                    mat3 normWorldRot = inverseMat3(worldRot);
-                    vec3 dir = normalize(normWorldRot * (${splatPosition.associatedVariableName}.xyz - vEyePosition.xyz));\n`;
-            }
+                const cameraPosition = this.cameraPosition.associatedVariableName;
 
-            state.compilationString += `
-            dir *= vec3${addF}(1.,1.,-1.);
-            ${state._declareOutput(sh)} = computeSH(splat, splat.color.xyz, dir) - splat.color.xyz;
-            #else
-            ${state._declareOutput(sh)} = vec3${addF}(0.,0.,0.);
-            #endif;\n`;
+                state.compilationString += `#if ${this._shDegreeDefineName} > 0\n`;
+
+                if (state.shaderLanguage === ShaderLanguage.WGSL) {
+                    state.compilationString += `
+                    let worldRot: mat3x3f =  mat3x3f(${world.associatedVariableName}[0].xyz, ${world.associatedVariableName}[1].xyz, ${world.associatedVariableName}[2].xyz);
+                    let normWorldRot: mat3x3f = inverseMat3(worldRot);
+                    var dir: vec3f = normalize(normWorldRot * (${splatPosition.associatedVariableName}.xyz - ${cameraPosition}));\n`;
+                } else {
+                    state.compilationString += `
+                        mat3 worldRot = mat3(${world.associatedVariableName});
+                        mat3 normWorldRot = inverseMat3(worldRot);
+                        vec3 dir = normalize(normWorldRot * (${splatPosition.associatedVariableName}.xyz - ${cameraPosition}));\n`;
+                }
+
+                state.compilationString += `
+                dir *= vec3${addF}(1.,1.,-1.);
+                ${state._declareOutput(sh)} = computeSH(splat, splat.color.xyz, dir) - splat.color.xyz;
+                #else
+                ${state._declareOutput(sh)} = vec3${addF}(0.,0.,0.);
+                #endif;\n`;
+            }
         } else {
             state.compilationString += `${state._declareOutput(sh)} = vec3${addF}(0.,0.,0.);`;
         }
