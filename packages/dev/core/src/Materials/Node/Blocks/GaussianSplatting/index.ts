@@ -3,5 +3,5 @@ export * from "./splatReaderBlock";
 export * from "./gaussianBlock";
 
 // Gaussian
-export * from "../../../../ShadersWGSL/ShadersInclude/gaussianSplattingVertexDeclaration";
-export * from "../../../../Shaders/ShadersInclude/gaussianSplattingVertexDeclaration";
+export * from "../../../../ShadersWGSL/ShadersInclude/gaussianSplattingUboDeclaration";
+export * from "../../../../Shaders/ShadersInclude/gaussianSplattingUboDeclaration";

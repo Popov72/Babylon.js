@@ -9,7 +9,10 @@ import type { GaussianSplattingMesh } from "core/Meshes/GaussianSplatting/gaussi
 import { ShaderLanguage } from "core/Materials/shaderLanguage";
 import type { AbstractMesh } from "core/Meshes/abstractMesh";
 import type { NodeMaterial, NodeMaterialDefines } from "../../nodeMaterial";
-import { Logger } from "core/Misc";
+import type { Effect } from "core/Materials/effect";
+import type { Mesh } from "core/Meshes/mesh";
+import { BindSceneUniformBuffer } from "core/Materials/materialHelper.functions";
+import { Matrix } from "core/Maths/math.vector";
 
 /**
  * Block used for the Gaussian Splatting
@@ -31,7 +34,6 @@ export class GaussianSplattingBlock extends NodeMaterialBlock {
         this.registerInput("world", NodeMaterialBlockConnectionPointTypes.Matrix, false, NodeMaterialBlockTargets.Vertex);
         this.registerInput("view", NodeMaterialBlockConnectionPointTypes.Matrix, false, NodeMaterialBlockTargets.Vertex);
         this.registerInput("projection", NodeMaterialBlockConnectionPointTypes.Matrix, false, NodeMaterialBlockTargets.Vertex);
-        this.registerInput("cameraPosition", NodeMaterialBlockConnectionPointTypes.Vector3, true, NodeMaterialBlockTargets.Vertex);
 
         this.registerOutput("splatVertex", NodeMaterialBlockConnectionPointTypes.Vector4, NodeMaterialBlockTargets.Vertex);
         this.registerOutput("SH", NodeMaterialBlockConnectionPointTypes.Color3, NodeMaterialBlockTargets.Vertex);
@@ -81,13 +83,6 @@ export class GaussianSplattingBlock extends NodeMaterialBlock {
     }
 
     /**
-     * Gets the camera position input component
-     */
-    public get cameraPosition(): NodeMaterialConnectionPoint {
-        return this._inputs[5];
-    }
-
-    /**
      * Gets the splatVertex output component
      */
     public get splatVertex(): NodeMaterialConnectionPoint {
@@ -122,6 +117,25 @@ export class GaussianSplattingBlock extends NodeMaterialBlock {
         }
     }
 
+    public override updateUniformsAndSamples(_state: NodeMaterialBuildState, _nodeMaterial: NodeMaterial, _defines: NodeMaterialDefines, uniformBuffers: string[]) {
+        uniformBuffers.push("Scene");
+        uniformBuffers.push("Mesh");
+    }
+
+    public override bind(effect: Effect, _nodeMaterial: NodeMaterial, mesh?: Mesh) {
+        if (!mesh) {
+            return;
+        }
+
+        const scene = mesh.getScene();
+
+        BindSceneUniformBuffer(effect, scene.getSceneUniformBuffer());
+        scene.finalizeSceneUbo();
+
+        mesh.getMeshUniformBuffer().bindToEffect(effect, "Mesh");
+        mesh.transferToEffect(Matrix.IdentityReadOnly as Matrix);
+    }
+
     protected override _buildBlock(state: NodeMaterialBuildState) {
         super._buildBlock(state);
 
@@ -130,10 +144,13 @@ export class GaussianSplattingBlock extends NodeMaterialBlock {
         }
 
         state.sharedData.blocksWithDefines.push(this);
+        state.sharedData.dynamicUniformBlocks.push(this);
+        state.sharedData.bindableBlocks.push(this);
+
         this._shDegreeDefineName = state._getFreeDefineName("SH_DEGREE");
 
         const comments = `//${this.name}`;
-        state._emitFunctionFromInclude("gaussianSplattingVertexDeclaration", comments);
+        state._emitFunctionFromInclude("gaussianSplattingUboDeclaration", comments);
         state._emitFunctionFromInclude("gaussianSplatting", comments);
         state._emitFunctionFromInclude("helperFunctions", comments);
         state._emitUniformFromString("focal", NodeMaterialBlockConnectionPointTypes.Vector2);
@@ -163,33 +180,26 @@ export class GaussianSplattingBlock extends NodeMaterialBlock {
             uniforms = ", uniforms.focal, uniforms.invViewport, uniforms.kernelSize";
         }
         if (this.SH.isConnected) {
-            if (!this.cameraPosition.isConnected) {
-                Logger.Warn("GaussianSplattingBlock: cameraPosition is not connected, SH will be disabled");
-                state.compilationString += `${state._declareOutput(sh)} = vec3${addF}(0.,0.,0.);\n`;
-            } else {
-                const cameraPosition = this.cameraPosition.associatedVariableName;
+            state.compilationString += `#if ${this._shDegreeDefineName} > 0\n`;
 
-                state.compilationString += `#if ${this._shDegreeDefineName} > 0\n`;
-
-                if (state.shaderLanguage === ShaderLanguage.WGSL) {
-                    state.compilationString += `
+            if (state.shaderLanguage === ShaderLanguage.WGSL) {
+                state.compilationString += `
                     let worldRot: mat3x3f =  mat3x3f(${world.associatedVariableName}[0].xyz, ${world.associatedVariableName}[1].xyz, ${world.associatedVariableName}[2].xyz);
                     let normWorldRot: mat3x3f = inverseMat3(worldRot);
-                    var dir: vec3f = normalize(normWorldRot * (${splatPosition.associatedVariableName}.xyz - ${cameraPosition}));\n`;
-                } else {
-                    state.compilationString += `
+                    var dir: vec3f = normalize(normWorldRot * (${splatPosition.associatedVariableName}.xyz - scene.vEyePosition.xyz));\n`;
+            } else {
+                state.compilationString += `
                         mat3 worldRot = mat3(${world.associatedVariableName});
                         mat3 normWorldRot = inverseMat3(worldRot);
-                        vec3 dir = normalize(normWorldRot * (${splatPosition.associatedVariableName}.xyz - ${cameraPosition}));\n`;
-                }
+                        vec3 dir = normalize(normWorldRot * (${splatPosition.associatedVariableName}.xyz - vEyePosition.xyz));\n`;
+            }
 
-                state.compilationString += `
+            state.compilationString += `
                 dir *= vec3${addF}(1.,1.,-1.);
                 ${state._declareOutput(sh)} = computeSH(splat, splat.color.xyz, dir) - splat.color.xyz;
                 #else
                 ${state._declareOutput(sh)} = vec3${addF}(0.,0.,0.);
                 #endif;\n`;
-            }
         } else {
             state.compilationString += `${state._declareOutput(sh)} = vec3${addF}(0.,0.,0.);`;
         }
