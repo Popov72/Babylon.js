@@ -3,7 +3,8 @@ import { serialize, expandToProperty, addAccessorsForMaterialProperty } from "..
 import { GetEnvironmentBRDFTexture } from "../../Misc/brdfTextureTools";
 import type { Nullable } from "../../types";
 import { Scene } from "../../scene";
-import { Color3, Color4 } from "../../Maths/math.color";
+import type { Color4 } from "../../Maths/math.color";
+import { Color3 } from "../../Maths/math.color";
 import { ImageProcessingConfiguration } from "../imageProcessingConfiguration";
 import type { BaseTexture } from "../../Materials/Textures/baseTexture";
 import { Texture } from "../../Materials/Textures/texture";
@@ -56,8 +57,8 @@ import { MaterialFlags } from "../materialFlags";
 import type { SubMesh } from "../../Meshes/subMesh";
 import { Logger } from "core/Misc/logger";
 import { UVDefinesMixin } from "../uv.defines";
-import { Vector2, Vector3, Vector4, TmpVectors } from "core/Maths/math.vector";
-import type { Matrix } from "core/Maths/math.vector";
+import { Vector2, Vector4, TmpVectors } from "core/Maths/math.vector";
+import type { Vector3, Matrix } from "core/Maths/math.vector";
 import type { Mesh } from "../../Meshes/mesh";
 import { ImageProcessingMixin } from "../imageProcessing";
 import { PushMaterial } from "../pushMaterial";
@@ -70,9 +71,9 @@ const onCreatedEffectParameters = { effect: null as unknown as Effect, subMesh: 
 class Uniform {
     public name: string;
     public numComponents: number;
-    public linkedProperties: { [name: string]: Property<any> } = {};
+    public linkedProperties: { [name: string]: Property<PropertyType> } = {};
     public populateVectorFromLinkedProperties(vector: Vector4 | Vector3 | Vector2): void {
-        const destinationSize = vector instanceof Vector4 ? 4 : vector instanceof Vector3 ? 3 : vector instanceof Vector2 ? 2 : 1;
+        const destinationSize = vector.dimension[0];
         for (const propKey in this.linkedProperties) {
             const prop = this.linkedProperties[propKey];
             const sourceSize = prop.numComponents;
@@ -99,10 +100,12 @@ class Uniform {
     private static _tmpArray: number[] = [0, 0, 0, 0];
 }
 
+type PropertyType = Vector2 | Vector3 | Vector4 | number | Color3 | Color4;
+
 /**
  * Defines a property for the OpenPBRMaterial.
  */
-class Property<T> {
+class Property<T extends PropertyType> {
     public name: string;
     public targetUniformName: string;
     public defaultValue: T;
@@ -140,18 +143,8 @@ class Property<T> {
     public get numComponents(): number {
         if (typeof this.defaultValue === "number") {
             return 1;
-        } else if (this.defaultValue instanceof Color3) {
-            return 3;
-        } else if (this.defaultValue instanceof Color4) {
-            return 4;
-        } else if (this.defaultValue instanceof Vector2) {
-            return 2;
-        } else if (this.defaultValue instanceof Vector3) {
-            return 3;
-        } else if (this.defaultValue instanceof Vector4) {
-            return 4;
         }
-        return 0; // Default size for unsupported types
+        return this.defaultValue.dimension[0];
     }
 }
 
@@ -1921,7 +1914,7 @@ export class OpenPBRMaterial extends OpenPBRMaterialBase {
                         uniform.populateVectorFromLinkedProperties(TmpVectors.Vector2[0]);
                         ubo.updateFloat2(uniform.name, TmpVectors.Vector2[0].x, TmpVectors.Vector2[0].y);
                     } else if (uniform.numComponents === 1) {
-                        ubo.updateFloat(uniform.name, uniform.linkedProperties[Object.keys(uniform.linkedProperties)[0]].value);
+                        ubo.updateFloat(uniform.name, uniform.linkedProperties[Object.keys(uniform.linkedProperties)[0]].value as number);
                     }
                 });
 
