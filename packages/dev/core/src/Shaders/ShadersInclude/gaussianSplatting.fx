@@ -41,7 +41,9 @@ Splat readSplat(float splatIndex)
     Splat splat;
     vec2 splatUV = getDataUV(splatIndex, dataTextureSize);
     splat.center = texture2D(centersTexture, splatUV);
+#ifndef NO_COLOR
     splat.color = texture2D(colorsTexture, splatUV);
+#endif
     splat.covA = texture2D(covariancesATexture, splatUV) * splat.center.w;
     splat.covB = texture2D(covariancesBTexture, splatUV) * splat.center.w;
 #if SH_DEGREE > 0

@@ -1,7 +1,7 @@
 import type { SubMesh } from "../../Meshes/subMesh";
 import type { AbstractMesh } from "../../Meshes/abstractMesh";
 import type { Mesh } from "../../Meshes/mesh";
-import { Effect, type IEffectCreationOptions } from "../../Materials/effect";
+import type { Effect, IEffectCreationOptions } from "../../Materials/effect";
 import type { Scene } from "../../scene";
 import type { Matrix } from "../../Maths/math.vector";
 import type { GaussianSplattingMesh } from "core/Meshes";
@@ -29,6 +29,7 @@ import {
     PrepareUniformsAndSamplersList,
 } from "../materialHelper.functions";
 import { ShaderLanguage } from "../shaderLanguage";
+import { ShaderStore } from "../../Engines/shaderStore";
 
 /**
  * @internal
@@ -388,7 +389,6 @@ export class GaussianSplattingMaterial extends PushMaterial {
             uniform sampler2D covariancesATexture;
             uniform sampler2D covariancesBTexture;
             uniform sampler2D centersTexture;
-            uniform sampler2D colorsTexture;
 
             varying vec2 vPosition;
             #include<gaussianSplatting>
@@ -416,7 +416,6 @@ export class GaussianSplattingMaterial extends PushMaterial {
             var covariancesATexture: texture_2d<f32>;
             var covariancesBTexture: texture_2d<f32>;
             var centersTexture: texture_2d<f32>;
-            var colorsTexture: texture_2d<f32>;
 
             varying vPosition: vec2f;
 
@@ -437,7 +436,7 @@ export class GaussianSplattingMaterial extends PushMaterial {
             varying vec2 vPosition;
             void main(void) {
                 float A = -dot(vPosition, vPosition);
-                if (A < -1.) discard;
+                if (A < -1.) { discard; }
             }`;
 
         const splatFragmentWGPU = `
@@ -445,13 +444,14 @@ export class GaussianSplattingMaterial extends PushMaterial {
             varying vPosition: vec2f;
             @fragment
             fn main(input: FragmentInputs) -> FragmentOutputs {
-                var A : f32 = -dot(inPosition, inPosition);
-                if (A < -1.) discard;
+                var A : f32 = -dot(fragmentInputs.vPosition, fragmentInputs.vPosition);
+                if (A < -1.) { discard; }
             }`;
 
-        const isWebGPU = shaderLanguage === ShaderLanguage.WGSL;
-        Effect.ShadersStore["gaussianSplattingDepthVertexShader"] = isWebGPU ? splatVertexWGPU : splatVertexWGL;
-        Effect.ShadersStore["gaussianSplattingDepthFragmentShader"] = isWebGPU ? splatFragmentWGPU : splatFragmentWGL;
+        ShaderStore.ShadersStore["gaussianSplattingDepthVertexShader"] = splatVertexWGL;
+        ShaderStore.ShadersStore["gaussianSplattingDepthFragmentShader"] = splatFragmentWGL;
+        ShaderStore.ShadersStoreWGSL["gaussianSplattingDepthVertexShader"] = splatVertexWGPU;
+        ShaderStore.ShadersStoreWGSL["gaussianSplattingDepthFragmentShader"] = splatFragmentWGPU;
 
         const shaderMaterial = new ShaderMaterial(
             "gaussianSplattingDepth",
@@ -466,6 +466,7 @@ export class GaussianSplattingMaterial extends PushMaterial {
                 samplers: GaussianSplattingMaterial._Samplers,
                 uniformBuffers: GaussianSplattingMaterial._UniformBuffers,
                 shaderLanguage: shaderLanguage,
+                defines: ["#define NO_COLOR"],
             }
         );
 

@@ -25,7 +25,9 @@ fn readSplat(splatIndex: f32, dataTextureSize: vec2f) -> Splat {
     let splatUV = getDataUV(splatIndex, dataTextureSize);
     let splatUVi32 = vec2<i32>(i32(splatUV.x), i32(splatUV.y));
     splat.center = textureLoad(centersTexture, splatUVi32, 0);
+#ifndef NO_COLOR
     splat.color = textureLoad(colorsTexture, splatUVi32, 0);
+#endif
     splat.covA = textureLoad(covariancesATexture, splatUVi32, 0) * splat.center.w;
     splat.covB = textureLoad(covariancesBTexture, splatUVi32, 0) * splat.center.w;
 #if SH_DEGREE > 0
