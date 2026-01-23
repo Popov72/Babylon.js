@@ -1,4 +1,17 @@
-import type { AbstractMesh, MorphTargetManager, TransformNode, Immutable, Bone, Nullable, MorphTarget, AnimationGroup, Animation, Node, Skeleton } from "core/index";
+import type {
+    AbstractMesh,
+    MorphTargetManager,
+    TransformNode,
+    Immutable,
+    Bone,
+    Nullable,
+    MorphTarget,
+    AnimationGroup,
+    Animation,
+    Node,
+    Skeleton,
+    TargetedAnimation,
+} from "core/index";
 import { Vector3, Quaternion, TmpVectors } from "core/Maths/math.vector";
 import { Logger } from "../Misc/logger";
 
@@ -37,7 +50,7 @@ export interface IRetargetOptions {
      * between the source and target bone transforms.
      * Default is true.
      */
-    retargetFrameValues?: boolean;
+    retargetAnimationKeys?: boolean;
 }
 
 /**
@@ -161,16 +174,15 @@ export class AnimatorAvatar {
             clonedAnimationGroupName: animationGroup.name,
             fixAnimations: true,
             checkHierarchy: true,
-            retargetFrameValues: true,
+            retargetAnimationKeys: true,
             ...options,
         };
 
         if (localOptions.cloneAnimationGroup) {
-            animationGroup = animationGroup.clone(localOptions.clonedAnimationGroupName!, undefined, true);
+            animationGroup = animationGroup.clone(localOptions.clonedAnimationGroupName!, undefined, true, true);
         }
 
         const mapTransformNodeToRootNode: Map<TransformNode, Node> = new Map<TransformNode, Node>();
-
         const lstAnims = new Set<Animation>();
 
         for (let i = 0; i < animationGroup.targetedAnimations.length; ++i) {
@@ -187,22 +199,10 @@ export class AnimatorAvatar {
 
             switch (animation.targetProperty) {
                 case "influence": {
-                    // This is a morph target animation
-                    const morphTarget = ta.target as MorphTarget;
-                    const key = morphTarget.morphTargetManager?.meshName + "_" + morphTarget.name;
-
-                    if (!this.mapMorphTargetNameToMorphTarget.has(key)) {
-                        if (this.showWarnings) {
-                            Logger.Warn(
-                                `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': "${morphTarget.name}" morph target not found in morph target manager of mesh "${morphTarget.morphTargetManager?.meshName}": animation removed`
-                            );
-                        }
+                    if (!this._retargetMorphTarget(ta, animationGroup.name)) {
                         animationGroup.targetedAnimations.splice(i, 1);
                         i--;
-                        continue;
                     }
-
-                    ta.target = this.mapMorphTargetNameToMorphTarget.get(key)!;
                     break;
                 }
                 case "position":
@@ -215,95 +215,20 @@ export class AnimatorAvatar {
                     const sourceTransformNode = ta.target as TransformNode;
                     const targetBone = this.findBone(sourceTransformNode.name);
 
-                    let rootNode: Node | undefined;
-
-                    if (localOptions.checkHierarchy) {
-                        rootNode = mapTransformNodeToRootNode.get(sourceTransformNode);
-                        if (!rootNode) {
-                            rootNode = this._getRootNode(sourceTransformNode);
-                            mapTransformNodeToRootNode.set(sourceTransformNode, rootNode);
-                        }
-                    }
-
-                    if (!targetBone || (localOptions.checkHierarchy && !this._checkParentHierarchy(targetBone, rootNode!))) {
+                    if (!targetBone) {
                         if (this.showWarnings) {
-                            if (!targetBone) {
-                                Logger.Warn(
-                                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': "${sourceTransformNode.name}" bone not found in any skeleton of avatar: animation removed`
-                                );
-                            } else {
-                                Logger.Warn(
-                                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': parent hierarchy mismatch between bone "${targetBone.name}" and transform node "${sourceTransformNode.name}": animation removed`
-                                );
-                            }
+                            Logger.Warn(
+                                `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': "${sourceTransformNode.name}" bone not found in any skeleton of avatar: animation removed`
+                            );
                         }
-                        animationGroup.targetedAnimations.splice(i, 1);
-                        i--;
-                        continue;
-                    }
-
-                    ta.target = targetBone._linkedTransformNode;
-
-                    if (!localOptions.retargetFrameValues) {
                         break;
                     }
 
-                    const isRootBone = !targetBone.parent;
-                    const keys = animation.getKeys();
-
-                    const sourceTransformNodeInverseRotation = sourceTransformNode.rotationQuaternion!.conjugate();
-                    const sourceTransformationInverseScaling = new Vector3(1 / sourceTransformNode.scaling.x, 1 / sourceTransformNode.scaling.y, 1 / sourceTransformNode.scaling.z);
-                    const targetBoneRotation = targetBone.rotationQuaternion;
-                    const targetBoneScaling = targetBone.scaling;
-
-                    // Difference between target and source
-                    const diffQuaternion = sourceTransformNodeInverseRotation.multiplyToRef(targetBoneRotation, TmpVectors.Quaternion[0]).normalize();
-                    const diffPosition = targetBone.position.subtractToRef(sourceTransformNode.position, TmpVectors.Vector3[0]);
-                    const diffScaling = targetBone.scaling.divideToRef(sourceTransformNode.scaling, TmpVectors.Vector3[1]);
-
-                    switch (animation.targetProperty) {
-                        case "rotationQuaternion": {
-                            if (isRootBone) {
-                                for (const key of keys) {
-                                    const quaternion = (key.value as Quaternion).clone();
-
-                                    key.value = quaternion.multiplyInPlace(diffQuaternion);
-                                }
-                            } else {
-                                for (const key of keys) {
-                                    const quaternion = (key.value as Quaternion).clone();
-                                    const animDiffQuaternion = sourceTransformNodeInverseRotation.multiplyToRef(quaternion, TmpVectors.Quaternion[1]);
-
-                                    key.value = targetBoneRotation.multiplyToRef(animDiffQuaternion, TmpVectors.Quaternion[2]).normalizeToRef(quaternion);
-                                }
-                            }
-                            break;
-                        }
-                        case "position": {
-                            for (const key of keys) {
-                                const position = (key.value as Vector3).clone();
-
-                                key.value = diffPosition.addToRef(position, position);
-                            }
-                            break;
-                        }
-                        case "scaling": {
-                            if (isRootBone) {
-                                for (const key of keys) {
-                                    const scaling = (key.value as Vector3).clone();
-
-                                    key.value = scaling.multiplyInPlace(diffScaling);
-                                }
-                            } else {
-                                for (const key of keys) {
-                                    const scaling = (key.value as Vector3).clone();
-                                    const animDiffScaling = sourceTransformationInverseScaling.multiplyToRef(scaling, TmpVectors.Vector3[2]);
-
-                                    key.value = targetBoneScaling.multiplyToRef(animDiffScaling, scaling);
-                                }
-                            }
-                            break;
-                        }
+                    if (!this._retargetTransformNodeToBone(ta, sourceTransformNode, targetBone, animationGroup.name, mapTransformNodeToRootNode, !!localOptions.checkHierarchy)) {
+                        animationGroup.targetedAnimations.splice(i, 1);
+                        i--;
+                    } else if (localOptions.retargetAnimationKeys) {
+                        this._retargetAnimationKeys(ta.animation, sourceTransformNode, targetBone);
                     }
 
                     break;
@@ -316,6 +241,122 @@ export class AnimatorAvatar {
         }
 
         return animationGroup;
+    }
+
+    private _retargetMorphTarget(ta: TargetedAnimation, animationGroupName: string) {
+        const morphTarget = ta.target as MorphTarget;
+        const key = morphTarget.morphTargetManager?.meshName + "_" + morphTarget.name;
+
+        if (!this.mapMorphTargetNameToMorphTarget.has(key)) {
+            if (this.showWarnings) {
+                Logger.Warn(
+                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroupName}': "${morphTarget.name}" morph target not found in morph target manager of mesh "${morphTarget.morphTargetManager?.meshName}": animation removed`
+                );
+            }
+            return false;
+        }
+
+        ta.target = this.mapMorphTargetNameToMorphTarget.get(key)!;
+
+        return true;
+    }
+
+    private _retargetTransformNodeToBone(
+        ta: TargetedAnimation,
+        sourceTransformNode: TransformNode,
+        targetBone: Bone,
+        animationGroupName: string,
+        mapTransformNodeToRootNode: Map<TransformNode, Node>,
+        checkHierarchy: boolean
+    ) {
+        if (checkHierarchy) {
+            let rootNode = mapTransformNodeToRootNode.get(sourceTransformNode);
+
+            if (!rootNode) {
+                rootNode = this._getRootNode(sourceTransformNode);
+                mapTransformNodeToRootNode.set(sourceTransformNode, rootNode);
+            }
+
+            if (!this._checkParentHierarchy(targetBone, rootNode!)) {
+                if (this.showWarnings) {
+                    Logger.Warn(
+                        `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroupName}': parent hierarchy mismatch between bone "${targetBone.name}" and transform node "${sourceTransformNode.name}": animation removed`
+                    );
+                }
+                return false;
+            }
+        }
+
+        ta.target = targetBone._linkedTransformNode;
+
+        return true;
+    }
+
+    private _retargetAnimationKeys(animation: Animation, sourceTransformNode: TransformNode, targetBone: Bone) {
+        const isRootBone = !targetBone.parent;
+        const keys = animation.getKeys();
+
+        const sourceTransformNodeInverseRotation = sourceTransformNode.rotationQuaternion!.conjugate();
+        const sourceTransformationInverseScaling = new Vector3(1 / sourceTransformNode.scaling.x, 1 / sourceTransformNode.scaling.y, 1 / sourceTransformNode.scaling.z);
+
+        const targetBonePosition = targetBone.position;
+        const targetBoneRotation = targetBone.rotationQuaternion;
+        const targetBoneScaling = targetBone.scaling;
+        // const targetBonePosition = TmpVectors.Vector3[3];
+        // const targetBoneRotation = TmpVectors.Quaternion[2];
+        // const targetBoneScaling = TmpVectors.Vector3[4];
+
+        // targetBone.getBindMatrix().decompose(targetBoneScaling, targetBoneRotation, targetBonePosition);
+
+        // Difference between target and source
+        const diffQuaternion = sourceTransformNodeInverseRotation.multiplyToRef(targetBoneRotation, TmpVectors.Quaternion[0]).normalize();
+        const diffPosition = targetBonePosition.subtractToRef(sourceTransformNode.position, TmpVectors.Vector3[0]);
+        const diffScaling = targetBoneScaling.divideToRef(sourceTransformNode.scaling, TmpVectors.Vector3[1]);
+
+        switch (animation.targetProperty) {
+            case "rotationQuaternion": {
+                if (isRootBone) {
+                    for (const key of keys) {
+                        const quaternion = key.value as Quaternion;
+
+                        key.value = quaternion.multiplyInPlace(diffQuaternion);
+                    }
+                } else {
+                    for (const key of keys) {
+                        const quaternion = key.value as Quaternion;
+                        const animDiffQuaternion = sourceTransformNodeInverseRotation.multiplyToRef(quaternion, TmpVectors.Quaternion[1]);
+
+                        key.value = targetBoneRotation.multiplyToRef(animDiffQuaternion, TmpVectors.Quaternion[1]).normalizeToRef(quaternion);
+                    }
+                }
+                break;
+            }
+            case "position": {
+                for (const key of keys) {
+                    const position = key.value as Vector3;
+
+                    key.value = diffPosition.addToRef(position, position);
+                }
+                break;
+            }
+            case "scaling": {
+                if (isRootBone) {
+                    for (const key of keys) {
+                        const scaling = key.value as Vector3;
+
+                        key.value = scaling.multiplyInPlace(diffScaling);
+                    }
+                } else {
+                    for (const key of keys) {
+                        const scaling = key.value as Vector3;
+                        const animDiffScaling = sourceTransformationInverseScaling.multiplyToRef(scaling, TmpVectors.Vector3[2]);
+
+                        key.value = targetBoneScaling.multiplyToRef(animDiffScaling, scaling);
+                    }
+                }
+                break;
+            }
+        }
     }
 
     /**
