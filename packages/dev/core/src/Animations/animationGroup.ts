@@ -947,9 +947,10 @@ export class AnimationGroup implements IDisposable {
      * @param newName defines the name of the new group
      * @param targetConverter defines an optional function used to convert current animation targets to new ones
      * @param cloneAnimations defines if the animations should be cloned or referenced
+     * @param cloneAnimationKeys defines if the animation keys should be cloned when cloning animations (false by default). No effect if cloneAnimations is false
      * @returns the new animation group
      */
-    public clone(newName: string, targetConverter?: (oldTarget: any) => any, cloneAnimations = false): AnimationGroup {
+    public clone(newName: string, targetConverter?: (oldTarget: any) => any, cloneAnimations = false, cloneAnimationKeys = false): AnimationGroup {
         const newGroup = new AnimationGroup(newName || this.name, this._scene, this._weight, this._playOrder);
 
         newGroup._from = this.from;
@@ -964,7 +965,7 @@ export class AnimationGroup implements IDisposable {
 
         for (const targetAnimation of this._targetedAnimations) {
             newGroup.addTargetedAnimation(
-                cloneAnimations ? targetAnimation.animation.clone() : targetAnimation.animation,
+                cloneAnimations ? targetAnimation.animation.clone(cloneAnimationKeys) : targetAnimation.animation,
                 targetConverter ? targetConverter(targetAnimation.target) : targetAnimation.target
             );
         }
