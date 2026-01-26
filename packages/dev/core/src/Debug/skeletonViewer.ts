@@ -609,22 +609,6 @@ export class SkeletonViewer {
         }
     }
 
-    /**
-     * function to get the absolute bind pose of a bone by accumulating transformations up the bone hierarchy.
-     * @param bone
-     * @param matrix
-     */
-    private _getAbsoluteBindPoseToRef(bone: Nullable<Bone>, matrix: Matrix) {
-        if (bone === null || bone._index === -1) {
-            matrix.copyFrom(Matrix.Identity());
-            return;
-        }
-
-        this._getAbsoluteBindPoseToRef(bone.getParent(), matrix);
-        bone.getBindMatrix().multiplyToRef(matrix, matrix);
-        return;
-    }
-
     private _createSpur(anchorPoint: Vector3, bone: Bone, childPoint: Vector3, childBone: Nullable<Bone>, displayOptions: ISkeletonViewerDisplayOptions, utilityLayerScene: Scene) {
         const dir = childPoint.subtract(anchorPoint);
         const h = dir.length();
@@ -767,7 +751,7 @@ export class SkeletonViewer {
                 }
 
                 const boneAbsoluteBindPoseTransform = new Matrix();
-                this._getAbsoluteBindPoseToRef(bone, boneAbsoluteBindPoseTransform);
+                bone.getAbsoluteInverseBindMatrix().invertToRef(boneAbsoluteBindPoseTransform);
 
                 const anchorPoint = new Vector3();
 
@@ -799,7 +783,7 @@ export class SkeletonViewer {
                             let childPoint;
                             const parentBone = bone.getParent();
                             if (parentBone) {
-                                this._getAbsoluteBindPoseToRef(parentBone, boneAbsoluteBindPoseTransform);
+                                parentBone.getAbsoluteInverseBindMatrix().invertToRef(boneAbsoluteBindPoseTransform);
                                 boneAbsoluteBindPoseTransform.decompose(undefined, undefined, TmpVectors.Vector3[0]);
                                 childPoint = anchorPoint.subtract(TmpVectors.Vector3[0]).normalize().scale(boundingSphere.radius).add(anchorPoint);
                             } else {
@@ -914,7 +898,7 @@ export class SkeletonViewer {
             const boneAbsoluteBindPoseTransform = new Matrix();
             const boneOrigin = new Vector3();
 
-            this._getAbsoluteBindPoseToRef(bone, boneAbsoluteBindPoseTransform);
+            bone.getAbsoluteInverseBindMatrix().invertToRef(boneAbsoluteBindPoseTransform);
             boneAbsoluteBindPoseTransform.decompose(undefined, TmpVectors.Quaternion[0], boneOrigin);
 
             const m = new Matrix();
