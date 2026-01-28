@@ -12,16 +12,17 @@ import { StandardMaterial } from "core/Materials/standardMaterial";
 import { SkyMaterial } from "materials/sky/skyMaterial";
 import { MaterialGeneralProperties, MaterialStencilProperties, MaterialTransparencyProperties } from "../../../components/properties/materials/materialProperties";
 import { MultiMaterialChildrenProperties } from "../../../components/properties/materials/multiMaterialProperties";
-import { NodeMaterialGeneralProperties } from "../../../components/properties/materials/nodeMaterialProperties";
+import { NodeMaterialGeneralProperties, NodeMaterialInputProperties } from "../../../components/properties/materials/nodeMaterialProperties";
 import { NormalMapProperties } from "../../../components/properties/materials/normalMapProperties";
 import {
     OpenPBRMaterialBaseProperties,
-    OpenPBRMaterialCoatProperties,
-    OpenPBRMaterialEmissionProperties,
-    OpenPBRMaterialFuzzProperties,
-    OpenPBRMaterialGeometryProperties,
     OpenPBRMaterialSpecularProperties,
+    OpenPBRMaterialTransmissionProperties,
+    OpenPBRMaterialCoatProperties,
+    OpenPBRMaterialFuzzProperties,
+    OpenPBRMaterialEmissionProperties,
     OpenPBRMaterialThinFilmProperties,
+    OpenPBRMaterialGeometryProperties,
 } from "../../../components/properties/materials/openpbrMaterialProperties";
 import {
     PBRBaseMaterialAdvancedProperties,
@@ -196,6 +197,10 @@ export const MaterialPropertiesServiceDefinition: ServiceDefinition<[], [IProper
                     component: ({ context }) => <OpenPBRMaterialSpecularProperties material={context} />,
                 },
                 {
+                    section: "Transmission",
+                    component: ({ context }) => <OpenPBRMaterialTransmissionProperties material={context} />,
+                },
+                {
                     section: "Coat",
                     component: ({ context }) => <OpenPBRMaterialCoatProperties material={context} />,
                 },
@@ -247,6 +252,10 @@ export const MaterialPropertiesServiceDefinition: ServiceDefinition<[], [IProper
                 {
                     section: "General",
                     component: ({ context }) => <NodeMaterialGeneralProperties material={context} />,
+                },
+                {
+                    section: "Inputs",
+                    component: ({ context }) => <NodeMaterialInputProperties material={context} />,
                 },
             ],
         });
