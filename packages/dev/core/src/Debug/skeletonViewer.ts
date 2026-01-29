@@ -366,6 +366,10 @@ export class SkeletonViewer {
     set debugMesh(value: Nullable<AbstractMesh> | Nullable<LinesMesh>) {
         this._debugMesh = value as any;
     }
+    /** Gets the local axes mesh */
+    get debugLocalAxesMesh(): Nullable<LinesMesh> {
+        return this._localAxes;
+    }
     /** Gets the displayMode */
     get displayMode(): number {
         return this.options.displayMode || SkeletonViewer.DISPLAY_LINES;
@@ -494,6 +498,8 @@ export class SkeletonViewer {
         if (this.debugMesh) {
             this.debugMesh.setEnabled(value);
         }
+
+        this._localAxes?.setEnabled(value);
 
         if (value && !this._obs) {
             this._bindObs();
