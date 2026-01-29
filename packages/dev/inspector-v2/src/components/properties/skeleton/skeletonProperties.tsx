@@ -101,7 +101,7 @@ export const SkeletonViewerProperties: FunctionComponent<{ skeleton: Skeleton }>
                         for (const mesh of scene.meshes) {
                             if (mesh.skeleton === skeleton && !mesh.reservedDataStore?.skeletonViewer) {
                                 mesh.reservedDataStore ||= {};
-                                mesh.reservedDataStore.skeletonViewer = new SkeletonViewer(skeleton, mesh, scene, undefined, 0);
+                                mesh.reservedDataStore.skeletonViewer = new SkeletonViewer(skeleton, mesh, scene);
                             }
                         }
                     } else {
