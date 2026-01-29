@@ -5,7 +5,7 @@ import type { IDisposable, Nullable, Scene, TransformNode } from "core/index";
 import type { IGizmoService } from "../services/gizmoService";
 
 import { makeStyles, Menu, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, SplitButton, tokens, Tooltip } from "@fluentui/react-components";
-import { ArrowExpandRegular, ArrowRotateClockwiseRegular, CubeRegular, GlobeRegular, SelectObjectRegular } from "@fluentui/react-icons";
+import { ArrowExpandRegular, ArrowRotateClockwiseRegular, CameraRegular, CubeRegular, GlobeRegular, SelectObjectRegular } from "@fluentui/react-icons";
 import { useCallback, useEffect, useState } from "react";
 
 import { Bone } from "core/Bones/bone";
@@ -28,6 +28,12 @@ const useStyles = makeStyles({
         margin: `0 0 0 ${tokens.spacingHorizontalXS}`,
     },
     coordinatesModeMenu: {
+        minWidth: 0,
+    },
+    cameraGizmoButton: {
+        margin: `0 0 0 ${tokens.spacingHorizontalXS}`,
+    },
+    cameraGizmoMenu: {
         minWidth: 0,
     },
 });
@@ -58,6 +64,8 @@ export const GizmoToolbar: FunctionComponent<{ scene: Scene; entity: unknown; gi
     const coordinatesMode = useProperty(gizmoManager, "coordinatesMode");
 
     const [gizmoMode, setGizmoMode] = useState<GizmoMode>();
+
+    const [cameraGizmo, setCameraGizmo] = useState<number>();
 
     useEffect(() => {
         let visualizationGizmoRef: Nullable<IDisposable> = null;
@@ -136,6 +144,20 @@ export const GizmoToolbar: FunctionComponent<{ scene: Scene; entity: unknown; gi
         gizmoManager.coordinatesMode = coordinatesMode === GizmoCoordinatesMode.Local ? GizmoCoordinatesMode.World : GizmoCoordinatesMode.Local;
     }, [gizmoManager, coordinatesMode]);
 
+    const onCameraGizmoChange = useCallback((e: MenuCheckedValueChangeEvent, data: MenuCheckedValueChangeData) => {
+        const newCameraNumber = Number(data.checkedItems[0]);
+
+        setCameraGizmo((currentCameraNumber) => (currentCameraNumber === newCameraNumber ? undefined : newCameraNumber));
+
+        const camera = !scene.activeCameras || newCameraNumber === -1 ? null : scene.activeCameras[newCameraNumber];
+
+        const utilityLayerRef = gizmoService.getUtilityLayer(scene);
+        const keepDepthUtilityLayerRef = gizmoService.getUtilityLayer(scene, "keepDepth");
+
+        utilityLayerRef.value.setRenderCamera(camera);
+        keepDepthUtilityLayerRef.value.setRenderCamera(camera);
+    }, []);
+
     return (
         <>
             <ToggleButton title="Translate" checkedIcon={TranslateIcon} value={gizmoMode === "translate"} onChange={() => updateGizmoMode("translate")} />
@@ -171,6 +193,37 @@ export const GizmoToolbar: FunctionComponent<{ scene: Scene; entity: unknown; gi
                             <MenuItemRadio name="coordinatesMode" value={GizmoCoordinatesMode.World.toString()}>
                                 World
                             </MenuItemRadio>
+                        </MenuList>
+                    </MenuPopover>
+                </Menu>
+            </Collapse>
+            <Collapse visible={true} orientation="horizontal">
+                <Menu positioning="below-end" checkedValues={{ cameraGizmo: [cameraGizmo?.toString() ?? "-1"] }} onCheckedValueChange={onCameraGizmoChange}>
+                    <MenuTrigger disableButtonEnhancement={true}>
+                        {(triggerProps: MenuButtonProps) => (
+                            <Tooltip content="Camera Gizmo" relationship="label">
+                                <SplitButton
+                                    className={classes.cameraGizmoButton}
+                                    menuButton={triggerProps}
+                                    size="small"
+                                    appearance="transparent"
+                                    shape="rounded"
+                                    icon={<CameraRegular />}
+                                ></SplitButton>
+                            </Tooltip>
+                        )}
+                    </MenuTrigger>
+
+                    <MenuPopover className={classes.cameraGizmoMenu}>
+                        <MenuList>
+                            <MenuItemRadio name="cameraGizmo" value={"-1"}>
+                                Automatic
+                            </MenuItemRadio>
+                            {scene.activeCameras?.map((camera, index) => (
+                                <MenuItemRadio key={camera.uniqueId} name="cameraGizmo" value={index.toString()}>
+                                    {camera.name}
+                                </MenuItemRadio>
+                            ))}
                         </MenuList>
                     </MenuPopover>
                 </Menu>
