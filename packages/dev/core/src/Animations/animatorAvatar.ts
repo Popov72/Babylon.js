@@ -14,6 +14,7 @@ import type {
 } from "core/index";
 import { Vector3, Quaternion, TmpVectors } from "core/Maths/math.vector";
 import { Logger } from "../Misc/logger";
+import { Matrix } from "core/Maths/math.vector";
 
 /**
  * Options for retargeting an animation group to an avatar.
@@ -51,6 +52,8 @@ export interface IRetargetOptions {
      * Default is true.
      */
     retargetAnimationKeys?: boolean;
+
+    retargetMesh?: AbstractMesh;
 }
 
 /**
@@ -228,7 +231,7 @@ export class AnimatorAvatar {
                         animationGroup.targetedAnimations.splice(i, 1);
                         i--;
                     } else if (localOptions.retargetAnimationKeys) {
-                        this._retargetAnimationKeys(ta.animation, sourceTransformNode, targetBone);
+                        this._retargetAnimationKeys(ta.animation, sourceTransformNode, targetBone, localOptions.retargetMesh);
                     }
 
                     break;
@@ -292,7 +295,7 @@ export class AnimatorAvatar {
         return true;
     }
 
-    private _retargetAnimationKeys(animation: Animation, sourceTransformNode: TransformNode, targetBone: Bone) {
+    private _retargetAnimationKeys(animation: Animation, sourceTransformNode: TransformNode, targetBone: Bone, retargetMesh?: AbstractMesh) {
         const isRootBone = !targetBone.parent;
         const keys = animation.getKeys();
 
@@ -302,16 +305,17 @@ export class AnimatorAvatar {
         const targetBonePosition = targetBone.position;
         const targetBoneRotation = targetBone.rotationQuaternion;
         const targetBoneScaling = targetBone.scaling;
-        // const targetBonePosition = TmpVectors.Vector3[3];
-        // const targetBoneRotation = TmpVectors.Quaternion[2];
-        // const targetBoneScaling = TmpVectors.Vector3[4];
-
-        // targetBone.getBindMatrix().decompose(targetBoneScaling, targetBoneRotation, targetBonePosition);
 
         // Difference between target and source
         const diffQuaternion = sourceTransformNodeInverseRotation.multiplyToRef(targetBoneRotation, TmpVectors.Quaternion[0]).normalize();
+        const diffQuaternion2 = targetBoneRotation.multiplyToRef(sourceTransformNodeInverseRotation, TmpVectors.Quaternion[2]).normalize();
         const diffPosition = targetBonePosition.subtractToRef(sourceTransformNode.position, TmpVectors.Vector3[0]);
         const diffScaling = targetBoneScaling.divideToRef(sourceTransformNode.scaling, TmpVectors.Vector3[1]);
+
+        const targetMeshWorldMatrix = retargetMesh ? retargetMesh.getWorldMatrix() : Matrix.IdentityReadOnly;
+        const targetMeshAbsoluteQuaternion = new Quaternion();
+
+        targetMeshWorldMatrix.decompose(undefined, targetMeshAbsoluteQuaternion, undefined);
 
         switch (animation.targetProperty) {
             case "rotationQuaternion": {
@@ -324,9 +328,8 @@ export class AnimatorAvatar {
                 } else {
                     for (const key of keys) {
                         const quaternion = key.value as Quaternion;
-                        const animDiffQuaternion = sourceTransformNodeInverseRotation.multiplyToRef(quaternion, TmpVectors.Quaternion[1]);
 
-                        key.value = targetBoneRotation.multiplyToRef(animDiffQuaternion, TmpVectors.Quaternion[1]).normalizeToRef(quaternion);
+                        key.value = diffQuaternion2.multiplyToRef(quaternion, quaternion);
                     }
                 }
                 break;
