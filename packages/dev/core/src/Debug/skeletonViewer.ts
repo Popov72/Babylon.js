@@ -1016,6 +1016,7 @@ export class SkeletonViewer {
         }
         this.update();
         this._bindObs();
+        this._isEnabled = undefined as any; // force the isEnabled setter to reapply (next line)
         this.isEnabled = wasEnabled;
     }
 
