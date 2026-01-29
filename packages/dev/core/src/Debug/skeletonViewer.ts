@@ -773,11 +773,9 @@ export class SkeletonViewer {
                         if (distanceFromParent > longestBoneLength) {
                             longestBoneLength = distanceFromParent;
                         }
-                        if (spheresOnly) {
-                            return;
+                        if (!spheresOnly) {
+                            spurs.push(this._createSpur(anchorPoint, bone, childPoint, bc, displayOptions, utilityLayerScene));
                         }
-
-                        spurs.push(this._createSpur(anchorPoint, bone, childPoint, bc, displayOptions, utilityLayerScene));
                     }
                 } else {
                     const boundingSphere = this._getBoundingSphereForBone(bone.getIndex());
