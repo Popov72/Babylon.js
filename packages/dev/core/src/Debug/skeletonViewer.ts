@@ -396,7 +396,7 @@ export class SkeletonViewer {
         /** [true] defines a boolean indicating if bones matrices must be forced to update before rendering (true by default)  */
         public autoUpdateBonesMatrices: boolean = true,
         /** [3] defines the rendering group id to use with the viewer */
-        public renderingGroupId: number = 3,
+        public renderingGroupId: number = 2,
         /** [Object] is the options for the viewer */
         public options: Partial<ISkeletonViewerOptions> = {}
     ) {
