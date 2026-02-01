@@ -19,6 +19,7 @@ import { DebugServiceDefinition } from "./services/panes/debugService";
 import { AnimationGroupPropertiesServiceDefinition } from "./services/panes/properties/animationGroupPropertiesService";
 import { AnimationPropertiesServiceDefinition } from "./services/panes/properties/animationPropertiesService";
 import { AtmospherePropertiesServiceDefinition } from "./services/panes/properties/atmospherePropertiesService";
+import { AudioPropertiesServiceDefinition } from "./services/panes/properties/audioPropertiesService";
 import { CameraPropertiesServiceDefinition } from "./services/panes/properties/cameraPropertiesService";
 import { CommonPropertiesServiceDefinition } from "./services/panes/properties/commonPropertiesService";
 import { EffectLayerPropertiesServiceDefinition } from "./services/panes/properties/effectLayerPropertiesService";
@@ -49,10 +50,16 @@ import { PostProcessExplorerServiceDefinition } from "./services/panes/scene/pos
 import { RenderingPipelineExplorerServiceDefinition } from "./services/panes/scene/renderingPipelinesExplorerService";
 import { SceneExplorerServiceDefinition } from "./services/panes/scene/sceneExplorerService";
 import { SkeletonExplorerServiceDefinition } from "./services/panes/scene/skeletonExplorerService";
+import { SoundExplorerServiceDefinition } from "./services/panes/scene/soundExplorerService";
 import { SpriteManagerExplorerServiceDefinition } from "./services/panes/scene/spriteManagerExplorerService";
 import { TextureExplorerServiceDefinition } from "./services/panes/scene/texturesExplorerService";
 import { SettingsServiceDefinition } from "./services/panes/settingsService";
 import { StatsServiceDefinition } from "./services/panes/statsService";
+import { CaptureToolsDefinition } from "./services/panes/tools/captureService";
+import { ExportServiceDefinition } from "./services/panes/tools/exportService";
+import { GLTFAnimationImportServiceDefinition } from "./services/panes/tools/import/gltfAnimationImportService";
+import { GLTFLoaderOptionsServiceDefinition } from "./services/panes/tools/import/gltfLoaderOptionsService";
+import { GLTFValidationServiceDefinition } from "./services/panes/tools/import/gltfValidationService";
 import { ToolsServiceDefinition } from "./services/panes/toolsService";
 import { PickingServiceDefinition } from "./services/pickingService";
 import { SceneContextIdentity } from "./services/sceneContext";
@@ -284,6 +291,7 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
             GuiExplorerServiceDefinition,
             FrameGraphExplorerServiceDefinition,
             AtmosphereExplorerServiceDefinition,
+            SoundExplorerServiceDefinition,
 
             // Properties pane tab and related services.
             ScenePropertiesServiceDefinition,
@@ -307,6 +315,7 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
             AnimationGroupPropertiesServiceDefinition,
             MetadataPropertiesServiceDefinition,
             AtmospherePropertiesServiceDefinition,
+            AudioPropertiesServiceDefinition,
 
             // Texture editor and related services.
             TextureEditorServiceDefinition,
@@ -319,6 +328,11 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
 
             // Tools pane tab and related services.
             ToolsServiceDefinition,
+            ExportServiceDefinition,
+            GLTFAnimationImportServiceDefinition,
+            GLTFLoaderOptionsServiceDefinition,
+            GLTFValidationServiceDefinition,
+            CaptureToolsDefinition,
 
             // Settings pane tab and related services.
             SettingsServiceDefinition,

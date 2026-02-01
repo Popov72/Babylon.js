@@ -1,38 +1,15 @@
 /* eslint-disable no-console */
-const exec = require("child_process").exec;
 const path = require("path");
 const fs = require("fs");
 const glob = require("glob");
 const generateChangelog = require("./generateChangelog");
+const { runCommand, getCurrentVersion } = require("./versionUtils");
 
 const branchName = process.argv[2];
-const dryRun = process.argv[3];
 
 const config = require(path.resolve("./.build/config.json"));
 
 const baseDirectory = path.resolve(".");
-
-async function runCommand(command) {
-    return new Promise((resolve, reject) => {
-        console.log(command);
-        exec(command, function (error, stdout, stderr) {
-            if (error || typeof stderr !== "string") {
-                console.log(error);
-                return reject(error || stderr);
-            }
-            console.log(stderr || stdout);
-            return resolve(stderr || stdout);
-        });
-    });
-}
-
-const getCurrentVersion = () => {
-    // get @dev/core package.json
-    const rawdata = fs.readFileSync(path.join(baseDirectory, "packages", "public", "umd", "babylonjs", "package.json"), "utf-8");
-    const packageJson = JSON.parse(rawdata);
-    const version = packageJson.version;
-    return version;
-};
 
 const updateEngineVersion = async (version) => {
     // get thinEngine.ts
@@ -68,7 +45,7 @@ const updateSinceTag = (version) => {
                 fs.writeFileSync(file, newData);
             }
         } catch (e) {
-            console.log(e);
+            console.log("updateSinceTag error", e);
         }
     });
     // run formatter to make sure the package.json files are formatted
@@ -81,7 +58,31 @@ const updateDependencies = (version, dependencies) => {
     if (dependencies) {
         Object.keys(dependencies).forEach((dependency) => {
             if (dependency.startsWith("babylonjs") || dependency.startsWith("@babylonjs")) {
-                dependencies[dependency] = version;
+                // Cheap targetted way for now to update when needed
+                const currentVersion = dependencies[dependency];
+
+                // Target version is the requested one by default
+                let newVersion = version;
+
+                // If the new version is containing a modifier (~, ^...), We need to keep it.
+                // If not, we reuse the current modifier if any.
+                if (!isNaN(parseInt(version[0], 10))) {
+                    if (currentVersion.startsWith("^")) {
+                        newVersion = "^" + newVersion;
+                    } else if (currentVersion.startsWith("~")) {
+                        newVersion = "~" + newVersion;
+                    }
+                }
+
+                // If the dependency contains the version already do not change anything
+                // Else if the dependency contains several versions but this one, adds the new one in
+                if (currentVersion.indexOf(newVersion) !== -1) {
+                    newVersion = currentVersion;
+                } else if (currentVersion.indexOf(" || ") > -1) {
+                    newVersion = currentVersion + " || " + newVersion;
+                }
+
+                dependencies[dependency] = newVersion;
                 changed = true;
             }
         });
@@ -90,7 +91,7 @@ const updateDependencies = (version, dependencies) => {
 };
 
 const updatePeerDependencies = (version) => {
-    // get all package.json files in the dev folder
+    // get all package.json files in the public folder
     const files = glob.globSync(path.join(baseDirectory, "packages", "public", "**", "package.json").replace(/\\/g, "/"));
     files.forEach((file) => {
         try {
@@ -105,13 +106,13 @@ const updatePeerDependencies = (version) => {
                 fs.writeFileSync(file, JSON.stringify(packageJson, null, 4));
             }
         } catch (e) {
-            console.log(e);
+            console.log("updatePeerDependencies error", e);
         }
     });
 };
 
-const updateVersion = (version) => {
-    // get all package.json files in the dev folder
+const updatePackages = (version) => {
+    // get all package.json files in the public folder
     const files = glob.globSync(path.join(baseDirectory, "packages", "public", "**", "package.json").replace(/\\/g, "/"));
     files.forEach((file) => {
         try {
@@ -120,7 +121,7 @@ const updateVersion = (version) => {
             const packageJson = JSON.parse(data);
 
             const name = packageJson.name;
-            if (!packageJson.private && (name.startsWith("babylonjs") || name.startsWith("@babylonjs"))) {
+            if (name.startsWith("babylonjs") || name.startsWith("@babylonjs")) {
                 // if not private bump the revision.
                 packageJson.version = version;
             }
@@ -134,12 +135,12 @@ const updateVersion = (version) => {
             // write file
             fs.writeFileSync(file, JSON.stringify(packageJson, null, 4));
         } catch (e) {
-            console.log(e);
+            console.log("updatePackages error", e);
         }
     });
 };
 
-async function runTagsUpdate() {
+async function main() {
     // Gets the current version to update
     const previousVersion = getCurrentVersion();
     let [major, minor, revision] = previousVersion.split(".");
@@ -159,8 +160,8 @@ async function runTagsUpdate() {
     // Gets the new version
     const version = [major, minor, revision].join(".");
 
-    // update package-json
-    updateVersion(version);
+    // update package.json
+    updatePackages(version);
     // update engine version
     await updateEngineVersion(version);
     // generate changelog
@@ -171,18 +172,10 @@ async function runTagsUpdate() {
     if (config.versionDefinition === "major") {
         updatePeerDependencies(`^${version}`);
     }
-    if (dryRun) {
-        console.log("skipping", `git commit -m "Version update ${version}"`);
-        console.log("skipping", `git tag -a ${version} -m ${version}`);
-    } else {
-        await runCommand("git add .");
-        await runCommand(`git commit -m "Version update ${version}"`);
-        await runCommand(`git tag -a ${version} -m ${version}`);
-    }
 }
 if (!branchName) {
     console.log("Please provide a branch name");
     process.exit(1);
 } else {
-    runTagsUpdate();
+    main();
 }
