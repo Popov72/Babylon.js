@@ -1,5 +1,4 @@
-import type { IDisposable, Scene } from "core/scene";
-import type { Nullable } from "core/types";
+import type { IDisposable, IReadonlyObservable, Nullable, Scene } from "core/index";
 import type { WeaklyTypedServiceDefinition } from "./modularity/serviceContainer";
 import type { ServiceDefinition } from "./modularity/serviceDefinition";
 import type { ModularToolOptions } from "./modularTool";
@@ -20,6 +19,7 @@ import { DebugServiceDefinition } from "./services/panes/debugService";
 import { AnimationGroupPropertiesServiceDefinition } from "./services/panes/properties/animationGroupPropertiesService";
 import { AnimationPropertiesServiceDefinition } from "./services/panes/properties/animationPropertiesService";
 import { AtmospherePropertiesServiceDefinition } from "./services/panes/properties/atmospherePropertiesService";
+import { AudioPropertiesServiceDefinition } from "./services/panes/properties/audioPropertiesService";
 import { CameraPropertiesServiceDefinition } from "./services/panes/properties/cameraPropertiesService";
 import { CommonPropertiesServiceDefinition } from "./services/panes/properties/commonPropertiesService";
 import { EffectLayerPropertiesServiceDefinition } from "./services/panes/properties/effectLayerPropertiesService";
@@ -50,10 +50,16 @@ import { PostProcessExplorerServiceDefinition } from "./services/panes/scene/pos
 import { RenderingPipelineExplorerServiceDefinition } from "./services/panes/scene/renderingPipelinesExplorerService";
 import { SceneExplorerServiceDefinition } from "./services/panes/scene/sceneExplorerService";
 import { SkeletonExplorerServiceDefinition } from "./services/panes/scene/skeletonExplorerService";
+import { SoundExplorerServiceDefinition } from "./services/panes/scene/soundExplorerService";
 import { SpriteManagerExplorerServiceDefinition } from "./services/panes/scene/spriteManagerExplorerService";
 import { TextureExplorerServiceDefinition } from "./services/panes/scene/texturesExplorerService";
 import { SettingsServiceDefinition } from "./services/panes/settingsService";
 import { StatsServiceDefinition } from "./services/panes/statsService";
+import { CaptureToolsDefinition } from "./services/panes/tools/captureService";
+import { ExportServiceDefinition } from "./services/panes/tools/exportService";
+import { GLTFAnimationImportServiceDefinition } from "./services/panes/tools/import/gltfAnimationImportService";
+import { GLTFLoaderOptionsServiceDefinition } from "./services/panes/tools/import/gltfLoaderOptionsService";
+import { GLTFValidationServiceDefinition } from "./services/panes/tools/import/gltfValidationService";
 import { ToolsServiceDefinition } from "./services/panes/toolsService";
 import { PickingServiceDefinition } from "./services/pickingService";
 import { SceneContextIdentity } from "./services/sceneContext";
@@ -69,6 +75,11 @@ export type InspectorOptions = Omit<ModularToolOptions, "toolbarMode"> & {
     layoutMode?: LayoutMode;
 };
 
+export type InspectorToken = IDisposable & {
+    readonly isDisposed: boolean;
+    readonly onDisposed: IReadonlyObservable<void>;
+};
+
 // TODO: The key should probably be the Canvas, because we only want to show one inspector instance per canvas.
 //       If it is called for a different scene that is rendering to the same canvas, then we should probably
 //       switch the inspector instance to that scene (once this is supported).
@@ -78,7 +89,7 @@ const InspectorTokens = new WeakMap<Scene, IDisposable>();
 // This is needed because each time Inspector is shown or hidden, it is potentially mutating the same DOM element.
 const InspectorLock = new AsyncLock();
 
-export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> = {}): IDisposable {
+export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> = {}): InspectorToken {
     // Dispose of any existing inspector for this scene.
     InspectorTokens.get(scene)?.dispose();
 
@@ -88,14 +99,25 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
 
     // Create an inspector dispose token. The dispose will use the same async lock to
     // make sure async dispose (hide) does not actually start until async show is finished.
+    let isDisposed = false;
+    const onDisposed = new Observable<void>();
     const inspectorToken = {
-        dispose: () => {
+        dispose() {
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             InspectorLock.lockAsync(async () => {
                 await disposeAsync();
+                isDisposed = true;
+                onDisposed.notifyObservers();
+                onDisposed.clear();
             });
         },
-    } as const;
+        get isDisposed() {
+            return isDisposed;
+        },
+        get onDisposed() {
+            return onDisposed;
+        },
+    } as const satisfies InspectorToken;
 
     // Track the inspector token for the scene.
     InspectorTokens.set(scene, inspectorToken);
@@ -194,11 +216,7 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
             const canvasContainerChildren = [...parentElement.childNodes];
             parentElement.replaceChildren();
 
-            disposeActions.push(async () => {
-                // When the ModularTool token is disposed, it unmounts the react element, which asynchronously
-                // removes all children from the parentElement. We need to wait for that to complete before
-                // re-adding the canvas children back to the parentElement.
-                await new Promise((resolve) => setTimeout(resolve));
+            disposeActions.push(() => {
                 parentElement.replaceChildren(...canvasContainerChildren);
             });
 
@@ -273,6 +291,7 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
             GuiExplorerServiceDefinition,
             FrameGraphExplorerServiceDefinition,
             AtmosphereExplorerServiceDefinition,
+            SoundExplorerServiceDefinition,
 
             // Properties pane tab and related services.
             ScenePropertiesServiceDefinition,
@@ -296,6 +315,7 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
             AnimationGroupPropertiesServiceDefinition,
             MetadataPropertiesServiceDefinition,
             AtmospherePropertiesServiceDefinition,
+            AudioPropertiesServiceDefinition,
 
             // Texture editor and related services.
             TextureEditorServiceDefinition,
@@ -308,6 +328,11 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
 
             // Tools pane tab and related services.
             ToolsServiceDefinition,
+            ExportServiceDefinition,
+            GLTFAnimationImportServiceDefinition,
+            GLTFLoaderOptionsServiceDefinition,
+            GLTFValidationServiceDefinition,
+            CaptureToolsDefinition,
 
             // Settings pane tab and related services.
             SettingsServiceDefinition,

@@ -1,15 +1,5 @@
-import type {
-    IDisposable,
-    IExplorerAdditionalChild,
-    IInspectorContextMenuItem,
-    IInspectorContextMenuType,
-    IInspectorOptions as InspectorV1Options,
-    Nullable,
-    Scene,
-    WritableObject,
-} from "core/index";
-import type { EntityBase } from "../components/scene/sceneExplorer";
-import type { InspectorOptions as InspectorV2Options } from "../inspector";
+import type { IInspectorContextMenuItem, IInspectorContextMenuType, IInspectorOptions as InspectorV1Options, Nullable, Scene } from "core/index";
+import type { InspectorOptions as InspectorV2Options, InspectorToken } from "../inspector";
 import type { WeaklyTypedServiceDefinition } from "../modularity/serviceContainer";
 import type { ServiceDefinition } from "../modularity/serviceDefinition";
 import type { IGizmoService } from "../services/gizmoService";
@@ -23,7 +13,6 @@ import { BranchRegular } from "@fluentui/react-icons";
 import { DebugLayerTab } from "core/Debug/debugLayer";
 import { EngineStore } from "core/Engines/engineStore";
 import { Observable } from "core/Misc/observable";
-import { UniqueIdGenerator } from "core/Misc/uniqueIdGenerator";
 import { ShowInspector } from "../inspector";
 import { InterceptProperty } from "../instrumentation/propertyInstrumentation";
 import { GizmoServiceIdentity } from "../services/gizmoService";
@@ -122,16 +111,7 @@ export function ConvertOptions(v1Options: Partial<InspectorV1Options>): Partial<
                     sceneExplorerService.addSection({
                         displayName: node.name,
                         order: Number.MAX_SAFE_INTEGER,
-                        getRootEntities: () => {
-                            const children = node.getContent();
-                            for (const child of children) {
-                                const entity = child as Partial<WritableObject<EntityBase>>;
-                                if (!entity.uniqueId) {
-                                    entity.uniqueId = UniqueIdGenerator.UniqueId;
-                                }
-                            }
-                            return children as (IExplorerAdditionalChild & EntityBase)[];
-                        },
+                        getRootEntities: () => node.getContent(),
                         getEntityDisplayInfo: (entity) => {
                             const onChangeObservable = new Observable<void>();
 
@@ -177,7 +157,7 @@ export function ConvertOptions(v1Options: Partial<InspectorV1Options>): Partial<
                 const sceneExplorerCommandRegistrations = explorerExtensibility.flatMap((command) =>
                     command.entries.map((entry) =>
                         sceneExplorerService.addEntityCommand({
-                            predicate: (entity): entity is EntityBase => command.predicate(entity),
+                            predicate: (entity): entity is unknown => command.predicate(entity),
                             getCommand: (entity) => {
                                 return {
                                     displayName: entry.label,
@@ -288,7 +268,7 @@ export function ConvertOptions(v1Options: Partial<InspectorV1Options>): Partial<
  * @deprecated This class only exists for backward compatibility. Use the module-level ShowInspector function instead.
  */
 export class Inspector {
-    private static _CurrentInstance: Nullable<{ scene: Scene; options: Partial<InspectorV2Options>; disposeToken: IDisposable }> = null;
+    private static _CurrentInstance: Nullable<{ scene: Scene; options: Partial<InspectorV2Options>; disposeToken: InspectorToken }> = null;
     private static _PopupToggler: Nullable<(side: "left" | "right") => void> = null;
     private static _SectionHighlighter: Nullable<(sectionIds: readonly string[]) => void> = null;
     private static _SidePaneOpenCounter: Nullable<() => number> = null;
@@ -449,11 +429,12 @@ export class Inspector {
             options,
             disposeToken: ShowInspector(scene, options),
         };
+
+        this._CurrentInstance.disposeToken.onDisposed.addOnce(() => (this._CurrentInstance = null));
     }
 
     public static Hide() {
         this._CurrentInstance?.disposeToken.dispose();
-        this._CurrentInstance = null;
     }
 
     // @ts-expect-error TS6133: This is private, but used by debugLayer (same as Inspector v1).
