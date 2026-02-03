@@ -2856,6 +2856,10 @@
             "playgroundId": "#XSNYAU#165"
         },
         {
+            "title": "FrameGraph selection outline",
+            "playgroundId": "#E1F0GP#4"
+        },
+        {
             "title": "Render target texture with clustered lights",
             "playgroundId": "#1QCA2M#11"
         },
