@@ -18,10 +18,22 @@
             "referenceImage": "gsplat-ply-sh-reload.png"
         },
         {
+            "title": "Gaussian Splatting Bake Transforms",
+            "playgroundId": "#GU7A98#0",
+            "renderCount": 15,
+            "referenceImage": "gsplat-splat-bake-transforms.png"
+        },
+        {
             "title": "Gaussian Splatting Depth",
             "playgroundId": "#V80DRL#12",
             "renderCount": 15,
             "referenceImage": "gsplat-depth.png"
+        },
+        {
+            "title": "Gaussian Splatting Depth Alpha Blended",
+            "playgroundId": "#V80DRL#19",
+            "renderCount": 15,
+            "referenceImage": "gsplat-depth-alpha-blended.png"
         },
         {
             "title": "Gaussian Splatting Compressed ply SH",
@@ -2777,6 +2789,10 @@
             "playgroundId": "#ZNTBN2#10"
         },
         {
+            "title": "FrameGraph nrge selection outline layer",
+            "playgroundId": "#ADUC74#1"
+        },
+        {
             "title": "FrameGraph nrg gui bloom",
             "playgroundId": "#3LB017#3",
             "errorRatio": 2
@@ -2854,6 +2870,10 @@
         {
             "title": "FrameGraph multi-render targets",
             "playgroundId": "#XSNYAU#165"
+        },
+        {
+            "title": "FrameGraph selection outline",
+            "playgroundId": "#E1F0GP#4"
         },
         {
             "title": "Render target texture with clustered lights",
@@ -3406,6 +3426,90 @@
             "title": "NME Particles with PositionW",
             "playgroundId": "#RA18GJ#17",
             "renderCount": 120
+        },
+        {
+            "title": "Particles - Basic Properties - Size",
+            "playgroundId": "#0K3AQ2#3780",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-size.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Scale",
+            "playgroundId": "#0K3AQ2#3782",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-scale.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Color",
+            "playgroundId": "#0K3AQ2#3786",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-color.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Speed",
+            "playgroundId": "#0K3AQ2#3791",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-speed.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Angular Speed",
+            "playgroundId": "#0K3AQ2#3796",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-angular-speed.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Angular Speed - Rotation",
+            "playgroundId": "#0K3AQ2#3806",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-angular-speed-rotation.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Translation Pivot",
+            "playgroundId": "#0K3AQ2#3808",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-translation-pivot.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Direction",
+            "playgroundId": "#0K3AQ2#3814",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-direction.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Direction - Gravity",
+            "playgroundId": "#0K3AQ2#3816",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-direction-gravity.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Emit Rate - Slow",
+            "playgroundId": "#0K3AQ2#3821",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-emit-rate-slow.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Emit Rate - Fast",
+            "playgroundId": "#0K3AQ2#3823",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-emit-rate-fast.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Emission Limits",
+            "playgroundId": "#0K3AQ2#3825",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-emission-limits.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Lifetime - Short",
+            "playgroundId": "#0K3AQ2#3829",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-lifetime-short.png"
+        },
+        {
+            "title": "Particles - Basic Properties - Lifetime - Long",
+            "playgroundId": "#0K3AQ2#3834",
+            "renderCount": 120,
+            "referenceImage": "particles-basic-lifetime-long.png"
         }
     ]
 }

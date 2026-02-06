@@ -1,5 +1,5 @@
 import type { Scene } from "core/scene";
-import type { Nullable } from "core/types";
+import type { DeepImmutable, Nullable } from "core/types";
 import type { BaseTexture } from "core/Materials/Textures/baseTexture";
 import { SubMesh } from "../subMesh";
 import type { AbstractMesh } from "../abstractMesh";
@@ -21,6 +21,7 @@ import { EngineStore } from "core/Engines/engineStore";
 import type { Camera } from "core/Cameras/camera";
 import { ImportMeshAsync } from "core/Loading/sceneLoader";
 import type { INative } from "core/Engines/Native/nativeInterfaces";
+import { GaussianSplattingPartProxyMesh } from "./gaussianSplattingPartProxyMesh";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 declare const _native: INative;
@@ -295,6 +296,7 @@ export interface PLYHeader {
      */
     shBuffer: ArrayBuffer | null;
 }
+
 /**
  * Class used to render a gaussian splatting mesh
  */
@@ -319,6 +321,7 @@ export class GaussianSplattingMesh extends Mesh {
     private _partIndices: Nullable<Uint8Array> = null;
     private _partMatrices: Matrix[] = [];
     private _partVisibility: number[] = [];
+    private _partProxies: Map<number, GaussianSplattingPartProxyMesh> = new Map();
     private _textureSize: Vector2 = new Vector2(0, 0);
     private readonly _keepInRam: boolean = false;
 
@@ -692,7 +695,7 @@ export class GaussianSplattingMesh extends Mesh {
                     cameraViewInfos.frameIdLastUpdate = frameId;
                     this._canPostToWorker = false;
                     if (this._worker) {
-                        this._worker!.postMessage(
+                        this._worker.postMessage(
                             {
                                 modelViewProjection: this._modelViewProjectionMatrix.m,
                                 viewProjection: this._viewProjectionMatrix.m,
@@ -746,9 +749,17 @@ export class GaussianSplattingMesh extends Mesh {
             return this;
         }
 
+        if (this.onBeforeRenderObservable) {
+            this.onBeforeRenderObservable.notifyObservers(this);
+        }
         const mesh = cameraViewInfos.mesh;
         mesh.getWorldMatrix().copyFrom(this.getWorldMatrix());
-        return mesh.render(subMesh, enableAlphaMode, effectiveMeshReplacement);
+        const ret = mesh.render(subMesh, enableAlphaMode, effectiveMeshReplacement);
+
+        if (this.onAfterRenderObservable) {
+            this.onAfterRenderObservable.notifyObservers(this);
+        }
+        return ret;
     }
 
     private static _TypeNameToEnum(name: string): PLYType {
@@ -1484,6 +1495,12 @@ export class GaussianSplattingMesh extends Mesh {
             cameraViewInfo.mesh.dispose();
         });
 
+        // dispose all proxy meshes
+        this._partProxies.forEach((proxy) => {
+            proxy.dispose();
+        });
+        this._partProxies.clear();
+
         super.dispose(doNotRecurse, true);
     }
 
@@ -1723,7 +1740,7 @@ export class GaussianSplattingMesh extends Mesh {
         };
 
         const firstTime = this._covariancesATexture === null;
-        const textureSizeChanged = this._textureSize.y < textureSize.y;
+        const textureSizeChanged = this._textureSize.y != textureSize.y;
 
         if (!firstTime && !textureSizeChanged) {
             this._delayedTextureUpdate = { covA, covB, colors: colorArray, centers: this._splatPositions!, sh, partIndices };
@@ -1935,7 +1952,7 @@ export class GaussianSplattingMesh extends Mesh {
     // in case size is different
     private _updateSplatIndexBuffer(vertexCount: number): void {
         const paddedVertexCount = (vertexCount + 15) & ~0xf;
-        if (!this._splatIndex || vertexCount > this._splatIndex.length) {
+        if (!this._splatIndex || vertexCount != this._splatIndex.length) {
             this._splatIndex = new Float32Array(paddedVertexCount);
             for (let i = 0; i < paddedVertexCount; i++) {
                 this._splatIndex[i] = i;
@@ -1948,11 +1965,11 @@ export class GaussianSplattingMesh extends Mesh {
         }
 
         // Update depthMix
-        if ((!this._depthMix || vertexCount > this._depthMix.length) && !IsNative) {
+        if ((!this._depthMix || vertexCount != this._depthMix.length) && !IsNative) {
             this._depthMix = new BigInt64Array(paddedVertexCount);
         }
 
-        this.forcedInstanceCount = paddedVertexCount >> 4;
+        this.forcedInstanceCount = Math.max(paddedVertexCount >> 4, 1);
     }
 
     private _updateSubTextures(
@@ -2136,6 +2153,24 @@ export class GaussianSplattingMesh extends Mesh {
     }
 
     /**
+     * Gets the visibility for a specific part of the compound (if this mesh is a compound).
+     * @param partIndex index of the part, that must be between 0 and partCount - 1
+     * @returns the visibility value (0.0 to 1.0) for the part
+     */
+    public getPartVisibility(partIndex: number): number {
+        return this._partVisibility[partIndex] ?? 1.0;
+    }
+
+    /**
+     * Sets the visibility for a specific part of the compound (if this mesh is a compound).
+     * @param partIndex index of the part, that must be between 0 and partCount - 1
+     * @param value the visibility value (0.0 to 1.0) to set
+     */
+    public setPartVisibility(partIndex: number, value: number): void {
+        this._partVisibility[partIndex] = Math.max(0.0, Math.min(1.0, value));
+    }
+
+    /**
      * Ensure that the part world matrix array is at least the given length.
      * NB: This length is used as reference for the number of parts in the compound.
      * Newly inserted parts are initialized with the current world matrix of the mesh.
@@ -2260,40 +2295,211 @@ export class GaussianSplattingMesh extends Mesh {
         const partWorldMatrix = other.getWorldMatrix();
         this.setWorldMatrixForPart(newPartIndex, partWorldMatrix);
 
-        // Create a placeholder mesh to manipulate the part transform
-        // Remove splats from the original mesh
+        // Create a proxy mesh to manipulate the part transform
+        const proxyMesh = new GaussianSplattingPartProxyMesh(other.name, this.getScene(), this, other, newPartIndex);
+
         if (disposeOther) {
             other.dispose();
         }
-        const placeholderMesh = new Mesh(other.name, this.getScene());
 
-        placeholderMesh.onAfterWorldMatrixUpdateObservable.add(() => {
-            this.setWorldMatrixForPart(newPartIndex, placeholderMesh.getWorldMatrix());
-        });
-        Object.defineProperty(placeholderMesh, "isVisible", {
-            get: () => {
-                return (this._partVisibility[newPartIndex] ?? 1.0) > 0;
-            },
-            set: (value: boolean) => {
-                this._partVisibility[newPartIndex] = value ? 1.0 : 0.0;
-            },
-        });
-        Object.defineProperty(placeholderMesh, "visibility", {
-            get: () => {
-                return this._partVisibility[newPartIndex] ?? 1.0;
-            },
-            set: (value: number) => {
-                this._partVisibility[newPartIndex] = Math.max(0.0, Math.min(1.0, value));
-            },
-        });
-
-        // Directly set the world matrix using freezeWorldMatrix
+        // Set the initial world matrix
         const quaternion = new Quaternion();
-        partWorldMatrix.decompose(placeholderMesh.scaling, quaternion, placeholderMesh.position);
-        placeholderMesh.rotationQuaternion = quaternion;
-        placeholderMesh.computeWorldMatrix(true);
-        placeholderMesh.metadata = { partIndex: newPartIndex };
+        partWorldMatrix.decompose(proxyMesh.scaling, quaternion, proxyMesh.position);
+        proxyMesh.rotationQuaternion = quaternion;
+        proxyMesh.computeWorldMatrix(true);
 
-        return placeholderMesh;
+        // Store the proxy in the map
+        this._partProxies.set(newPartIndex, proxyMesh);
+
+        return proxyMesh;
+    }
+
+    /**
+     * Remove a part from this compound mesh.
+     * @param index - The index of the part to remove
+     */
+    public removePart(index: number): void {
+        if (index < 0 || index >= this.partCount) {
+            throw new Error(`Part index ${index} is out of range [0, ${this.partCount})`);
+        }
+
+        // Get the current data
+        const splatsData = this.splatsData;
+        const shData = this.shData;
+        const partIndices = this.partIndices;
+
+        if (!splatsData || !partIndices) {
+            throw new Error("Cannot remove part from a non-compound mesh or mesh without keepInRam");
+        }
+
+        const splatCount = this._vertexCount;
+        const rowLength = GaussianSplattingMesh._RowOutputLength;
+
+        // Count splats that will remain (not in the removed part)
+        let newSplatCount = 0;
+        for (let i = 0; i < splatCount; i++) {
+            if (partIndices[i] !== index) {
+                newSplatCount++;
+            }
+        }
+
+        // Build new splats data excluding the removed part
+        const newSplatsData = new Uint8Array(newSplatCount * rowLength);
+        const newPartIndices = new Uint8Array(newSplatCount);
+        let newShData: Uint8Array[] | undefined = undefined;
+
+        if (shData) {
+            const bytesPerTexel = 16;
+            newShData = [];
+            for (let i = 0; i < shData.length; i++) {
+                newShData.push(new Uint8Array(newSplatCount * bytesPerTexel));
+            }
+        }
+
+        let writeIndex = 0;
+        for (let readIndex = 0; readIndex < splatCount; readIndex++) {
+            const currentPartIndex = partIndices[readIndex];
+            if (currentPartIndex === index) {
+                // Skip splats from the removed part
+                continue;
+            }
+
+            // Copy splat data
+            const srcOffset = readIndex * rowLength;
+            const dstOffset = writeIndex * rowLength;
+            newSplatsData.set(new Uint8Array(splatsData, srcOffset, rowLength), dstOffset);
+
+            // Renumber part indices: indices > removed index get decremented
+            newPartIndices[writeIndex] = currentPartIndex > index ? currentPartIndex - 1 : currentPartIndex;
+
+            // Copy SH data if present
+            if (shData && newShData) {
+                const bytesPerTexel = 16;
+                for (let shIndex = 0; shIndex < shData.length; shIndex++) {
+                    const srcShOffset = readIndex * bytesPerTexel;
+                    const dstShOffset = writeIndex * bytesPerTexel;
+                    newShData[shIndex].set(new Uint8Array(shData[shIndex].buffer, srcShOffset, bytesPerTexel), dstShOffset);
+                }
+            }
+
+            writeIndex++;
+        }
+
+        // Remove the part matrix and visibility
+        this._partMatrices.splice(index, 1);
+        this._partVisibility.splice(index, 1);
+
+        // Update worker with new part matrices
+        if (this._worker) {
+            this._worker.postMessage({ partMatrices: this._partMatrices.map((matrix) => new Float32Array(matrix.m)) });
+        }
+
+        // Update the mesh with the new data
+        this.updateData(newSplatsData.buffer, newShData, { flipY: false }, newPartIndices);
+
+        // Dispose and remove the proxy for the removed part
+        const proxyToRemove = this._partProxies.get(index);
+        if (proxyToRemove) {
+            proxyToRemove.dispose();
+            this._partProxies.delete(index);
+        }
+
+        // Update the proxy map: renumber proxies with index > removed index
+        const proxiesToUpdate: Array<[number, GaussianSplattingPartProxyMesh]> = [];
+        this._partProxies.forEach((proxy, proxyIndex) => {
+            if (proxyIndex > index) {
+                proxiesToUpdate.push([proxyIndex, proxy]);
+            }
+        });
+
+        // Remove and re-add with updated indices
+        for (const [oldIndex, proxy] of proxiesToUpdate) {
+            this._partProxies.delete(oldIndex);
+            // Update the proxy's internal partIndex
+            proxy.updatePartIndex(oldIndex - 1);
+            this._partProxies.set(oldIndex - 1, proxy);
+        }
+    }
+
+    /**
+     * Modifies the splats according to the passed transformation matrix.
+     * @param transform defines the transform matrix to use
+     * @returns the current mesh
+     */
+    public override bakeTransformIntoVertices(transform: DeepImmutable<Matrix>): Mesh {
+        const arrayBuffer = this.splatsData;
+        if (!arrayBuffer) {
+            Logger.Error("Cannot bake transform into vertices if splatsData is not kept in RAM");
+            return this;
+        }
+
+        // Check for uniform scaling
+        const m = transform.m;
+        const scaleX = Math.sqrt(m[0] * m[0] + m[1] * m[1] + m[2] * m[2]);
+        const scaleY = Math.sqrt(m[4] * m[4] + m[5] * m[5] + m[6] * m[6]);
+        const scaleZ = Math.sqrt(m[8] * m[8] + m[9] * m[9] + m[10] * m[10]);
+        const epsilon = 0.001;
+        if (Math.abs(scaleX - scaleY) > epsilon || Math.abs(scaleX - scaleZ) > epsilon) {
+            Logger.Error("Gaussian Splatting bakeTransformIntoVertices does not support non-uniform scaling");
+            return this;
+        }
+
+        const uBuffer = new Uint8Array(arrayBuffer);
+        const fBuffer = new Float32Array(arrayBuffer);
+
+        const temp = TmpVectors.Vector3[0];
+        let index: number;
+        const quaternion = TmpVectors.Quaternion[0];
+        const transformedQuaternion = TmpVectors.Quaternion[1];
+        transform.decompose(temp, transformedQuaternion, temp);
+        for (index = 0; index < this._vertexCount; index++) {
+            const floatIndex = index * 8; // 8 floats per splat (center.x, center.y, center.z, scale.x, scale.y, scale.z, ...)
+            Vector3.TransformCoordinatesFromFloatsToRef(fBuffer[floatIndex], fBuffer[floatIndex + 1], fBuffer[floatIndex + 2], transform, temp);
+            fBuffer[floatIndex] = temp.x;
+            fBuffer[floatIndex + 1] = temp.y;
+            fBuffer[floatIndex + 2] = temp.z;
+
+            // Apply uniform scaling to splat scales
+            fBuffer[floatIndex + 3] *= scaleX;
+            fBuffer[floatIndex + 4] *= scaleX;
+            fBuffer[floatIndex + 5] *= scaleX;
+
+            // Unpack quaternion from uint8array (matching _GetSplat packing convention)
+            quaternion.set(
+                (uBuffer[32 * index + 28 + 1] - 127.5) / 127.5,
+                (uBuffer[32 * index + 28 + 2] - 127.5) / 127.5,
+                (uBuffer[32 * index + 28 + 3] - 127.5) / 127.5,
+                (uBuffer[32 * index + 28 + 0] - 127.5) / 127.5
+            );
+            quaternion.normalize();
+
+            // If there is a negative scaling, we need to flip the quaternion to keep the correct handedness
+            if (this.scaling.x < 0) {
+                quaternion.x = -quaternion.x;
+                quaternion.w = -quaternion.w;
+            }
+            if (this.scaling.y < 0) {
+                quaternion.y = -quaternion.y;
+                quaternion.w = -quaternion.w;
+            }
+            if (this.scaling.z < 0) {
+                quaternion.z = -quaternion.z;
+                quaternion.w = -quaternion.w;
+            }
+
+            // Transform the quaternion
+            transformedQuaternion.multiplyToRef(quaternion, quaternion);
+            quaternion.normalize();
+
+            // Pack quaternion back to uint8array (matching _GetSplat packing convention)
+            uBuffer[32 * index + 28 + 0] = Math.round(quaternion.w * 127.5 + 127.5);
+            uBuffer[32 * index + 28 + 1] = Math.round(quaternion.x * 127.5 + 127.5);
+            uBuffer[32 * index + 28 + 2] = Math.round(quaternion.y * 127.5 + 127.5);
+            uBuffer[32 * index + 28 + 3] = Math.round(quaternion.z * 127.5 + 127.5);
+        }
+
+        this.updateData(arrayBuffer, this.shData ?? undefined, { flipY: false });
+
+        return this;
     }
 }
