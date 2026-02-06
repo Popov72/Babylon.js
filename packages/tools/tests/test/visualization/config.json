@@ -2793,6 +2793,10 @@
             "playgroundId": "#ADUC74#1"
         },
         {
+            "title": "FrameGraph nrge multi RTT MSAA",
+            "playgroundId": "#JAG54A"
+        },
+        {
             "title": "FrameGraph nrg gui bloom",
             "playgroundId": "#3LB017#3",
             "errorRatio": 2
