@@ -1277,8 +1277,9 @@ export abstract class AbstractEngine {
 
     /**
      * Unbind the current render target and bind the default framebuffer
+     * @param unbindOnly defines a boolean indicating that the function should only unbind the current render target without binding the default framebuffer
      */
-    public abstract restoreDefaultFramebuffer(): void;
+    public abstract restoreDefaultFramebuffer(unbindOnly?: boolean): void;
 
     /**
      * Draw a list of indexed primitives
