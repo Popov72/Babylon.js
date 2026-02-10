@@ -138,7 +138,6 @@ export interface AbstractEngineOptions {
     useHighPrecisionMatrix?: boolean;
 
     /**
-     * @experimental
      * LargeWorldRendering helps avoid floating point imprecision of rendering large worlds by
      * 1. Forcing highPrecisionMatrices (matrix computations in 64 bits instead of 32)
      * 2. Enabling floatingOriginMode in all scenes -- offsetting position-related uniform and attribute values before passing to shader so that active camera is centered at origin and world is offset by active camera position
@@ -1923,14 +1922,14 @@ export abstract class AbstractEngine {
      */
     // Not mixed with Version for tooling purpose.
     public static get NpmPackage(): string {
-        return "babylonjs@8.50.0";
+        return "babylonjs@8.50.2";
     }
 
     /**
      * Returns the current version of the framework
      */
     public static get Version(): string {
-        return "8.50.0";
+        return "8.50.2";
     }
 
     /**
