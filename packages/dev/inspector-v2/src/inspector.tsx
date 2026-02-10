@@ -40,6 +40,7 @@ import { TexturePropertiesServiceDefinition } from "./services/panes/properties/
 import { TransformPropertiesServiceDefinition } from "./services/panes/properties/transformPropertiesService";
 import { AnimationGroupExplorerServiceDefinition } from "./services/panes/scene/animationGroupExplorerService";
 import { AtmosphereExplorerServiceDefinition } from "./services/panes/scene/atmosphereExplorerService";
+import { DisposableCommandServiceDefinition } from "./services/panes/scene/disposableCommandService";
 import { EffectLayerExplorerServiceDefinition } from "./services/panes/scene/effectLayersExplorerService";
 import { FrameGraphExplorerServiceDefinition } from "./services/panes/scene/frameGraphExplorerService";
 import { GuiExplorerServiceDefinition } from "./services/panes/scene/guiExplorerService";
@@ -61,6 +62,7 @@ import { GLTFAnimationImportServiceDefinition } from "./services/panes/tools/imp
 import { GLTFLoaderOptionsServiceDefinition } from "./services/panes/tools/import/gltfLoaderOptionsService";
 import { GLTFValidationServiceDefinition } from "./services/panes/tools/import/gltfValidationService";
 import { ToolsServiceDefinition } from "./services/panes/toolsService";
+import { HighlightServiceDefinition } from "./services/highlightService";
 import { PickingServiceDefinition } from "./services/pickingService";
 import { SceneContextIdentity } from "./services/sceneContext";
 import { SelectionServiceDefinition } from "./services/selectionService";
@@ -292,6 +294,7 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
             FrameGraphExplorerServiceDefinition,
             AtmosphereExplorerServiceDefinition,
             SoundExplorerServiceDefinition,
+            DisposableCommandServiceDefinition,
 
             // Properties pane tab and related services.
             ScenePropertiesServiceDefinition,
@@ -346,6 +349,9 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
             // Allows picking objects from the scene to select them.
             PickingServiceDefinition,
 
+            // Highlights the selected mesh in the scene.
+            HighlightServiceDefinition,
+
             // Adds entry points for user feedback on Inspector v2 (probably eventually will be removed).
             UserFeedbackServiceDefinition,
 
@@ -370,6 +376,8 @@ export function ShowInspector(scene: Scene, options: Partial<InspectorOptions> =
             extensionFeeds: [DefaultInspectorExtensionFeed, ...(options.extensionFeeds ?? [])],
             toolbarMode: "compact",
             sidePaneRemapper: options.sidePaneRemapper,
+            leftPaneDefaultCollapsed: options.leftPaneDefaultCollapsed,
+            rightPaneDefaultCollapsed: options.rightPaneDefaultCollapsed,
         });
         disposeActions.push(() => modularTool.dispose());
 

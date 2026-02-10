@@ -1,5 +1,70 @@
 # Changelog
 
+## 8.31.3
+
+### Core
+
+- Fix memory leak when manually disposing effects - [_Bug Fix_] by [deltakosh](https://github.com/deltakosh) ([#17299](https://github.com/BabylonJS/Babylon.js/pull/17299))
+- GPUPicker: BoxPicking Support + Some optimization - by [noname0310](https://github.com/noname0310) ([#17289](https://github.com/BabylonJS/Babylon.js/pull/17289))
+- FrameGraph: Add support for color correction, filter and tonemap post processes - [_New Feature_] by [Popov72](https://github.com/Popov72) ([#17290](https://github.com/BabylonJS/Babylon.js/pull/17290))
+
+### Playground
+
+
+## 8.31.2
+
+### Core
+
+- Render normals when no normal attribute - by [MiiBond](https://github.com/MiiBond) ([#17281](https://github.com/BabylonJS/Babylon.js/pull/17281))
+
+## 8.31.1
+
+### Core
+
+- Add particleSystem support to Floating Origin Mode - by [georginahalpern](https://github.com/georginahalpern) ([#17276](https://github.com/BabylonJS/Babylon.js/pull/17276))
+- Geometry Buffer Renderer: Fix crash in WebGPU when mesh has no normal attribute - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17279](https://github.com/BabylonJS/Babylon.js/pull/17279))
+- Texture: Fix empty texture after when in delay load mode - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17278](https://github.com/BabylonJS/Babylon.js/pull/17278))
+- Improve WebXR feature typing - by [docEdub](https://github.com/docEdub) ([#17271](https://github.com/BabylonJS/Babylon.js/pull/17271))
+- BufferUtils: Fix GetTypedArrayData for interleaved, normalized data - by [alexchuber](https://github.com/alexchuber) ([#17269](https://github.com/BabylonJS/Babylon.js/pull/17269))
+- Geometry: Fix copying VBs with irregular strides or offsets - by [alexchuber](https://github.com/alexchuber) ([#17265](https://github.com/BabylonJS/Babylon.js/pull/17265))
+- PBR Material: Fix dispersion in WebGPU - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17268](https://github.com/BabylonJS/Babylon.js/pull/17268))
+- Mesh: Fix MinMax function - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17266](https://github.com/BabylonJS/Babylon.js/pull/17266))
+- Moving BindLogDepth to pure file - [_Bug Fix_] by [VicenteCartas](https://github.com/VicenteCartas) ([#17262](https://github.com/BabylonJS/Babylon.js/pull/17262))
+- OpenPBR Thin Film Iridescence - by [MiiBond](https://github.com/MiiBond) ([#17228](https://github.com/BabylonJS/Babylon.js/pull/17228))
+- Add support for hand tracking microgestures - by [simonedevit](https://github.com/simonedevit) ([#17255](https://github.com/BabylonJS/Babylon.js/pull/17255))
+- FrameGraph: Adds CustomPostProcessTask +fix a couple of bugs - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17258](https://github.com/BabylonJS/Babylon.js/pull/17258))
+
+### Inspector
+
+- OpenPBR Thin Film Iridescence - by [MiiBond](https://github.com/MiiBond) ([#17228](https://github.com/BabylonJS/Babylon.js/pull/17228))
+
+### Loaders
+
+- OpenPBR Thin Film Iridescence - by [MiiBond](https://github.com/MiiBond) ([#17228](https://github.com/BabylonJS/Babylon.js/pull/17228))
+
+### Playground
+
+- Inspector v2: Update Playground webpack config for sharedUiComponents - [_Bug Fix_] by [ryantrem](https://github.com/ryantrem) ([#17274](https://github.com/BabylonJS/Babylon.js/pull/17274))
+
+### Serializers
+
+- BufferUtils: Fix GetTypedArrayData for interleaved, normalized data - by [alexchuber](https://github.com/alexchuber) ([#17269](https://github.com/BabylonJS/Babylon.js/pull/17269))
+- OpenPBR Thin Film Iridescence - by [MiiBond](https://github.com/MiiBond) ([#17228](https://github.com/BabylonJS/Babylon.js/pull/17228))
+
+### Viewer
+
+- viewer variants now work with loaded models - by [alexandremottet](https://github.com/alexandremottet) ([#17267](https://github.com/BabylonJS/Babylon.js/pull/17267))
+
+## 8.31.0
+
+### Core
+
+- FrameGraph: Add support for the sharpen post process - [_New Feature_] by [Popov72](https://github.com/Popov72) ([#17254](https://github.com/BabylonJS/Babylon.js/pull/17254))
+- FrameGraph: Add support for the screen space curvature post process - [_New Feature_] by [Popov72](https://github.com/Popov72) ([#17253](https://github.com/BabylonJS/Babylon.js/pull/17253))
+
+### Playground
+
+
 ## 8.30.5
 
 ### Core
@@ -5264,6 +5329,48 @@
 
 - Mesh extrusion: Add an optional scaleVectorFunction parameter to ExtrudeShapeCustom - by [Popov72](https://github.com/Popov72) ([#17752](https://github.com/BabylonJS/Babylon.js/pull/17752))
 
+## 8.50.4
+
+## 8.50.3
+
+### Core
+
+- WebGPU: Fix wrong render target state when not using frame graphs - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17867](https://github.com/BabylonJS/Babylon.js/pull/17867))
+- Yaw East +90, West -90. Add pointer sensitivity - by [georginahalpern](https://github.com/georginahalpern) ([#17820](https://github.com/BabylonJS/Babylon.js/pull/17820))
+- Havok FloatingOrigin Multi-Region Support - [_New Feature_] by [georginahalpern](https://github.com/georginahalpern) ([#17815](https://github.com/BabylonJS/Babylon.js/pull/17815))
+- Fix Bounding Box Renderer did not work when EffectLayer was enabled - by [noname0310](https://github.com/noname0310) ([#17863](https://github.com/BabylonJS/Babylon.js/pull/17863))
+- Add support for compound gsplat in Depth renderer - by [eliemichel](https://github.com/eliemichel) ([#17846](https://github.com/BabylonJS/Babylon.js/pull/17846))
+
+### Playground
+
+- Trying a different Monaco fix - by [VicenteCartas](https://github.com/VicenteCartas) ([#17852](https://github.com/BabylonJS/Babylon.js/pull/17852))
+
+## 8.50.2
+
+### Core
+
+- ensure joint tracking spheres are created in same scene as the XR session - by [wmurphyrd](https://github.com/wmurphyrd) ([#17847](https://github.com/BabylonJS/Babylon.js/pull/17847))
+
+### Playground
+
+- Fix an issue with static in old versions - by [VicenteCartas](https://github.com/VicenteCartas) ([#17850](https://github.com/BabylonJS/Babylon.js/pull/17850))
+
+## 8.50.1
+
+### Core
+
+- WebGPU: Fix handling of MSAA textures in MRT case - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17842](https://github.com/BabylonJS/Babylon.js/pull/17842))
+- GS Bake Transforms - by [CedricGuillemet](https://github.com/CedricGuillemet) ([#17840](https://github.com/BabylonJS/Babylon.js/pull/17840))
+- SelectionOutlineLayer: Handle thin instances - by [noname0310](https://github.com/noname0310) ([#17838](https://github.com/BabylonJS/Babylon.js/pull/17838))
+- Small fixes to the removePart functionality for Gaussian Splats - by [spsDrop](https://github.com/spsDrop) ([#17834](https://github.com/BabylonJS/Babylon.js/pull/17834))
+- Adding alpha-blended depth rendering for Gaussian Splat - by [raymondyfei](https://github.com/raymondyfei) ([#17827](https://github.com/BabylonJS/Babylon.js/pull/17827))
+- Export KTX2 Worker functions - by [regnaio](https://github.com/regnaio) ([#17833](https://github.com/BabylonJS/Babylon.js/pull/17833))
+- Supporting procedural textures in the texture preview - by [VicenteCartas](https://github.com/VicenteCartas) ([#17824](https://github.com/BabylonJS/Babylon.js/pull/17824))
+- Allow nodes to automatically remove ports - [_New Feature_] by [deltakosh](https://github.com/deltakosh) ([#17819](https://github.com/BabylonJS/Babylon.js/pull/17819))
+- Use texelFetch/textureLoad for WebGL2/WGSL - by [sebavan](https://github.com/sebavan) ([#17829](https://github.com/BabylonJS/Babylon.js/pull/17829))
+- always create hand meshes in same scene as xrSession - by [wmurphyrd](https://github.com/wmurphyrd) ([#17828](https://github.com/BabylonJS/Babylon.js/pull/17828))
+- Selection Outline Layer: Introduce 8 direction sampling method - by [noname0310](https://github.com/noname0310) ([#17810](https://github.com/BabylonJS/Babylon.js/pull/17810))
+
 ## 8.50.0
 
 ## 8.49.7
@@ -6101,71 +6208,6 @@
 ### Serializers
 
 - Gltf: unofficial _COLOR_0 for EXT_mesh_gpu_instancing - by [kzhsw](https://github.com/kzhsw) ([#17264](https://github.com/BabylonJS/Babylon.js/pull/17264))
-
-## 8.31.3
-
-### Core
-
-- Fix memory leak when manually disposing effects - [_Bug Fix_] by [deltakosh](https://github.com/deltakosh) ([#17299](https://github.com/BabylonJS/Babylon.js/pull/17299))
-- GPUPicker: BoxPicking Support + Some optimization - by [noname0310](https://github.com/noname0310) ([#17289](https://github.com/BabylonJS/Babylon.js/pull/17289))
-- FrameGraph: Add support for color correction, filter and tonemap post processes - [_New Feature_] by [Popov72](https://github.com/Popov72) ([#17290](https://github.com/BabylonJS/Babylon.js/pull/17290))
-
-### Playground
-
-
-## 8.31.2
-
-### Core
-
-- Render normals when no normal attribute - by [MiiBond](https://github.com/MiiBond) ([#17281](https://github.com/BabylonJS/Babylon.js/pull/17281))
-
-## 8.31.1
-
-### Core
-
-- Add particleSystem support to Floating Origin Mode - by [georginahalpern](https://github.com/georginahalpern) ([#17276](https://github.com/BabylonJS/Babylon.js/pull/17276))
-- Geometry Buffer Renderer: Fix crash in WebGPU when mesh has no normal attribute - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17279](https://github.com/BabylonJS/Babylon.js/pull/17279))
-- Texture: Fix empty texture after when in delay load mode - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17278](https://github.com/BabylonJS/Babylon.js/pull/17278))
-- Improve WebXR feature typing - by [docEdub](https://github.com/docEdub) ([#17271](https://github.com/BabylonJS/Babylon.js/pull/17271))
-- BufferUtils: Fix GetTypedArrayData for interleaved, normalized data - by [alexchuber](https://github.com/alexchuber) ([#17269](https://github.com/BabylonJS/Babylon.js/pull/17269))
-- Geometry: Fix copying VBs with irregular strides or offsets - by [alexchuber](https://github.com/alexchuber) ([#17265](https://github.com/BabylonJS/Babylon.js/pull/17265))
-- PBR Material: Fix dispersion in WebGPU - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17268](https://github.com/BabylonJS/Babylon.js/pull/17268))
-- Mesh: Fix MinMax function - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17266](https://github.com/BabylonJS/Babylon.js/pull/17266))
-- Moving BindLogDepth to pure file - [_Bug Fix_] by [VicenteCartas](https://github.com/VicenteCartas) ([#17262](https://github.com/BabylonJS/Babylon.js/pull/17262))
-- OpenPBR Thin Film Iridescence - by [MiiBond](https://github.com/MiiBond) ([#17228](https://github.com/BabylonJS/Babylon.js/pull/17228))
-- Add support for hand tracking microgestures - by [simonedevit](https://github.com/simonedevit) ([#17255](https://github.com/BabylonJS/Babylon.js/pull/17255))
-- FrameGraph: Adds CustomPostProcessTask +fix a couple of bugs - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17258](https://github.com/BabylonJS/Babylon.js/pull/17258))
-
-### Inspector
-
-- OpenPBR Thin Film Iridescence - by [MiiBond](https://github.com/MiiBond) ([#17228](https://github.com/BabylonJS/Babylon.js/pull/17228))
-
-### Loaders
-
-- OpenPBR Thin Film Iridescence - by [MiiBond](https://github.com/MiiBond) ([#17228](https://github.com/BabylonJS/Babylon.js/pull/17228))
-
-### Playground
-
-- Inspector v2: Update Playground webpack config for sharedUiComponents - [_Bug Fix_] by [ryantrem](https://github.com/ryantrem) ([#17274](https://github.com/BabylonJS/Babylon.js/pull/17274))
-
-### Serializers
-
-- BufferUtils: Fix GetTypedArrayData for interleaved, normalized data - by [alexchuber](https://github.com/alexchuber) ([#17269](https://github.com/BabylonJS/Babylon.js/pull/17269))
-- OpenPBR Thin Film Iridescence - by [MiiBond](https://github.com/MiiBond) ([#17228](https://github.com/BabylonJS/Babylon.js/pull/17228))
-
-### Viewer
-
-- viewer variants now work with loaded models - by [alexandremottet](https://github.com/alexandremottet) ([#17267](https://github.com/BabylonJS/Babylon.js/pull/17267))
-
-## 8.31.0
-
-### Core
-
-- FrameGraph: Add support for the sharpen post process - [_New Feature_] by [Popov72](https://github.com/Popov72) ([#17254](https://github.com/BabylonJS/Babylon.js/pull/17254))
-- FrameGraph: Add support for the screen space curvature post process - [_New Feature_] by [Popov72](https://github.com/Popov72) ([#17253](https://github.com/BabylonJS/Babylon.js/pull/17253))
-
-### Playground
-
 
 ## 6.15.0
 

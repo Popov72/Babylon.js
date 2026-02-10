@@ -26,15 +26,6 @@ import { ShaderLanguage } from "core/Materials/shaderLanguage";
 import { TransmittanceLut } from "./transmittanceLut";
 import { UniformBuffer } from "core/Materials/uniformBuffer";
 import { Vector3 } from "core/Maths/math.vector";
-import "./Shaders/compositeAerialPerspective.fragment";
-import "./Shaders/compositeSky.fragment";
-import "./Shaders/compositeGlobeAtmosphere.fragment";
-import "./Shaders/fullscreenTriangle.vertex";
-import "./Shaders/ShadersInclude/atmosphereFragmentDeclaration";
-import "./Shaders/ShadersInclude/atmosphereFunctions";
-import "./Shaders/ShadersInclude/atmosphereUboDeclaration";
-import "./Shaders/ShadersInclude/atmosphereVertexDeclaration";
-import "./Shaders/ShadersInclude/depthFunctions";
 
 const MaterialPlugin = "atmo-pbr";
 
@@ -1471,11 +1462,9 @@ const CreateMultiScatteringEffectWrapper = (engine: AbstractEngine, uniformBuffe
         shaderLanguage: useWebGPU ? ShaderLanguage.WGSL : ShaderLanguage.GLSL,
         extraInitializations: (_, list) => {
             list.push(
-                Promise.all(
-                    useWebGPU
-                        ? [import("./ShadersWGSL/fullscreenTriangle.vertex"), import("./ShadersWGSL/multiScattering.fragment")]
-                        : [import("./Shaders/fullscreenTriangle.vertex"), import("./Shaders/multiScattering.fragment")]
-                )
+                ...(useWebGPU
+                    ? [import("./ShadersWGSL/fullscreenTriangle.vertex"), import("./ShadersWGSL/multiScattering.fragment")]
+                    : [import("./Shaders/fullscreenTriangle.vertex"), import("./Shaders/multiScattering.fragment")])
             );
         },
     });
@@ -1604,6 +1593,8 @@ const CreateSkyCompositorEffectWrapper = (
     applyApproximateTransmittance: boolean
 ): EffectWrapper => {
     const useUbo = uniformBuffer.useUbo;
+    const useWebGPU = engine.isWebGPU && !EffectWrapper.ForceGLSL;
+    const uboName = useWebGPU ? "atmosphere" : uniformBuffer.name;
     const defines = ["POSITION_VEC2", "COMPUTE_WORLD_RAY"];
     if (isSkyViewLutEnabled) {
         defines.push("USE_SKY_VIEW_LUT");
@@ -1621,8 +1612,16 @@ const CreateSkyCompositorEffectWrapper = (
         "compositeSky",
         ["depth", ...(useUbo ? [] : uniformBuffer.getUniformNames())],
         textures,
-        useUbo ? [uniformBuffer.name] : [],
-        defines
+        useUbo ? [uboName] : [],
+        defines,
+        useWebGPU,
+        (_, list) => {
+            list.push(
+                ...(useWebGPU
+                    ? [import("./ShadersWGSL/fullscreenTriangle.vertex"), import("./ShadersWGSL/compositeSky.fragment")]
+                    : [import("./Shaders/fullscreenTriangle.vertex"), import("./Shaders/compositeSky.fragment")])
+            );
+        }
     );
 };
 
@@ -1646,11 +1645,9 @@ const CreateAerialPerspectiveEffectWrapper = (engine: AbstractEngine, uniformBuf
         useWebGPU,
         (_, list) => {
             list.push(
-                Promise.all(
-                    useWebGPU
-                        ? [import("./ShadersWGSL/fullscreenTriangle.vertex"), import("./ShadersWGSL/aerialPerspective.fragment")]
-                        : [import("./Shaders/fullscreenTriangle.vertex"), import("./Shaders/aerialPerspective.fragment")]
-                )
+                ...(useWebGPU
+                    ? [import("./ShadersWGSL/fullscreenTriangle.vertex"), import("./ShadersWGSL/aerialPerspective.fragment")]
+                    : [import("./Shaders/fullscreenTriangle.vertex"), import("./Shaders/aerialPerspective.fragment")])
             );
         }
     );
@@ -1679,6 +1676,8 @@ const CreateAerialPerspectiveCompositorEffectWrapper = (
     aerialPerspectiveRadianceBias: number
 ): EffectWrapper => {
     const useUbo = uniformBuffer.useUbo;
+    const useWebGPU = engine.isWebGPU && !EffectWrapper.ForceGLSL;
+    const uboName = useWebGPU ? "atmosphere" : uniformBuffer.name;
     const defines = ["POSITION_VEC2", "COMPUTE_WORLD_RAY"];
     if (isAerialPerspectiveLutEnabled) {
         defines.push("USE_AERIAL_PERSPECTIVE_LUT");
@@ -1713,8 +1712,16 @@ const CreateAerialPerspectiveCompositorEffectWrapper = (
         "compositeAerialPerspective",
         ["depth", ...(useUbo ? [] : uniformBuffer.getUniformNames())],
         samplers,
-        useUbo ? [uniformBuffer.name] : [],
-        defines
+        useUbo ? [uboName] : [],
+        defines,
+        useWebGPU,
+        (_, list) => {
+            list.push(
+                ...(useWebGPU
+                    ? [import("./ShadersWGSL/fullscreenTriangle.vertex"), import("./ShadersWGSL/compositeAerialPerspective.fragment")]
+                    : [import("./Shaders/fullscreenTriangle.vertex"), import("./Shaders/compositeAerialPerspective.fragment")])
+            );
+        }
     );
 };
 
@@ -1741,6 +1748,8 @@ const CreateGlobeAtmosphereCompositorEffectWrapper = (
     hasDepthTexture: boolean
 ): EffectWrapper => {
     const useUbo = uniformBuffer.useUbo;
+    const useWebGPU = engine.isWebGPU && !EffectWrapper.ForceGLSL;
+    const uboName = useWebGPU ? "atmosphere" : uniformBuffer.name;
     const defines = ["POSITION_VEC2", "COMPUTE_WORLD_RAY"];
     if (isSkyViewLutEnabled) {
         defines.push("USE_SKY_VIEW_LUT");
@@ -1775,8 +1784,16 @@ const CreateGlobeAtmosphereCompositorEffectWrapper = (
         "compositeGlobeAtmosphere",
         ["depth", ...(useUbo ? [] : uniformBuffer.getUniformNames())],
         samplers,
-        useUbo ? [uniformBuffer.name] : [],
-        defines
+        useUbo ? [uboName] : [],
+        defines,
+        useWebGPU,
+        (_, list) => {
+            list.push(
+                ...(useWebGPU
+                    ? [import("./ShadersWGSL/fullscreenTriangle.vertex"), import("./ShadersWGSL/compositeGlobeAtmosphere.fragment")]
+                    : [import("./Shaders/fullscreenTriangle.vertex"), import("./Shaders/compositeGlobeAtmosphere.fragment")])
+            );
+        }
     );
 };
 
@@ -1800,11 +1817,9 @@ const CreateSkyViewEffectWrapper = (engine: AbstractEngine, uniformBuffer: Unifo
         useWebGPU,
         (_, list) => {
             list.push(
-                Promise.all(
-                    useWebGPU
-                        ? [import("./ShadersWGSL/fullscreenTriangle.vertex"), import("./ShadersWGSL/skyView.fragment")]
-                        : [import("./Shaders/fullscreenTriangle.vertex"), import("./Shaders/skyView.fragment")]
-                )
+                ...(useWebGPU
+                    ? [import("./ShadersWGSL/fullscreenTriangle.vertex"), import("./ShadersWGSL/skyView.fragment")]
+                    : [import("./Shaders/fullscreenTriangle.vertex"), import("./Shaders/skyView.fragment")])
             );
         }
     );
