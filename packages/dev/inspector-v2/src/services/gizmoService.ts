@@ -40,7 +40,7 @@ export interface IGizmoService extends IService<typeof GizmoServiceIdentity> {
     coordinatesMode: GizmoCoordinatesMode;
     readonly onCoordinatesModeChanged: IReadonlyObservable<void>;
 
-    cameraGizmo: number | undefined;
+    cameraGizmo: Camera | null;
     readonly onCameraGizmoChanged: IReadonlyObservable<void>;
 }
 
@@ -142,7 +142,7 @@ export const GizmoServiceDefinition: ServiceDefinition<[IGizmoService], [ISceneC
         let coordinatesModeState: GizmoCoordinatesMode = GizmoCoordinatesMode.Local;
         const coordinatesModeObservable = new Observable<void>();
 
-        let cameraGizmoState: number | undefined = undefined;
+        let cameraGizmoState: Camera | null = null;
         const cameraGizmoObservable = new Observable<void>();
 
         let currentGizmoManager: Nullable<GizmoManager> = null;
@@ -318,17 +318,13 @@ export const GizmoServiceDefinition: ServiceDefinition<[IGizmoService], [ISceneC
             get cameraGizmo() {
                 return cameraGizmoState;
             },
-            set cameraGizmo(cameraIndex: number | undefined) {
+            set cameraGizmo(camera: Camera | null) {
                 const currentScene = sceneContext.currentScene;
-                if (!currentScene || cameraIndex === cameraGizmoState) {
+                if (!currentScene || camera === cameraGizmoState) {
                     return;
                 }
 
-                cameraGizmoState = cameraIndex;
-
-                const newCameraNumber = cameraIndex;
-
-                const camera = !currentScene.activeCameras || newCameraNumber === undefined ? null : currentScene.activeCameras[newCameraNumber];
+                cameraGizmoState = camera;
 
                 const utilityLayerRef = getUtilityLayer(currentScene);
                 const keepDepthUtilityLayerRef = getUtilityLayer(currentScene, "keepDepth");

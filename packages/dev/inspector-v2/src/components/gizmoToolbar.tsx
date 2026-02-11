@@ -60,7 +60,7 @@ export const GizmoToolbar: FunctionComponent<{ gizmoService: IGizmoService; scen
     const onCameraGizmoChange = useCallback(
         (e: MenuCheckedValueChangeEvent, data: MenuCheckedValueChangeData) => {
             const value = data.checkedItems[0];
-            gizmoService.cameraGizmo = value === undefined || value === "-1" ? undefined : Number(value);
+            gizmoService.cameraGizmo = value === "-1" ? null : (sceneContext.currentScene?.activeCameras?.find((camera) => camera.uniqueId.toString() === value) ?? null);
         },
         [gizmoService]
     );
@@ -105,7 +105,7 @@ export const GizmoToolbar: FunctionComponent<{ gizmoService: IGizmoService; scen
                 </Menu>
             </Collapse>
             <Collapse visible={!!gizmoMode} orientation="horizontal">
-                <Menu positioning="below-end" checkedValues={{ cameraGizmo: [cameraGizmo?.toString() ?? "-1"] }} onCheckedValueChange={onCameraGizmoChange}>
+                <Menu positioning="below-end" checkedValues={{ cameraGizmo: [cameraGizmo?.uniqueId.toString() ?? "-1"] }} onCheckedValueChange={onCameraGizmoChange}>
                     <MenuTrigger disableButtonEnhancement={true}>
                         {(triggerProps: MenuButtonProps) => (
                             <Tooltip content="Camera Gizmo" relationship="label">
@@ -128,7 +128,7 @@ export const GizmoToolbar: FunctionComponent<{ gizmoService: IGizmoService; scen
                             </MenuItemRadio>
                             {sceneContext.currentScene &&
                                 sceneContext.currentScene.activeCameras?.map((camera, index) => (
-                                    <MenuItemRadio key={camera.uniqueId} name="cameraGizmo" value={index.toString()}>
+                                    <MenuItemRadio key={camera.uniqueId} name="cameraGizmo" value={camera.uniqueId.toString()}>
                                         {camera.name}
                                     </MenuItemRadio>
                                 ))}
