@@ -12,26 +12,18 @@ import type {
     Skeleton,
     TargetedAnimation,
 } from "core/index";
-import { Vector3, Quaternion, TmpVectors } from "core/Maths/math.vector";
+import { Vector3, Quaternion, TmpVectors, Matrix } from "core/Maths/math.vector";
 import { Logger } from "../Misc/logger";
-import { Matrix } from "core/Maths/math.vector";
 
 /**
  * Options for retargeting an animation group to an avatar.
  */
 export interface IRetargetOptions {
     /**
-     * If true, the animation group will be cloned before retargeting, leaving the original animation group unchanged.
-     * If false, the original animation group will be modified (targets and animations).
-     * Default is true.
-     */
-    cloneAnimationGroup?: boolean;
-
-    /**
-     * The name to assign to the cloned animation group if cloneAnimationGroup is true.
+     * The name to assign to the (cloned) retargeted animation group.
      * If not specified, the same name as the original animation group will be used.
      */
-    clonedAnimationGroupName?: string;
+    animationGroupName?: string;
 
     /**
      * If true, the retargeted animations will be fixed to correct common issues like orthogonal quaternions.
@@ -53,8 +45,53 @@ export interface IRetargetOptions {
      */
     retargetAnimationKeys?: boolean;
 
-    retargetMesh?: AbstractMesh;
+    /**
+     * If true, scales and adjusts the root position animation to account for size differences between the source and target avatars.
+     * This helps maintain the relative motion of the character when retargeting between avatars of different proportions.
+     * Default is true.
+     */
+    fixRootPosition?: boolean;
+
+    /**
+     * If true, adjusts the root position animation to correct for ground reference height differences between the source and target avatars.
+     * This ensures that the animated character maintains proper contact with the ground during retargeting.
+     * Default is true.
+     */
+    fixGroundReference?: boolean;
+
+    /**
+     * The name of the root transform node in the source animation group (typically "Hips" or similar).
+     * If not specified, the system will attempt to automatically find the first bone without a parent.
+     * This bone is used as a reference point for fixing root position during retargeting.
+     * It's also used by the ground reference fixing processing.
+     */
+    rootNodeName?: string;
+
+    /**
+     * The name of the transform node in the source animation group used as a ground reference point (typically a foot bone like "LeftFoot" or "RightFoot").
+     * This bone is used to determine the vertical offset needed to maintain proper ground contact during retargeting.
+     * Required when fixGroundReference or fixRootPosition is enabled.
+     */
+    groundReferenceNodeName?: string;
+
+    /**
+     * Specifies which axis represents the vertical/up direction in the animation space.
+     * Use "X", "Y", or "Z" to explicitly set the vertical axis, or "" (empty string) / undefined to auto-detect.
+     * If not specified or empty, the system will automatically determine the vertical axis based on the difference
+     * between the root node and ground reference node positions.
+     * Default is undefined (auto-detect).
+     */
+    groundReferenceVerticalAxis?: "" | "X" | "Y" | "Z";
+
+    /**
+     * A map for renaming nodes during retargeting when the source transform node hierarchy and target skeleton use different naming conventions.
+     * The map keys are the original node names from the source animation group, and the values are the corresponding
+     * node names in the target skeleton. This is useful when bone names don't match between avatars.
+     */
+    mapNodeNames?: Map<string, string>;
 }
+
+type TransformNodeNameToNode = Map<string, { node: TransformNode; initialTransformations: { position: Vector3; scaling: Vector3; quaternion: Quaternion } }>;
 
 /**
  * Represents an animator avatar that manages skeletons and morph target managers for a hierarchical transform node and mesh structure.
@@ -131,6 +168,8 @@ export class AnimatorAvatar {
                     this.morphTargetManagers.add(mesh.morphTargetManager);
                 }
             });
+
+        this._computeBoneWorldMatrices();
     }
 
     /**
@@ -164,26 +203,62 @@ export class AnimatorAvatar {
     /**
      * Make sures that the animation group passed as the first parameter will animate the bones in the skeleton(s) / the morphs in the morph target manager(s) of the avatar.
      * Retargeting is based on the names of the targets (TransformNode or MorphTarget) in the animation and the names of the bones in the skeleton / morph targets in the morph target manager.
-     * So make sure the names are the same in both cases!
+     * Note that you can use the mapNodeNames option to specify a mapping between source transform node names and target bone names in case they are different.
      * If no bones with the same name as a target (TransformNode) of a targeted animation are found, the targeted animation is removed from the animation group.
      * Same for morph targets.
-     * @param animationGroup The animation group to retarget
+     * Note that for the time being, we only support a source animation group which animates transform nodes, not bones!
+     * That's typically the case when the source animation group is created from a glTF file, as glTF animations always target transform nodes.
+     * @param sourceAnimationGroup The animation group to retarget
      * @param options Options for retargeting the animation group (optional)
-     * @returns The retargeted animation group (a clone if the cloneAnimationGroup option is true (which is the default), otherwise the original animation group)
+     * @returns The retargeted (new) animation group
      */
-    public retargetAnimationGroup(animationGroup: AnimationGroup, options?: IRetargetOptions): AnimationGroup {
+    public retargetAnimationGroup(sourceAnimationGroup: AnimationGroup, options?: IRetargetOptions): AnimationGroup {
         const localOptions: IRetargetOptions = {
-            cloneAnimationGroup: true,
-            clonedAnimationGroupName: animationGroup.name,
+            animationGroupName: sourceAnimationGroup.name,
             fixAnimations: true,
             checkHierarchy: true,
             retargetAnimationKeys: true,
+            fixGroundReference: true,
+            fixRootPosition: true,
             ...options,
         };
 
-        if (localOptions.cloneAnimationGroup) {
-            animationGroup = animationGroup.clone(localOptions.clonedAnimationGroupName!, undefined, true, true);
+        // Make sure that all world matrices are up to date, both in the bone hierarchy and in the animation transform node hierarchy
+        this._computeBoneWorldMatrices();
+
+        const mapNodeNames = localOptions.mapNodeNames ?? new Map();
+        const lstTransformNodes = new Set<TransformNode>();
+        const sourceTransformNodeNameToNode: TransformNodeNameToNode = new Map();
+
+        for (let i = 0; i < sourceAnimationGroup.targetedAnimations.length; ++i) {
+            const ta = sourceAnimationGroup.targetedAnimations[i];
+            if (ta.target.getClassName?.() === "TransformNode" && !lstTransformNodes.has(ta.target)) {
+                const tn = ta.target as TransformNode;
+
+                lstTransformNodes.add(tn);
+
+                if (!tn.rotationQuaternion) {
+                    tn.rotationQuaternion = Quaternion.FromEulerAngles(tn.rotation.x, tn.rotation.y, tn.rotation.z);
+                    tn.rotation.setAll(0);
+                }
+
+                sourceTransformNodeNameToNode.set(mapNodeNames.get(tn.name) ?? tn.name, {
+                    node: tn,
+                    initialTransformations: {
+                        position: tn.position.clone(),
+                        scaling: tn.scaling.clone(),
+                        quaternion: tn.rotationQuaternion.clone(),
+                    },
+                });
+            }
         }
+
+        for (const node of lstTransformNodes) {
+            node.computeWorldMatrix(true);
+        }
+
+        // Clone the source animation and retarget it
+        const animationGroup = sourceAnimationGroup.clone(localOptions.animationGroupName!, undefined, true, true);
 
         const mapTransformNodeToRootNode: Map<TransformNode, Node> = new Map<TransformNode, Node>();
         const lstAnims = new Set<Animation>();
@@ -193,9 +268,11 @@ export class AnimatorAvatar {
             const animation = ta.animation;
 
             if (lstAnims.has(animation)) {
-                Logger.Warn(
-                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': animation '${animation.name}' is used multiple times in the same animation group: duplicated animations are not supported, the retargeted animation may not work as expected`
-                );
+                if (this.showWarnings) {
+                    Logger.Warn(
+                        `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': animation '${animation.name}' is used multiple times in the same animation group: duplicated animations are not supported, the retargeted animation may not work as expected.`
+                    );
+                }
             }
 
             lstAnims.add(animation);
@@ -216,22 +293,44 @@ export class AnimatorAvatar {
                     }
 
                     const sourceTransformNode = ta.target as TransformNode;
-                    const targetBone = this.findBone(sourceTransformNode.name);
+                    const sourceTransformNodeName = mapNodeNames.get(sourceTransformNode.name) ?? sourceTransformNode.name;
+                    const targetBone = this.findBone(sourceTransformNodeName);
 
                     if (!targetBone) {
                         if (this.showWarnings) {
                             Logger.Warn(
-                                `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': "${sourceTransformNode.name}" bone not found in any skeleton of avatar: animation removed`
+                                `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': "${sourceTransformNodeName}" bone not found in any skeleton of avatar: animation removed.`
+                            );
+                            animationGroup.targetedAnimations.splice(i, 1);
+                            i--;
+                        }
+                        break;
+                    }
+
+                    if (!targetBone._linkedTransformNode) {
+                        if (this.showWarnings) {
+                            Logger.Warn(
+                                `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': bone "${targetBone.name}" has no linked transform node: skipping retargeting.`
                             );
                         }
                         break;
                     }
 
-                    if (!this._retargetTransformNodeToBone(ta, sourceTransformNode, targetBone, animationGroup.name, mapTransformNodeToRootNode, !!localOptions.checkHierarchy)) {
+                    if (
+                        !this._retargetTransformNodeToBone(
+                            ta,
+                            sourceTransformNode,
+                            targetBone,
+                            animationGroup.name,
+                            mapTransformNodeToRootNode,
+                            mapNodeNames,
+                            !!localOptions.checkHierarchy
+                        )
+                    ) {
                         animationGroup.targetedAnimations.splice(i, 1);
                         i--;
                     } else if (localOptions.retargetAnimationKeys) {
-                        this._retargetAnimationKeys(ta.animation, sourceTransformNode, targetBone, localOptions.retargetMesh);
+                        this._retargetAnimationKeys(ta.animation, sourceTransformNode, targetBone);
                     }
 
                     break;
@@ -243,7 +342,105 @@ export class AnimatorAvatar {
             this._fixAnimationGroup(animationGroup);
         }
 
+        if (localOptions.fixGroundReference || localOptions.fixRootPosition) {
+            const msg =
+                localOptions.fixGroundReference && localOptions.fixRootPosition
+                    ? "Ground reference and root position fixing processes skipped."
+                    : localOptions.fixGroundReference
+                      ? "Ground reference fixing process skipped."
+                      : "Root position fixing process skipped.";
+
+            const res = this._findVerticalAxis(
+                msg,
+                animationGroup,
+                mapNodeNames.get(localOptions.rootNodeName) ?? localOptions.rootNodeName,
+                sourceTransformNodeNameToNode,
+                mapNodeNames.get(localOptions.groundReferenceNodeName) ?? localOptions.groundReferenceNodeName,
+                localOptions.groundReferenceVerticalAxis
+            );
+
+            if (res) {
+                const {
+                    verticalAxis,
+                    sourceRootTransformNode,
+                    targetRootTransformNode,
+                    targetRootPositionAnimation,
+                    sourceGroundReferenceTransformNode,
+                    targetGroundReferenceTransformNode,
+                    proportionRatio,
+                } = res;
+
+                if (localOptions.fixRootPosition) {
+                    this._fixRootPosition(sourceAnimationGroup, animationGroup, sourceRootTransformNode, targetRootTransformNode, targetRootPositionAnimation, proportionRatio);
+                    this._resetStates(sourceTransformNodeNameToNode);
+                }
+
+                if (localOptions.fixGroundReference) {
+                    this._fixGroundReference(
+                        sourceAnimationGroup,
+                        animationGroup,
+                        verticalAxis,
+                        targetRootTransformNode,
+                        targetRootPositionAnimation,
+                        sourceGroundReferenceTransformNode,
+                        targetGroundReferenceTransformNode
+                    );
+                    this._resetStates(sourceTransformNodeNameToNode);
+                }
+            }
+        }
+
         return animationGroup;
+    }
+
+    /**
+     * Disposes of the avatar and releases all associated resources.
+     * This will dispose all skeletons, morph target managers, and the root mesh with its descendants (including materials and textures).
+     * If disposeResources was set to false in the constructor, this method does nothing.
+     */
+    public dispose(): void {
+        if (!this._disposeResources) {
+            return;
+        }
+
+        const iterator = this.skeletons.keys();
+        for (let key = iterator.next(); key.done !== true; key = iterator.next()) {
+            key.value.dispose();
+        }
+
+        const iterator2 = this.morphTargetManagers.keys();
+        for (let key = iterator2.next(); key.done !== true; key = iterator2.next()) {
+            key.value.dispose();
+        }
+
+        this.rootNode?.dispose(false, true);
+    }
+
+    private _computeBoneWorldMatrices() {
+        this.skeletons.forEach((skeleton) => {
+            skeleton.bones.forEach((bone) => {
+                bone._linkedTransformNode?.computeWorldMatrix(true);
+            });
+        });
+    }
+
+    private _isTransformNode(nameOrTransformNode: string | TransformNode): nameOrTransformNode is TransformNode {
+        return typeof nameOrTransformNode !== "string";
+    }
+
+    private _buildMorphTargetMap(): void {
+        this._mapMorphTargetNameToMorphTarget = new Map<string, MorphTarget>();
+
+        for (const manager of this.morphTargetManagers) {
+            const numTargets = manager.numTargets;
+
+            for (let t = 0; t < numTargets; ++t) {
+                const target = manager.getTarget(t);
+                const key = manager.meshName + "_" + target.name;
+
+                this._mapMorphTargetNameToMorphTarget.set(key, target);
+            }
+        }
     }
 
     private _retargetMorphTarget(ta: TargetedAnimation, animationGroupName: string) {
@@ -270,6 +467,7 @@ export class AnimatorAvatar {
         targetBone: Bone,
         animationGroupName: string,
         mapTransformNodeToRootNode: Map<TransformNode, Node>,
+        mapNodeNames: Map<string, string>,
         checkHierarchy: boolean
     ) {
         if (checkHierarchy) {
@@ -280,7 +478,7 @@ export class AnimatorAvatar {
                 mapTransformNodeToRootNode.set(sourceTransformNode, rootNode);
             }
 
-            if (!this._checkParentHierarchy(targetBone, rootNode!)) {
+            if (!this._checkParentHierarchy(targetBone, rootNode!, mapNodeNames)) {
                 if (this.showWarnings) {
                     Logger.Warn(
                         `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroupName}': parent hierarchy mismatch between bone "${targetBone.name}" and transform node "${sourceTransformNode.name}": animation removed`
@@ -295,42 +493,26 @@ export class AnimatorAvatar {
         return true;
     }
 
-    private _retargetAnimationKeys(animation: Animation, sourceTransformNode: TransformNode, targetBone: Bone, retargetMesh?: AbstractMesh) {
-        const isRootBone = !targetBone.parent;
+    private _retargetAnimationKeys(animation: Animation, sourceTransformNode: TransformNode, targetBone: Bone) {
         const keys = animation.getKeys();
+        const targetTransformNode = targetBone._linkedTransformNode!;
 
-        const sourceTransformNodeInverseRotation = sourceTransformNode.rotationQuaternion!.conjugate();
-        const sourceTransformationInverseScaling = new Vector3(1 / sourceTransformNode.scaling.x, 1 / sourceTransformNode.scaling.y, 1 / sourceTransformNode.scaling.z);
+        const targetWorldMatrix = targetTransformNode.getWorldMatrix();
+        const targetParentWorldMatrix = targetTransformNode.parent ? targetTransformNode.parent.getWorldMatrix() : Matrix.IdentityReadOnly;
+        const targetParentInverseWorldMatrix = targetParentWorldMatrix.invertToRef(TmpVectors.Matrix[0]);
 
-        const targetBonePosition = targetBone.position;
-        const targetBoneRotation = targetBone.rotationQuaternion;
-        const targetBoneScaling = targetBone.scaling;
-
-        // Difference between target and source
-        const diffQuaternion = sourceTransformNodeInverseRotation.multiplyToRef(targetBoneRotation, TmpVectors.Quaternion[0]).normalize();
-        const diffQuaternion2 = targetBoneRotation.multiplyToRef(sourceTransformNodeInverseRotation, TmpVectors.Quaternion[2]).normalize();
-        const diffPosition = targetBonePosition.subtractToRef(sourceTransformNode.position, TmpVectors.Vector3[0]);
-        const diffScaling = targetBoneScaling.divideToRef(sourceTransformNode.scaling, TmpVectors.Vector3[1]);
-
-        const targetMeshWorldMatrix = retargetMesh ? retargetMesh.getWorldMatrix() : Matrix.IdentityReadOnly;
-        const targetMeshAbsoluteQuaternion = new Quaternion();
-
-        targetMeshWorldMatrix.decompose(undefined, targetMeshAbsoluteQuaternion, undefined);
+        const sourceInverseWorld = sourceTransformNode.getWorldMatrix().invertToRef(TmpVectors.Matrix[1]);
+        const sourceParentWorld = sourceTransformNode.parent ? sourceTransformNode.parent.getWorldMatrix() : Matrix.IdentityReadOnly;
 
         switch (animation.targetProperty) {
             case "rotationQuaternion": {
-                if (isRootBone) {
-                    for (const key of keys) {
-                        const quaternion = key.value as Quaternion;
+                for (const key of keys) {
+                    const quaternion = key.value as Quaternion;
 
-                        key.value = quaternion.multiplyInPlace(diffQuaternion);
-                    }
-                } else {
-                    for (const key of keys) {
-                        const quaternion = key.value as Quaternion;
+                    const localMat = Matrix.ComposeToRef(sourceTransformNode.scaling, quaternion, sourceTransformNode.position, TmpVectors.Matrix[2]);
 
-                        key.value = diffQuaternion2.multiplyToRef(quaternion, quaternion);
-                    }
+                    sourceInverseWorld.multiplyToRef(localMat, localMat).multiplyToRef(sourceParentWorld, localMat);
+                    targetWorldMatrix.multiplyToRef(localMat, localMat).multiplyToRef(targetParentInverseWorldMatrix, localMat).decompose(undefined, quaternion, undefined);
                 }
                 break;
             }
@@ -338,68 +520,23 @@ export class AnimatorAvatar {
                 for (const key of keys) {
                     const position = key.value as Vector3;
 
-                    key.value = diffPosition.addToRef(position, position);
+                    const localMat = Matrix.ComposeToRef(sourceTransformNode.scaling, sourceTransformNode.rotationQuaternion!, position, TmpVectors.Matrix[2]);
+
+                    sourceInverseWorld.multiplyToRef(localMat, localMat).multiplyToRef(sourceParentWorld, localMat);
+                    targetWorldMatrix.multiplyToRef(localMat, localMat).multiplyToRef(targetParentInverseWorldMatrix, localMat).decompose(undefined, undefined, position);
                 }
                 break;
             }
             case "scaling": {
-                if (isRootBone) {
-                    for (const key of keys) {
-                        const scaling = key.value as Vector3;
+                for (const key of keys) {
+                    const scaling = key.value as Vector3;
 
-                        key.value = scaling.multiplyInPlace(diffScaling);
-                    }
-                } else {
-                    for (const key of keys) {
-                        const scaling = key.value as Vector3;
-                        const animDiffScaling = sourceTransformationInverseScaling.multiplyToRef(scaling, TmpVectors.Vector3[2]);
+                    const localMat = Matrix.ComposeToRef(scaling, sourceTransformNode.rotationQuaternion!, sourceTransformNode.position, TmpVectors.Matrix[2]);
 
-                        key.value = targetBoneScaling.multiplyToRef(animDiffScaling, scaling);
-                    }
+                    sourceInverseWorld.multiplyToRef(localMat, localMat).multiplyToRef(sourceParentWorld, localMat);
+                    targetWorldMatrix.multiplyToRef(localMat, localMat).multiplyToRef(targetParentInverseWorldMatrix, localMat).decompose(scaling, undefined, undefined);
                 }
                 break;
-            }
-        }
-    }
-
-    /**
-     * Disposes of the avatar and releases all associated resources.
-     * This will dispose all skeletons, morph target managers, and the root mesh with its descendants (including materials and textures).
-     * If disposeResources was set to false in the constructor, this method does nothing.
-     */
-    public dispose(): void {
-        if (!this._disposeResources) {
-            return;
-        }
-
-        const iterator = this.skeletons.keys();
-        for (let key = iterator.next(); key.done !== true; key = iterator.next()) {
-            key.value.dispose();
-        }
-
-        const iterator2 = this.morphTargetManagers.keys();
-        for (let key = iterator2.next(); key.done !== true; key = iterator2.next()) {
-            key.value.dispose();
-        }
-
-        this.rootNode?.dispose(false, true);
-    }
-
-    private _isTransformNode(nameOrTransformNode: string | TransformNode): nameOrTransformNode is TransformNode {
-        return typeof nameOrTransformNode !== "string";
-    }
-
-    private _buildMorphTargetMap(): void {
-        this._mapMorphTargetNameToMorphTarget = new Map<string, MorphTarget>();
-
-        for (const manager of this.morphTargetManagers) {
-            const numTargets = manager.numTargets;
-
-            for (let t = 0; t < numTargets; ++t) {
-                const target = manager.getTarget(t);
-                const key = manager.meshName + "_" + target.name;
-
-                this._mapMorphTargetNameToMorphTarget.set(key, target);
             }
         }
     }
@@ -482,23 +619,292 @@ export class AnimatorAvatar {
      * @returns True if the hierarchies match, false otherwise
      * @internal
      */
-    private _checkParentHierarchy(bone: Bone, rootTransformNode: Node) {
-        const children = rootTransformNode.getDescendants(false, (node) => node.name === bone._linkedTransformNode!.name);
+    private _checkParentHierarchy(bone: Bone, rootTransformNode: Node, mapNodeNames: Map<string, string>) {
+        const children = rootTransformNode.getDescendants(false, (node) => (mapNodeNames.get(node.name) ?? node.name) === bone._linkedTransformNode!.name);
         if (!children || children.length !== 1) {
+            if (this.showWarnings) {
+                Logger.Warn(
+                    `RetargetAnimationGroup - Avatar '${this.name}', CheckParentHierarchy: unable to find a corresponding transform node to bone name ${bone._linkedTransformNode!.name} in the source animation.`
+                );
+            }
             return false;
         }
 
         let transformNode: Nullable<Node> = children[0];
 
         while (bone) {
-            if (bone._linkedTransformNode!.name !== transformNode?.name) {
+            const name = mapNodeNames.get(transformNode?.name ?? "") ?? transformNode?.name;
+            if (bone._linkedTransformNode!.name !== name) {
+                if (this.showWarnings) {
+                    Logger.Warn(
+                        `RetargetAnimationGroup - Avatar '${this.name}', CheckParentHierarchy: bone name ${bone._linkedTransformNode!.name} is different from transform node name ${name}.`
+                    );
+                }
                 return false;
             }
 
             bone = bone.parent;
-            transformNode = transformNode.parent;
+            transformNode = transformNode!.parent;
         }
 
         return true;
+    }
+
+    private _getRootNodeName(rootNodeName: string | undefined, transformNodeNameToNode: TransformNodeNameToNode) {
+        if (rootNodeName) {
+            return rootNodeName;
+        }
+
+        // Look for the first bone that doesn't have a parent
+        const iterator = this.skeletons.keys();
+        for (let key = iterator.next(); key.done !== true; key = iterator.next()) {
+            const skeleton = key.value;
+
+            for (const bone of skeleton.bones) {
+                if (!bone.parent) {
+                    // Make sure there's a transform node with that name in the source animation
+                    if (transformNodeNameToNode.get(bone.name)) {
+                        return bone.name;
+                    }
+                }
+            }
+        }
+
+        return;
+    }
+
+    private _findVerticalAxis(
+        msg: string,
+        animationGroup: AnimationGroup,
+        remappedRootNodeName: string | undefined,
+        sourceTransformNodeNameToNode: TransformNodeNameToNode,
+        remappedGroundReferenceNodeName?: string,
+        groundReferenceVerticalAxis?: string
+    ) {
+        if (!remappedGroundReferenceNodeName) {
+            if (this.showWarnings) {
+                Logger.Warn(
+                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': you must provide the name of the ground reference node (option parameter "groundReferenceNodeName"). ${msg}`
+                );
+            }
+            return null;
+        }
+
+        remappedRootNodeName = this._getRootNodeName(remappedRootNodeName, sourceTransformNodeNameToNode);
+
+        if (!remappedRootNodeName) {
+            if (this.showWarnings) {
+                Logger.Warn(
+                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': unable to find a suitable root node in the source animation. You should provide its name through the "rootNodeName" optional parameter. ${msg}`
+                );
+            }
+            return null;
+        }
+
+        const sourceRootTransformNode = sourceTransformNodeNameToNode.get(remappedRootNodeName)?.node;
+        const sourceGroundReferenceTransformNode = sourceTransformNodeNameToNode.get(remappedGroundReferenceNodeName)?.node;
+
+        if (!sourceRootTransformNode) {
+            if (this.showWarnings) {
+                Logger.Warn(
+                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': unable to find the transform node corresponding to "${remappedRootNodeName}" in the source animation. This transform node either doesn't exist or is not animated. ${msg}`
+                );
+            }
+            return null;
+        }
+
+        if (!sourceGroundReferenceTransformNode) {
+            if (this.showWarnings) {
+                Logger.Warn(
+                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': unable to find the transform node corresponding to "${remappedGroundReferenceNodeName}" in the source animation. This transform node either doesn't exist or is not animated. ${msg}`
+                );
+            }
+            return null;
+        }
+
+        // Look for the position animation + target node of the root node name (generally the hips) in the retargeted animation
+        let targetRootPositionAnimation: Animation | undefined;
+        let targetRootTransformNode: TransformNode | undefined;
+
+        for (let i = 0; i < animationGroup.targetedAnimations.length; ++i) {
+            const ta = animationGroup.targetedAnimations[i];
+            const target = ta.target;
+            const animation = ta.animation;
+
+            if (target.name === remappedRootNodeName && animation.targetProperty === "position") {
+                targetRootPositionAnimation = animation;
+                targetRootTransformNode = ta.target;
+                break;
+            }
+        }
+
+        if (!targetRootPositionAnimation || !targetRootTransformNode) {
+            if (this.showWarnings) {
+                Logger.Warn(
+                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': unable to find a "position" animation for the node "${remappedRootNodeName}". ${msg}`
+                );
+            }
+            return null;
+        }
+
+        const targetGroundReferenceTransformNode = this.findBone(remappedGroundReferenceNodeName)?._linkedTransformNode!;
+
+        if (!targetGroundReferenceTransformNode) {
+            if (this.showWarnings) {
+                Logger.Warn(
+                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': unable to find the transform node corresponding to the bone "${remappedGroundReferenceNodeName}" in the avatar skeleton. Ensure that this bone exists and is linked to a transform node. ${msg}`
+                );
+            }
+            return null;
+        }
+
+        sourceRootTransformNode.computeWorldMatrix(true);
+        sourceGroundReferenceTransformNode.computeWorldMatrix(true);
+
+        // Determine the vertical axis
+        const sourceRootGroundReferenceDiff = sourceRootTransformNode.getAbsolutePosition().subtract(sourceGroundReferenceTransformNode.getAbsolutePosition());
+
+        let verticalAxis = 0;
+
+        if (groundReferenceVerticalAxis) {
+            switch (groundReferenceVerticalAxis) {
+                case "Y":
+                    verticalAxis = 1;
+                    break;
+                case "Z":
+                    verticalAxis = 2;
+                    break;
+            }
+        } else {
+            // No axis provided: assume the vertical axis is the one with the larger difference between the reference and the ground reference transform nodes
+            if (Math.abs(sourceRootGroundReferenceDiff.y) > Math.abs(sourceRootGroundReferenceDiff.x)) {
+                verticalAxis = 1;
+            }
+            if (Math.abs(sourceRootGroundReferenceDiff.z) > Math.abs(sourceRootGroundReferenceDiff.y)) {
+                verticalAxis = 2;
+            }
+        }
+
+        const targetRootGroundReferenceDiff = targetRootTransformNode.getAbsolutePosition().subtract(targetGroundReferenceTransformNode.getAbsolutePosition());
+
+        return {
+            verticalAxis,
+            sourceRootTransformNode,
+            sourceGroundReferenceTransformNode,
+            targetRootTransformNode,
+            targetRootPositionAnimation,
+            targetGroundReferenceTransformNode,
+            proportionRatio:
+                verticalAxis === 0
+                    ? targetRootGroundReferenceDiff.x / sourceRootGroundReferenceDiff.x
+                    : verticalAxis === 1
+                      ? targetRootGroundReferenceDiff.y / sourceRootGroundReferenceDiff.y
+                      : targetRootGroundReferenceDiff.z / sourceRootGroundReferenceDiff.z,
+        };
+    }
+
+    private _resetStates(sourceTransformNodeNameToNode: TransformNodeNameToNode) {
+        this.skeletons.forEach((skeleton) => skeleton.returnToRest());
+
+        sourceTransformNodeNameToNode.forEach((data) => {
+            const { node, initialTransformations } = data;
+            node.position = initialTransformations.position;
+            node.scaling = initialTransformations.scaling;
+            node.rotationQuaternion = initialTransformations.quaternion;
+            node.computeWorldMatrix(true);
+        });
+    }
+
+    private _fixRootPosition(
+        sourceAnimationGroup: AnimationGroup,
+        animationGroup: AnimationGroup,
+        sourceRootTransformNode: TransformNode,
+        targetRootTransformNode: TransformNode,
+        targetRootPositionAnimation: Animation,
+        proportionRatio: number
+    ) {
+        const targetNodeInverseParentWorldMatrix = targetRootTransformNode.parent?.getWorldMatrix().invertToRef(TmpVectors.Matrix[0]) ?? Matrix.IdentityReadOnly;
+
+        sourceRootTransformNode.computeWorldMatrix(true);
+        targetRootTransformNode.computeWorldMatrix(true);
+
+        const sourceWorldPosition = sourceRootTransformNode.absolutePosition.clone();
+        const targetWorldPosition = targetRootTransformNode.absolutePosition.clone();
+
+        sourceAnimationGroup.play(false);
+        animationGroup.play(false);
+
+        // Loop over the position animation of the root transform node
+        for (const key of targetRootPositionAnimation.getKeys()) {
+            const frame = key.frame;
+
+            // Advance the source and retargeted animations to this frame
+            sourceAnimationGroup.goToFrame(frame);
+            sourceAnimationGroup.pause();
+
+            animationGroup.goToFrame(frame);
+            animationGroup.pause();
+
+            sourceRootTransformNode.computeWorldMatrix(true);
+
+            const offset = sourceRootTransformNode.absolutePosition.subtractToRef(sourceWorldPosition, TmpVectors.Vector3[0]);
+
+            offset.scaleInPlace(proportionRatio);
+            offset.addInPlace(targetWorldPosition);
+
+            Vector3.TransformNormalToRef(offset, targetNodeInverseParentWorldMatrix, key.value);
+        }
+
+        sourceAnimationGroup.stop();
+        animationGroup.stop();
+    }
+
+    private _fixGroundReference(
+        sourceAnimationGroup: AnimationGroup,
+        animationGroup: AnimationGroup,
+        verticalAxis: number,
+        targetRootTransformNode: TransformNode,
+        targetRootPositionAnimation: Animation,
+        sourceGroundReferenceTransformNode: TransformNode,
+        targetGroundReferenceTransformNode: TransformNode
+    ) {
+        const targetNodeInverseParentWorldMatrix = targetRootTransformNode.parent?.getWorldMatrix().invertToRef(TmpVectors.Matrix[0]) ?? Matrix.IdentityReadOnly;
+
+        sourceAnimationGroup.play(false);
+        animationGroup.play(false);
+
+        // Loop over the position animation of the root transform node
+        for (const key of targetRootPositionAnimation.getKeys()) {
+            const frame = key.frame;
+
+            // Advance the source and retargeted animations to this frame
+            sourceAnimationGroup.goToFrame(frame);
+            sourceAnimationGroup.pause();
+
+            animationGroup.goToFrame(frame);
+            animationGroup.pause();
+
+            sourceGroundReferenceTransformNode.computeWorldMatrix(true);
+            targetGroundReferenceTransformNode.computeWorldMatrix(true);
+
+            // Calculate the offset to apply to the root position in the target to have the ground reference at the same height in the source and target animations
+            const diffGroundReferences = targetGroundReferenceTransformNode.absolutePosition.subtractToRef(
+                sourceGroundReferenceTransformNode.absolutePosition,
+                TmpVectors.Vector3[0]
+            );
+
+            const offset = verticalAxis === 0 ? diffGroundReferences.x : verticalAxis === 1 ? diffGroundReferences.y : diffGroundReferences.z;
+
+            const localOffset = Vector3.TransformNormalToRef(
+                new Vector3(verticalAxis === 0 ? offset : 0, verticalAxis === 1 ? offset : 0, verticalAxis === 2 ? offset : 0),
+                targetNodeInverseParentWorldMatrix,
+                TmpVectors.Vector3[1]
+            );
+
+            key.value.subtractInPlace(localOffset);
+        }
+
+        sourceAnimationGroup.stop();
+        animationGroup.stop();
     }
 }
