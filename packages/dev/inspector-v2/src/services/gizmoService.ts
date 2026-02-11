@@ -40,7 +40,7 @@ export interface IGizmoService extends IService<typeof GizmoServiceIdentity> {
     coordinatesMode: GizmoCoordinatesMode;
     readonly onCoordinatesModeChanged: IReadonlyObservable<void>;
 
-    cameraGizmo: Camera | null;
+    gizmoCamera: Camera | null;
     readonly onCameraGizmoChanged: IReadonlyObservable<void>;
 }
 
@@ -315,10 +315,10 @@ export const GizmoServiceDefinition: ServiceDefinition<[IGizmoService], [ISceneC
             },
             onCoordinatesModeChanged: coordinatesModeObservable as IReadonlyObservable<void>,
 
-            get cameraGizmo() {
+            get gizmoCamera() {
                 return cameraGizmoState;
             },
-            set cameraGizmo(camera: Camera | null) {
+            set gizmoCamera(camera: Camera | null) {
                 const currentScene = sceneContext.currentScene;
                 if (!currentScene || camera === cameraGizmoState) {
                     return;
