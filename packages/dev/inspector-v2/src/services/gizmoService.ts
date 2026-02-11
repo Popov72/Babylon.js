@@ -42,8 +42,6 @@ export interface IGizmoService extends IService<typeof GizmoServiceIdentity> {
 
     cameraGizmo: number | undefined;
     readonly onCameraGizmoChanged: IReadonlyObservable<void>;
-
-    scene: Scene | null;
 }
 
 export const GizmoServiceDefinition: ServiceDefinition<[IGizmoService], [ISceneContext, ISelectionService]> = {
@@ -264,13 +262,10 @@ export const GizmoServiceDefinition: ServiceDefinition<[IGizmoService], [ISceneC
             }
         }
 
-        let currentScene = sceneContext.currentScene;
-
         // Recreate the GizmoManager when the active scene changes.
         const sceneObserver = sceneContext.currentSceneObservable.add((scene) => {
             destroyGizmoManager();
             if (scene) {
-                currentScene = scene;
                 createGizmoManager(scene);
                 syncGizmoManager();
             }
@@ -293,10 +288,6 @@ export const GizmoServiceDefinition: ServiceDefinition<[IGizmoService], [ISceneC
             getLightGizmo,
             getCameraGizmos: (scene) => scene.cameras.map((camera) => cameraGizmos.get(camera)?.gizmo).filter(Boolean) as readonly CameraGizmo[],
             getLightGizmos: (scene) => scene.lights.map((light) => lightGizmos.get(light)?.gizmo).filter(Boolean) as readonly LightGizmo[],
-
-            get scene() {
-                return currentScene;
-            },
 
             get gizmoMode() {
                 return gizmoModeState;
@@ -328,6 +319,7 @@ export const GizmoServiceDefinition: ServiceDefinition<[IGizmoService], [ISceneC
                 return cameraGizmoState;
             },
             set cameraGizmo(cameraIndex: number | undefined) {
+                const currentScene = sceneContext.currentScene;
                 if (!currentScene || cameraIndex === cameraGizmoState) {
                     return;
                 }

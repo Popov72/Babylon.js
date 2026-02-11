@@ -13,6 +13,7 @@ import { TranslateIcon } from "shared-ui-components/fluent/icons";
 import { Collapse } from "shared-ui-components/fluent/primitives/collapse";
 import { ToggleButton } from "shared-ui-components/fluent/primitives/toggleButton";
 import { useObservableState } from "../hooks/observableHooks";
+import type { ISceneContext } from "../services/sceneContext";
 
 const useStyles = makeStyles({
     coordinatesModeButton: {
@@ -29,8 +30,8 @@ const useStyles = makeStyles({
     },
 });
 
-export const GizmoToolbar: FunctionComponent<{ gizmoService: IGizmoService }> = (props) => {
-    const { gizmoService } = props;
+export const GizmoToolbar: FunctionComponent<{ gizmoService: IGizmoService; sceneContext: ISceneContext }> = (props) => {
+    const { gizmoService, sceneContext } = props;
 
     const classes = useStyles();
 
@@ -103,7 +104,7 @@ export const GizmoToolbar: FunctionComponent<{ gizmoService: IGizmoService }> = 
                     </MenuPopover>
                 </Menu>
             </Collapse>
-            <Collapse visible={true} orientation="horizontal">
+            <Collapse visible={!!gizmoMode} orientation="horizontal">
                 <Menu positioning="below-end" checkedValues={{ cameraGizmo: [cameraGizmo?.toString() ?? "-1"] }} onCheckedValueChange={onCameraGizmoChange}>
                     <MenuTrigger disableButtonEnhancement={true}>
                         {(triggerProps: MenuButtonProps) => (
@@ -125,8 +126,8 @@ export const GizmoToolbar: FunctionComponent<{ gizmoService: IGizmoService }> = 
                             <MenuItemRadio name="cameraGizmo" value={"-1"}>
                                 Automatic
                             </MenuItemRadio>
-                            {gizmoService.scene &&
-                                gizmoService.scene.activeCameras?.map((camera, index) => (
+                            {sceneContext.currentScene &&
+                                sceneContext.currentScene.activeCameras?.map((camera, index) => (
                                     <MenuItemRadio key={camera.uniqueId} name="cameraGizmo" value={index.toString()}>
                                         {camera.name}
                                     </MenuItemRadio>
