@@ -58,7 +58,8 @@ export const GizmoToolbar: FunctionComponent<{ gizmoService: IGizmoService }> = 
 
     const onCameraGizmoChange = useCallback(
         (e: MenuCheckedValueChangeEvent, data: MenuCheckedValueChangeData) => {
-            gizmoService.cameraGizmo = Number(data.checkedItems[0]);
+            const value = data.checkedItems[0];
+            gizmoService.cameraGizmo = value === undefined || value === "-1" ? undefined : Number(value);
         },
         [gizmoService]
     );
