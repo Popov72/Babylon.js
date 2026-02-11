@@ -552,10 +552,14 @@ export class Skeleton implements IAnimatable {
             const currentVertexIndex = positions.length / 3;
 
             if (boneMeshPositions) {
-                positions.push(...boneMeshPositions);
+                for (let i = 0; i < boneMeshPositions.length; ++i) {
+                    positions.push(boneMeshPositions[i]);
+                }
             }
             if (boneMeshNormals) {
-                normals.push(...boneMeshNormals);
+                for (let i = 0; i < boneMeshNormals.length; ++i) {
+                    normals.push(boneMeshNormals[i]);
+                }
             }
 
             const boneIndex = skeleton.bones.length;

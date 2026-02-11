@@ -253,9 +253,9 @@ export class AnimatorAvatar {
             }
         }
 
-        for (const node of lstTransformNodes) {
+        lstTransformNodes.forEach((node) => {
             node.computeWorldMatrix(true);
-        }
+        });
 
         // Clone the source animation and retarget it
         const animationGroup = sourceAnimationGroup.clone(localOptions.animationGroupName!, undefined, true, true);
@@ -431,7 +431,7 @@ export class AnimatorAvatar {
     private _buildMorphTargetMap(): void {
         this._mapMorphTargetNameToMorphTarget = new Map<string, MorphTarget>();
 
-        for (const manager of this.morphTargetManagers) {
+        this.morphTargetManagers.forEach((manager) => {
             const numTargets = manager.numTargets;
 
             for (let t = 0; t < numTargets; ++t) {
@@ -440,7 +440,7 @@ export class AnimatorAvatar {
 
                 this._mapMorphTargetNameToMorphTarget.set(key, target);
             }
-        }
+        });
     }
 
     private _retargetMorphTarget(ta: TargetedAnimation, animationGroupName: string) {
