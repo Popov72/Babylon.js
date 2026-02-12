@@ -38,6 +38,11 @@ export const GizmoToolbar: FunctionComponent<{ gizmoService: IGizmoService; scen
     const gizmoMode = useObservableState(() => gizmoService.gizmoMode, gizmoService.onGizmoModeChanged);
     const coordinatesMode = useObservableState(() => gizmoService.coordinatesMode, gizmoService.onCoordinatesModeChanged);
     const cameraGizmo = useObservableState(() => gizmoService.gizmoCamera, gizmoService.onCameraGizmoChanged);
+    const scene = useObservableState(() => sceneContext.currentScene, sceneContext.currentSceneObservable);
+    const cameras = useObservableState(
+        useCallback(() => (scene?.activeCameras ? [...scene.activeCameras] : []), [scene]),
+        scene?.onActiveCamerasChanged
+    );
 
     const updateGizmoMode = useCallback(
         (mode: GizmoMode) => {
@@ -60,7 +65,7 @@ export const GizmoToolbar: FunctionComponent<{ gizmoService: IGizmoService; scen
     const onCameraGizmoChange = useCallback(
         (e: MenuCheckedValueChangeEvent, data: MenuCheckedValueChangeData) => {
             const value = data.checkedItems[0];
-            gizmoService.gizmoCamera = value === "-1" ? null : (sceneContext.currentScene?.activeCameras?.find((camera) => camera.uniqueId.toString() === value) ?? null);
+            gizmoService.gizmoCamera = value === "-1" ? null : (cameras.find((camera) => camera.uniqueId.toString() === value) ?? null);
         },
         [gizmoService]
     );
