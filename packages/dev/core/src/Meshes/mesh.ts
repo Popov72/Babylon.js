@@ -658,13 +658,17 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
 
     /** Gets the array buffer used to store the instanced buffer used for instances' world matrices */
     public get worldMatrixInstancedBuffer(): Float32Array {
-        const instanceDataStorage = this._instanceDataStorage.renderPasses[this._instanceDataStorage.engine.isWebGPU ? this._instanceDataStorage.engine.currentRenderPassId : 0];
+        const instanceDataStorage = this._instanceDataStorage.useMonoDataStorageRenderPass
+            ? this._instanceDataStorage.dataStorageRenderPass
+            : this._instanceDataStorage.renderPasses[this._instanceDataStorage.engine.currentRenderPassId];
         return instanceDataStorage ? instanceDataStorage.instancesData : (undefined as any);
     }
 
     /** Gets the array buffer used to store the instanced buffer used for instances' previous world matrices */
     public get previousWorldMatrixInstancedBuffer(): Float32Array {
-        const instanceDataStorage = this._instanceDataStorage.renderPasses[this._instanceDataStorage.engine.isWebGPU ? this._instanceDataStorage.engine.currentRenderPassId : 0];
+        const instanceDataStorage = this._instanceDataStorage.useMonoDataStorageRenderPass
+            ? this._instanceDataStorage.dataStorageRenderPass
+            : this._instanceDataStorage.renderPasses[this._instanceDataStorage.engine.currentRenderPassId];
         return instanceDataStorage ? instanceDataStorage.instancesPreviousData : (undefined as any);
     }
 
@@ -1603,7 +1607,7 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
             return this._instanceDataStorage.dataStorageRenderPass;
         }
 
-        const renderPassId = this._instanceDataStorage.engine.isWebGPU ? this._instanceDataStorage.engine.currentRenderPassId : 0;
+        const renderPassId = this._instanceDataStorage.engine.currentRenderPassId;
 
         let instanceDataStorage = this._instanceDataStorage.renderPasses[renderPassId];
         if (!instanceDataStorage) {
@@ -2542,14 +2546,16 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
      * @internal
      */
     public override _rebuild(dispose = false): void {
-        for (const renderPassId in this._instanceDataStorage.renderPasses) {
-            const instanceDataStorage = this._instanceDataStorage.renderPasses[renderPassId];
-            if (instanceDataStorage.instancesBuffer) {
-                // Dispose instance buffer to be recreated in _renderWithInstances when rendered
-                if (dispose) {
-                    instanceDataStorage.instancesBuffer.dispose();
+        if (!this._instanceDataStorage.useMonoDataStorageRenderPass) {
+            for (const renderPassId in this._instanceDataStorage.renderPasses) {
+                const instanceDataStorage = this._instanceDataStorage.renderPasses[renderPassId];
+                if (instanceDataStorage.instancesBuffer) {
+                    // Dispose instance buffer to be recreated in _renderWithInstances when rendered
+                    if (dispose) {
+                        instanceDataStorage.instancesBuffer.dispose();
+                    }
+                    instanceDataStorage.instancesBuffer = null;
                 }
-                instanceDataStorage.instancesBuffer = null;
             }
         }
         if (this._userInstancedBuffersStorage) {
@@ -2589,9 +2595,11 @@ export class Mesh extends AbstractMesh implements IGetSetVerticesData {
     /** @internal */
     public override _unFreeze() {
         this._instanceDataStorage.isFrozen = false;
-        for (const renderPassId in this._instanceDataStorage.renderPasses) {
-            const instanceDataStorage = this._instanceDataStorage.renderPasses[renderPassId];
-            instanceDataStorage.previousBatch = null;
+        if (!this._instanceDataStorage.useMonoDataStorageRenderPass) {
+            for (const renderPassId in this._instanceDataStorage.renderPasses) {
+                const instanceDataStorage = this._instanceDataStorage.renderPasses[renderPassId];
+                instanceDataStorage.previousBatch = null;
+            }
         }
     }
 
