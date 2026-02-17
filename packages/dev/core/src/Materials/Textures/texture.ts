@@ -1102,7 +1102,7 @@ export class Texture extends BaseTexture {
                             },
                         };
 
-                        // name and url are the same to ensure caching happens from the actual base64 string
+                        // use the base64 string as the texture name for caching; the actual payload comes from options.buffer
                         texture = Texture.CreateFromBase64String("", parsedTexture.base64String, scene, options);
 
                         // prettier name to fit with the loaded data
