@@ -55,7 +55,13 @@ export const SpinButton = forwardRef<HTMLInputElement, SpinButtonProps>((props, 
 
     // step and forceInt are not mutually exclusive since there could be cases where you want to forceInt but have spinButton jump >1 int per spin
     const step = CoerceStepValue(props.step ?? 1, isUnfocusedAltKeyPressed || isFocusedAltKeyPressed, isUnfocusedShiftKeyPressed || isFocusedShiftKeyPressed);
-    const precision = Math.min(4, Math.max(0, CalculatePrecision(step))); // Cap precision at 4 to avoid wild numbers
+    const stepPrecision = Math.max(0, CalculatePrecision(step));
+    const valuePrecision = Math.max(0, CalculatePrecision(value));
+    // Display precision: controls how many decimals are shown in the formatted displayValue. Cap at 4 to avoid wild numbers
+    const displayPrecision = Math.min(4, Math.max(stepPrecision, valuePrecision));
+    // Set to large const to prevent Fluent from rounding user-entered values on commit
+    // We control display formatting ourselves via displayValue, so this only affects internal rounding. The value stored internally will still have max precision
+    const fluentPrecision = 20;
 
     useEffect(() => {
         if (props.value !== lastCommittedValue.current) {
@@ -88,11 +94,48 @@ export const SpinButton = forwardRef<HTMLInputElement, SpinButtonProps>((props, 
         }
     };
 
+    // Strip the unit suffix (e.g. "deg" or " deg") from the raw input value before evaluating expressions.
+    const stripUnit = (val: string): string => {
+        if (!props.unit) {
+            return val;
+        }
+
+        const regex = new RegExp("\\s*" + props.unit + "$");
+        const match = val.match(regex);
+
+        if (match) {
+            return val.slice(0, -match[0].length);
+        }
+        return val;
+    };
+
+    // Allow arbitrary expressions, primarily for math operations (e.g. 10*60 for 10 minutes in seconds).
+    // Use Function constructor to safely evaluate the expression without allowing access to scope.
+    // If the expression is invalid, fallback to NaN which will be caught by validateValue and prevent committing.
+    const evaluateExpression = (rawValue: string): number => {
+        const val = stripUnit(rawValue).trim();
+        try {
+            return Number(Function(`"use strict";return (${val})`)());
+        } catch {
+            return NaN;
+        }
+    };
+
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === "Alt") {
             setIsFocusedAltKeyPressed(true);
         } else if (event.key === "Shift") {
             setIsFocusedShiftKeyPressed(true);
+        }
+
+        // Evaluate on Enter in keyDown (before Fluent's internal commit clears the raw text
+        // and re-renders with the truncated displayValue).
+        if (event.key === "Enter") {
+            const currVal = evaluateExpression((event.target as HTMLInputElement).value);
+            if (!isNaN(currVal)) {
+                setValue(currVal);
+                tryCommitValue(currVal);
+            }
         }
 
         HandleKeyDown(event);
@@ -101,24 +144,21 @@ export const SpinButton = forwardRef<HTMLInputElement, SpinButtonProps>((props, 
     const handleKeyUp = (event: KeyboardEvent<HTMLInputElement>) => {
         event.stopPropagation(); // Prevent event propagation
 
-        if (event.key !== "Enter") {
-            if (event.key === "Alt") {
-                setIsFocusedAltKeyPressed(false);
-            } else if (event.key === "Shift") {
-                setIsFocusedShiftKeyPressed(false);
-            }
+        if (event.key === "Alt") {
+            setIsFocusedAltKeyPressed(false);
+        } else if (event.key === "Shift") {
+            setIsFocusedShiftKeyPressed(false);
+        }
 
-            // Allow arbitrary expressions, primarily for math operations (e.g. 10*60 for 10 minutes in seconds).
-            // Use Function constructor to safely evaluate the expression without allowing access to scope.
-            // If the expression is invalid, fallback to NaN which will be caught by validateValue and prevent committing.
-            const currVal = ((val: string): number => {
-                try {
-                    return Number(Function(`"use strict";return (${val})`)());
-                } catch {
-                    return NaN;
-                }
-            })((event.target as any).value);
+        // Skip Enter — it's handled in keyDown before Fluent's internal commit
+        // clears the raw text and replaces it with the truncated displayValue.
+        if (event.key === "Enter") {
+            return;
+        }
 
+        const currVal = evaluateExpression((event.target as any).value);
+
+        if (!isNaN(currVal)) {
             setValue(currVal);
             tryCommitValue(currVal);
         }
@@ -141,8 +181,8 @@ export const SpinButton = forwardRef<HTMLInputElement, SpinButtonProps>((props, 
             step={step}
             id={id}
             size={size}
-            precision={precision}
-            displayValue={`${value.toFixed(precision)}${props.unit ? " " + props.unit : ""}`}
+            precision={fluentPrecision}
+            displayValue={`${value.toFixed(displayPrecision)}${props.unit ? " " + props.unit : ""}`}
             value={value}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
