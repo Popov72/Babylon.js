@@ -35,12 +35,12 @@ export const ToggleButton: FunctionComponent<ToggleButtonProps> = (props) => {
     const classes = useStyles();
     const [checked, setChecked] = useState(value);
     const toggle = useCallback(() => {
-        setChecked((prev) => {
-            const enabled = !prev;
+        setChecked((prevChecked) => {
+            const enabled = !prevChecked;
             onChange(enabled);
             return enabled;
         });
-    }, [setChecked]);
+    }, [onChange]);
 
     useEffect(() => {
         setChecked(props.value);
