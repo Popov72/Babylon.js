@@ -28,14 +28,14 @@ export interface IRetargetOptions {
 
     /**
      * If true, the retargeted animations will be fixed to correct common issues like orthogonal quaternions.
-     * Default is true.
+     * Default is false.
      */
     fixAnimations?: boolean;
 
     /**
      * If true, the parent hierarchy of bones and transform nodes will be checked during retargeting.
      * Animations will be removed if the hierarchies don't match.
-     * Default is true.
+     * Default is false.
      */
     checkHierarchy?: boolean;
 
@@ -56,7 +56,7 @@ export interface IRetargetOptions {
     /**
      * If true, adjusts the root position animation to correct for ground reference height differences between the source and target avatars.
      * This ensures that the animated character maintains proper contact with the ground during retargeting.
-     * Default is true.
+     * Default is false.
      */
     fixGroundReference?: boolean;
 
@@ -239,10 +239,10 @@ export class AnimatorAvatar {
     public retargetAnimationGroup(sourceAnimationGroup: AnimationGroup, options?: IRetargetOptions): AnimationGroup {
         const localOptions: IRetargetOptions = {
             animationGroupName: sourceAnimationGroup.name,
-            fixAnimations: true,
-            checkHierarchy: true,
+            fixAnimations: false,
+            checkHierarchy: false,
             retargetAnimationKeys: true,
-            fixGroundReference: true,
+            fixGroundReference: false,
             fixRootPosition: true,
             ...options,
         };
@@ -444,6 +444,8 @@ export class AnimatorAvatar {
 
     private _computeBoneWorldMatrices() {
         this.skeletons.forEach((skeleton) => {
+            skeleton.prepare(true);
+
             skeleton.bones.forEach((bone) => {
                 bone._linkedTransformNode?.computeWorldMatrix(true);
             });
@@ -792,7 +794,7 @@ export class AnimatorAvatar {
         if (!targetGroundReferenceTransformNodeOrBone) {
             if (this.showWarnings) {
                 Logger.Warn(
-                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': unable to find the bone/transform node corresponding with name "${remappedGroundReferenceNodeName}" in the avatar skeleton. Ensure that this bone exists and is linked to a transform node. ${msg}`
+                    `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': unable to find the bone/transform node corresponding with name "${remappedGroundReferenceNodeName}" in the avatar skeleton. Ensure that this bone exists. ${msg}`
                 );
             }
             return null;
