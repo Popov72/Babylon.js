@@ -579,11 +579,9 @@ export class AnimatorAvatar {
     }
 
     /**
-     * This method does two things:
-     *   - It deletes a targeted animation if a bone corresponding to the target cannot be found
-     *   - It corrects quaternion animations when two consecutive quaternions are orthogonal to each other. When this happens, in 99.99% of cases it's an error
-     *     in the animation data, as two consecutive rotations should normally be close to each other and not have a large gap.
-     *     The fix is to copy the first quaternion into the second.
+     * This method corrects quaternion animations when two consecutive quaternions are orthogonal to each other. When this happens, in 99.99% of
+     * cases it's an error in the animation data, as two consecutive rotations should normally be close to each other and not have a large gap.
+     * The fix is to copy the first quaternion into the second.
      * @param animationGroup The animation group to fix
      * @internal
      */
@@ -592,47 +590,20 @@ export class AnimatorAvatar {
             const ta = animationGroup.targetedAnimations[i];
 
             switch (ta.animation.targetProperty) {
-                case "position":
-                case "rotationQuaternion":
-                case "scaling": {
-                    if (ta.target.getClassName() !== "TransformNode") {
-                        break;
-                    }
+                case "rotationQuaternion": {
+                    const keys = ta.animation.getKeys();
 
-                    const transformNode = ta.target as TransformNode;
-                    const bone = this.findBoneByTransformNode(transformNode);
+                    for (let i = 0; i < keys.length - 1; ++i) {
+                        const curQuat = keys[i].value as Quaternion;
+                        const nextQuat = keys[i + 1].value as Quaternion;
 
-                    if (!bone) {
-                        if (this.showWarnings) {
-                            Logger.Warn(
-                                `FixAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': no bone in any skeleton of the avatar ${this.name} animates the transform node ${transformNode.name}: animation removed`
-                            );
+                        if (Math.abs(Quaternion.Dot(curQuat, nextQuat)) < 0.001) {
+                            keys[i + 1].value = curQuat.clone();
+                            i += 1;
                         }
-                        animationGroup.targetedAnimations.splice(i, 1);
-                        i--;
-                        continue;
                     }
-
-                    ta.target = bone._linkedTransformNode;
-
-                    if (ta.animation.targetProperty === "rotationQuaternion") {
-                        this._fixAnimationQuaternion(ta.animation);
-                    }
+                    break;
                 }
-            }
-        }
-    }
-
-    private _fixAnimationQuaternion(animation: Animation, epsilon = 0.001) {
-        const keys = animation.getKeys();
-
-        for (let i = 0; i < keys.length - 1; ++i) {
-            const curQuat = keys[i].value as Quaternion;
-            const nextQuat = keys[i + 1].value as Quaternion;
-
-            if (Math.abs(Quaternion.Dot(curQuat, nextQuat)) < epsilon) {
-                keys[i + 1].value = curQuat.clone();
-                i += 1;
             }
         }
     }
