@@ -24,6 +24,8 @@ export interface IPlaneDragGizmo extends IGizmo {
     dragBehavior: PointerDragBehavior;
     /** Drag distance in babylon units that the gizmo will snap to when dragged */
     snapDistance: number;
+    /** Scale factor applied to the delta movement of the gizmo (default: 1) */
+    deltaScale?: number;
     /**
      * Event that fires each time the gizmo snaps to a new location.
      * * snapDistance is the change in distance
@@ -53,6 +55,10 @@ export class PlaneDragGizmo extends Gizmo implements IPlaneDragGizmo {
      * Drag distance in babylon units that the gizmo will snap to when dragged (Default: 0)
      */
     public snapDistance = 0;
+    /**
+     * Scale factor applied to the delta movement of the gizmo (default: 1)
+     */
+    public deltaScale = 1;
     /**
      * Event that fires each time the gizmo snaps to a new location.
      * * snapDistance is the change in distance
@@ -152,12 +158,14 @@ export class PlaneDragGizmo extends Gizmo implements IPlaneDragGizmo {
                 // Snapping logic
                 if (this.snapDistance == 0) {
                     this.attachedNode.getWorldMatrix().getTranslationToRef(TmpVectors.Vector3[0]);
-                    TmpVectors.Vector3[0].addToRef(event.delta, TmpVectors.Vector3[0]);
+                    TmpVectors.Vector3[0].addToRef(event.delta.scaleToRef(this.deltaScale, TmpVectors.Vector3[1]), TmpVectors.Vector3[0]);
                     if (this.dragBehavior.validateDrag(TmpVectors.Vector3[0])) {
-                        this.attachedNode.getWorldMatrix().addTranslationFromFloats(event.delta.x, event.delta.y, event.delta.z);
+                        this.attachedNode
+                            .getWorldMatrix()
+                            .addTranslationFromFloats(event.delta.x * this.deltaScale, event.delta.y * this.deltaScale, event.delta.z * this.deltaScale);
                     }
                 } else {
-                    currentSnapDragDistance.addInPlace(event.delta);
+                    currentSnapDragDistance.addInPlace(event.delta.scaleToRef(this.deltaScale, TmpVectors.Vector3[1]));
                     tmpVector2.set(0, 0, 0);
                     const currentSnapDragDistanceArray = currentSnapDragDistance.asArray();
                     for (let axis = 0; axis < 3; axis++) {

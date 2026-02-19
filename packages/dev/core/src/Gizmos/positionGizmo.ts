@@ -51,6 +51,8 @@ export interface IPositionGizmo extends IGizmo {
     planarGizmoEnabled: boolean;
     /** Drag distance in babylon units that the gizmo will snap to when dragged */
     snapDistance: number;
+    /** Scale factor applied to the delta movement of the gizmo (default: 1) */
+    deltaScale?: number;
     /**
      * Builds Gizmo Axis Cache to enable features such as hover state preservation and graying out other axis during manipulation
      * @param mesh Axis gizmo mesh
@@ -110,6 +112,7 @@ export class PositionGizmo extends Gizmo implements IPositionGizmo {
     protected _meshAttached: Nullable<AbstractMesh> = null;
     protected _nodeAttached: Nullable<Node> = null;
     protected _snapDistance: number;
+    protected _deltaScale: number;
     protected _observables: Observer<PointerInfo>[] = [];
 
     /** Node Caching for quick lookup */
@@ -350,6 +353,23 @@ export class PositionGizmo extends Gizmo implements IPositionGizmo {
     }
     public get snapDistance() {
         return this._snapDistance;
+    }
+
+    /**
+     * Scale factor applied to the delta movement of the gizmo (Default: 1)
+     */
+    public set deltaScale(value: number) {
+        this._deltaScale = value;
+        const gizmos = [this.xGizmo, this.yGizmo, this.zGizmo, this.xPlaneGizmo, this.yPlaneGizmo, this.zPlaneGizmo];
+        for (const gizmo of gizmos) {
+            if (gizmo) {
+                gizmo.deltaScale = value;
+            }
+        }
+    }
+
+    public get deltaScale() {
+        return this._deltaScale;
     }
 
     /**
