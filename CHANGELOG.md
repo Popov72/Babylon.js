@@ -1,5 +1,17 @@
 # Changelog
 
+## 8.32.2
+
+### Core
+
+- Shadows: Fix shadow artifacts with PCF and reverse depth mode - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17315](https://github.com/BabylonJS/Babylon.js/pull/17315))
+- Fix NME dump code - [_Bug Fix_] by [sebavan](https://github.com/sebavan) ([#17314](https://github.com/BabylonJS/Babylon.js/pull/17314))
+- FrameGraph: Add support for SSAO2 - [_New Feature_] by [Popov72](https://github.com/Popov72) ([#17311](https://github.com/BabylonJS/Babylon.js/pull/17311))
+
+### Loaders
+
+- SPLATFileLoader: add user-provided fflate instance to options - by [kzhsw](https://github.com/kzhsw) ([#17310](https://github.com/BabylonJS/Babylon.js/pull/17310))
+
 ## 8.32.1
 
 ### Core
@@ -5351,6 +5363,15 @@
 
 - Mesh extrusion: Add an optional scaleVectorFunction parameter to ExtrudeShapeCustom - by [Popov72](https://github.com/Popov72) ([#17752](https://github.com/BabylonJS/Babylon.js/pull/17752))
 
+## 8.52.0
+
+### Core
+
+- Textures: Fix parsing of texture - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17915](https://github.com/BabylonJS/Babylon.js/pull/17915))
+- Using Lerp instead of Random for initial color - [_Bug Fix_] by [VicenteCartas](https://github.com/VicenteCartas) ([#17914](https://github.com/BabylonJS/Babylon.js/pull/17914))
+- Mesh: Optimize instance data access in WebGL - by [Popov72](https://github.com/Popov72) ([#17907](https://github.com/BabylonJS/Babylon.js/pull/17907))
+- fix (xr): Avoid tainting the mono scene UBO with stereo and vice versa - by [matthargett](https://github.com/matthargett) ([#17864](https://github.com/BabylonJS/Babylon.js/pull/17864))
+
 ## 8.51.2
 
 ### Core
@@ -6233,18 +6254,6 @@
 ### Viewer
 
 - Viewer: Make keyboard zoom sensitivity consistent across model sizes/scales - by [ryantrem](https://github.com/ryantrem) ([#17319](https://github.com/BabylonJS/Babylon.js/pull/17319))
-
-## 8.32.2
-
-### Core
-
-- Shadows: Fix shadow artifacts with PCF and reverse depth mode - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#17315](https://github.com/BabylonJS/Babylon.js/pull/17315))
-- Fix NME dump code - [_Bug Fix_] by [sebavan](https://github.com/sebavan) ([#17314](https://github.com/BabylonJS/Babylon.js/pull/17314))
-- FrameGraph: Add support for SSAO2 - [_New Feature_] by [Popov72](https://github.com/Popov72) ([#17311](https://github.com/BabylonJS/Babylon.js/pull/17311))
-
-### Loaders
-
-- SPLATFileLoader: add user-provided fflate instance to options - by [kzhsw](https://github.com/kzhsw) ([#17310](https://github.com/BabylonJS/Babylon.js/pull/17310))
 
 ## 6.15.0
 
