@@ -25,8 +25,6 @@ export interface IAxisDragGizmo extends IGizmo {
     dragBehavior: PointerDragBehavior;
     /** Drag distance in babylon units that the gizmo will snap to when dragged */
     snapDistance: number;
-    /** Scale factor applied to the delta movement of the gizmo (default: 1) */
-    deltaScale?: number;
     /**
      * Event that fires each time the gizmo snaps to a new location.
      * * snapDistance is the change in distance
@@ -85,9 +83,6 @@ export class AxisDragGizmo extends Gizmo implements IAxisDragGizmo {
     public get disableMaterial() {
         return this._disableMaterial;
     }
-
-    /** Scale factor applied to the delta movement of the gizmo (default: 1) */
-    public deltaScale = 1;
 
     /**
      * @internal
@@ -214,22 +209,16 @@ export class AxisDragGizmo extends Gizmo implements IAxisDragGizmo {
                     if (this.dragBehavior.validateDrag(TmpVectors.Vector3[2])) {
                         if ((this.attachedNode as any).position) {
                             // Required for nodes like lights
-                            (this.attachedNode as any).position.addInPlaceFromFloats(
-                                event.delta.x * this.deltaScale,
-                                event.delta.y * this.deltaScale,
-                                event.delta.z * this.deltaScale
-                            );
+                            (this.attachedNode as any).position.addInPlaceFromFloats(event.delta.x, event.delta.y, event.delta.z);
                         }
 
                         // use _worldMatrix to not force a matrix update when calling GetWorldMatrix especially with Cameras
-                        this.attachedNode
-                            .getWorldMatrix()
-                            .addTranslationFromFloats(event.delta.x * this.deltaScale, event.delta.y * this.deltaScale, event.delta.z * this.deltaScale);
+                        this.attachedNode.getWorldMatrix().addTranslationFromFloats(event.delta.x, event.delta.y, event.delta.z);
                         this.attachedNode.updateCache();
                         matrixChanged = true;
                     }
                 } else {
-                    currentSnapDragDistance += event.dragDistance * this.deltaScale;
+                    currentSnapDragDistance += event.dragDistance;
                     if (Math.abs(currentSnapDragDistance) > this.snapDistance) {
                         const dragSteps = Math.floor(Math.abs(currentSnapDragDistance) / this.snapDistance);
                         currentSnapDragDistance = currentSnapDragDistance % this.snapDistance;
