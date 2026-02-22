@@ -195,6 +195,26 @@ export class HighlightLayer extends EffectLayer {
     }
 
     /**
+     * Number of stencil bits used by the highlight layer (default: 8).
+     * The layer uses the numStencilBits highest bits of the stencil buffer.
+     */
+    @serialize()
+    public get numStencilBits(): number {
+        return this._thinEffectLayer.numStencilBits;
+    }
+
+    public set numStencilBits(value: number) {
+        this._thinEffectLayer.numStencilBits = value;
+    }
+
+    /**
+     * Gets the stencil reference value used for the meshes rendered by the highlight layer.
+     */
+    public get stencilReference(): number {
+        return this._thinEffectLayer.stencilReference;
+    }
+
+    /**
      * An event triggered when the highlight layer is being blurred.
      */
     public onBeforeBlurObservable = new Observable<HighlightLayer>();
