@@ -955,8 +955,8 @@ export class AnimatorAvatar {
                         continue;
                     }
 
-                    // sourceTransformNode.computeWorldMatrix(true);
-                    // targetBone.computeWorldMatrix(true);
+                    sourceTransformNode.computeWorldMatrix(true);
+                    targetBone.computeWorldMatrix(true);
 
                     const targetRootToBoneDiff = targetRootTransformNodeOrBone.getAbsolutePosition().subtractToRef(targetBone.getAbsolutePosition(), TmpVectors.Vector3[1]);
                     const rootToBoneOffset = verticalAxis === 0 ? targetRootToBoneDiff.x : verticalAxis === 1 ? targetRootToBoneDiff.y : targetRootToBoneDiff.z;
