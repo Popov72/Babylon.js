@@ -352,7 +352,11 @@ Mesh.prototype.thinInstancePartialBufferUpdate = function (kind: string, dataOrL
         if (this._thinInstanceDataStorage.matrixBuffer) {
             if (typeof dataOrLength === "number") {
                 this._thinInstanceDataStorage.matrixBuffer.updateDirectly(
-                    new Float32Array(this._thinInstanceDataStorage.matrixData!.buffer, this._thinInstanceDataStorage.matrixData!.byteOffset + offset * 16 * 4, dataOrLength * 16),
+                    new Float32Array(
+                        this._thinInstanceDataStorage.matrixData!.buffer,
+                        this._thinInstanceDataStorage.matrixData!.byteOffset + offset * 16 * Float32Array.BYTES_PER_ELEMENT,
+                        dataOrLength * 16
+                    ),
                     offset
                 );
             } else {
@@ -370,7 +374,7 @@ Mesh.prototype.thinInstancePartialBufferUpdate = function (kind: string, dataOrL
             if (typeof dataOrLength === "number") {
                 const data = new Float32Array(
                     this._userThinInstanceBuffersStorage.data[kind].buffer,
-                    this._userThinInstanceBuffersStorage.data[kind].byteOffset + offset * this._userThinInstanceBuffersStorage.strides[kind] * 4,
+                    this._userThinInstanceBuffersStorage.data[kind].byteOffset + offset * this._userThinInstanceBuffersStorage.strides[kind] * Float32Array.BYTES_PER_ELEMENT,
                     dataOrLength * this._userThinInstanceBuffersStorage.strides[kind]
                 );
                 this._userThinInstanceBuffersStorage.vertexBuffers[kind]!.updateDirectly(data, offset * this._userThinInstanceBuffersStorage.strides[kind]);
