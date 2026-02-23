@@ -91,10 +91,11 @@ declare module "./mesh" {
          * Applies a partial update to a buffer directly on the GPU
          * Note that the buffer located on the CPU is NOT updated! It's up to you to update it (or not) with the same data you pass to this method
          * @param kind name of the attribute to update. Use "matrix" to update the buffer of matrices
-         * @param data the data to set in the GPU buffer
+         * @param dataOrLength the data to set in the GPU buffer, or length of data to update (starting from the offset). If you pass a length, make sure the underlying buffer on the CPU has been updated with the data you want to set on the GPU.
+         *  if a length is provided, it's the number of elements to update, so for example if kind is "matrix" and you pass 2 as length, it will update 2 matrices (2*16 floats) in the GPU buffer starting from the offset (in this case offset should also be a number of elements)
          * @param offset the offset in the GPU buffer where to update the data
          */
-        thinInstancePartialBufferUpdate(kind: string, data: Float32Array, offset: number): void;
+        thinInstancePartialBufferUpdate(kind: string, dataOrLength: Float32Array | number, offset: number): void;
 
         /**
          * Refreshes the bounding info, taking into account all the thin instances defined
@@ -346,10 +347,17 @@ Mesh.prototype.thinInstanceBufferUpdated = function (kind: string): void {
     }
 };
 
-Mesh.prototype.thinInstancePartialBufferUpdate = function (kind: string, data: Float32Array, offset: number): void {
+Mesh.prototype.thinInstancePartialBufferUpdate = function (kind: string, dataOrLength: Float32Array | number, offset: number): void {
     if (kind === "matrix") {
         if (this._thinInstanceDataStorage.matrixBuffer) {
-            this._thinInstanceDataStorage.matrixBuffer.updateDirectly(data, offset);
+            if (typeof dataOrLength === "number") {
+                this._thinInstanceDataStorage.matrixBuffer.updateDirectly(
+                    new Float32Array(this._thinInstanceDataStorage.matrixData!.buffer, this._thinInstanceDataStorage.matrixData!.byteOffset + offset * 16 * 4, dataOrLength * 16),
+                    offset
+                );
+            } else {
+                this._thinInstanceDataStorage.matrixBuffer.updateDirectly(dataOrLength, offset);
+            }
         }
     } else {
         // preserve backward compatibility
@@ -358,7 +366,17 @@ Mesh.prototype.thinInstancePartialBufferUpdate = function (kind: string, data: F
         }
 
         if (this._userThinInstanceBuffersStorage?.vertexBuffers[kind]) {
-            this._userThinInstanceBuffersStorage.vertexBuffers[kind]!.updateDirectly(data, offset);
+            const buffer = this._userThinInstanceBuffersStorage.vertexBuffers[kind]!;
+            if (typeof dataOrLength === "number") {
+                const data = new Float32Array(
+                    this._userThinInstanceBuffersStorage.data[kind].buffer,
+                    this._userThinInstanceBuffersStorage.data[kind].byteOffset + offset * this._userThinInstanceBuffersStorage.strides[kind] * 4,
+                    dataOrLength * this._userThinInstanceBuffersStorage.strides[kind]
+                );
+                this._userThinInstanceBuffersStorage.vertexBuffers[kind]!.updateDirectly(data, offset * this._userThinInstanceBuffersStorage.strides[kind]);
+            } else {
+                buffer.updateDirectly(dataOrLength, offset);
+            }
         }
     }
 };
