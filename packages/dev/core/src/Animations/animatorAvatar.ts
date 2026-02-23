@@ -56,9 +56,18 @@ export interface IRetargetOptions {
     /**
      * If true, adjusts the root position animation to correct for ground reference height differences between the source and target avatars.
      * This ensures that the animated character maintains proper contact with the ground during retargeting.
+     * Requires groundReferenceNodeName to be specified to determine the ground reference point in the source animation.
      * Default is false.
      */
     fixGroundReference?: boolean;
+
+    /**
+     * If true, adjusts the ground reference dynamically during retargeting. fixGroundReference must be true for this to work.
+     * When enabled, the system will continuously adjust the ground reference point throughout the retargeting process to make sure it's the lowest point of the character.
+     * This allows for more accurate ground contact correction, especially in animations where groundReferenceNodeName is not always the lowest point (e.g., walking, running).
+     * Default is false.
+     */
+    fixGroundReferenceDynamicRefNode?: boolean;
 
     /**
      * The name of the root transform node in the source animation group (typically "Hips" or similar).
@@ -243,6 +252,7 @@ export class AnimatorAvatar {
             checkHierarchy: false,
             retargetAnimationKeys: true,
             fixGroundReference: false,
+            fixGroundReferenceDynamicRefNode: false,
             fixRootPosition: true,
             ...options,
         };
@@ -401,6 +411,8 @@ export class AnimatorAvatar {
                     this._resetStates(sourceTransformNodeNameToNode);
                 }
 
+                const fixGroundReferenceDynamicRefNode = !!localOptions.fixGroundReferenceDynamicRefNode;
+
                 if (localOptions.fixGroundReference) {
                     this._fixGroundReference(
                         sourceAnimationGroup,
@@ -409,9 +421,18 @@ export class AnimatorAvatar {
                         targetRootTransformNodeOrBone,
                         targetRootPositionAnimation,
                         sourceGroundReferenceTransformNode,
-                        targetGroundReferenceTransformNodeOrBone
+                        targetGroundReferenceTransformNodeOrBone,
+                        lstSourceTransformNodes,
+                        mapNodeNames,
+                        fixGroundReferenceDynamicRefNode
                     );
                     this._resetStates(sourceTransformNodeNameToNode);
+                } else if (fixGroundReferenceDynamicRefNode) {
+                    if (this.showWarnings) {
+                        Logger.Warn(
+                            `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': fixGroundReferenceDynamicRefNode option is set to true but fixGroundReference is false: dynamic ground reference node fixing process skipped.`
+                        );
+                    }
                 }
             }
         }
@@ -882,7 +903,10 @@ export class AnimatorAvatar {
         targetRootTransformNodeOrBone: TransformNode | Bone,
         targetRootPositionAnimation: Animation,
         sourceGroundReferenceTransformNode: TransformNode,
-        targetGroundReferenceTransformNodeOrBone: TransformNode | Bone
+        targetGroundReferenceTransformNodeOrBone: TransformNode | Bone,
+        sourceListTransformNodes: Set<TransformNode>,
+        mapNodeNames: Map<string, string>,
+        fixGroundReferenceDynamicRefNode: boolean
     ) {
         const targetNodeInverseParentWorldMatrix =
             targetRootTransformNodeOrBone instanceof TransformNode
@@ -911,10 +935,53 @@ export class AnimatorAvatar {
                 .getAbsolutePosition()
                 .subtractToRef(sourceGroundReferenceTransformNode.absolutePosition, TmpVectors.Vector3[0]);
 
-            const offset = verticalAxis === 0 ? diffGroundReferences.x : verticalAxis === 1 ? diffGroundReferences.y : diffGroundReferences.z;
+            let groundReferenceOffset = verticalAxis === 0 ? diffGroundReferences.x : verticalAxis === 1 ? diffGroundReferences.y : diffGroundReferences.z;
+
+            if (fixGroundReferenceDynamicRefNode) {
+                // Try to find a bone in this frame that has a greater offset than the ground reference, to use it instead of the ground reference.
+                const targetRootToGroundReferenceDiff = targetRootTransformNodeOrBone
+                    .getAbsolutePosition()
+                    .subtractToRef(targetGroundReferenceTransformNodeOrBone.getAbsolutePosition(), TmpVectors.Vector3[0]);
+
+                const targetRootToGroundReferenceOffset =
+                    verticalAxis === 0 ? targetRootToGroundReferenceDiff.x : verticalAxis === 1 ? targetRootToGroundReferenceDiff.y : targetRootToGroundReferenceDiff.z;
+
+                const iterator = sourceListTransformNodes.keys();
+
+                for (let key = iterator.next(); key.done !== true; key = iterator.next()) {
+                    const sourceTransformNode = key.value;
+                    if (sourceTransformNode === sourceGroundReferenceTransformNode) {
+                        continue;
+                    }
+
+                    const targetNodeName = mapNodeNames.get(sourceTransformNode.name) ?? sourceTransformNode.name;
+
+                    let targetBone = this.findBoneByTransformNode(targetNodeName);
+                    if (!targetBone) {
+                        targetBone = this.findBoneByName(targetNodeName);
+                    }
+                    if (!targetBone) {
+                        continue;
+                    }
+
+                    sourceTransformNode.computeWorldMatrix();
+                    targetBone.computeWorldMatrix();
+
+                    const targetBoneWorldPosition = targetBone._linkedTransformNode?.getAbsolutePosition() ?? targetBone.getAbsolutePosition();
+                    const targetRootToBoneDiff = targetRootTransformNodeOrBone.getAbsolutePosition().subtractToRef(targetBoneWorldPosition, TmpVectors.Vector3[0]);
+                    const rootToBoneOffset = verticalAxis === 0 ? targetRootToBoneDiff.x : verticalAxis === 1 ? targetRootToBoneDiff.y : targetRootToBoneDiff.z;
+
+                    if (Math.abs(rootToBoneOffset) > Math.abs(targetRootToGroundReferenceOffset) && Math.sign(rootToBoneOffset) === Math.sign(targetRootToGroundReferenceOffset)) {
+                        const diff = targetBoneWorldPosition.subtractToRef(sourceTransformNode.getAbsolutePosition(), TmpVectors.Vector3[0]);
+                        const offset = verticalAxis === 0 ? diff.x : verticalAxis === 1 ? diff.y : diff.z;
+
+                        groundReferenceOffset = offset;
+                    }
+                }
+            }
 
             const localOffset = Vector3.TransformNormalToRef(
-                new Vector3(verticalAxis === 0 ? offset : 0, verticalAxis === 1 ? offset : 0, verticalAxis === 2 ? offset : 0),
+                new Vector3(verticalAxis === 0 ? groundReferenceOffset : 0, verticalAxis === 1 ? groundReferenceOffset : 0, verticalAxis === 2 ? groundReferenceOffset : 0),
                 targetNodeInverseParentWorldMatrix,
                 TmpVectors.Vector3[1]
             );
