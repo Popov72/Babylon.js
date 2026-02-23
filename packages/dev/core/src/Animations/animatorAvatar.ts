@@ -938,7 +938,10 @@ export class AnimatorAvatar {
                 const targetRootToGroundReferenceOffset =
                     verticalAxis === 0 ? targetRootToGroundReferenceDiff.x : verticalAxis === 1 ? targetRootToGroundReferenceDiff.y : targetRootToGroundReferenceDiff.z;
 
-                for (const sourceTransformNode of sourceListTransformNodes) {
+                const iterator = sourceListTransformNodes.keys();
+
+                for (let key = iterator.next(); key.done !== true; key = iterator.next()) {
+                    const sourceTransformNode = key.value;
                     if (sourceTransformNode === sourceGroundReferenceTransformNode) {
                         continue;
                     }
