@@ -112,7 +112,12 @@ class GlowBlurPostProcess extends PostProcess {
  * Highlight layer options. This helps customizing the behaviour
  * of the highlight layer.
  */
-export interface IHighlightLayerOptions extends IThinHighlightLayerOptions {}
+export interface IHighlightLayerOptions extends IThinHighlightLayerOptions {
+    /**
+     * Whether or not to generate a stencil buffer. Default: false
+     */
+    generateStencilBuffer?: boolean;
+}
 
 /**
  * The highlight layer Helps adding a glow effect around a mesh.
@@ -261,6 +266,7 @@ export class HighlightLayer extends EffectLayer {
             mainTextureFormat: Constants.TEXTUREFORMAT_RGBA,
             forceGLSL: false,
             isStroke: false,
+            generateStencilBuffer: false,
             ...options,
         };
 
