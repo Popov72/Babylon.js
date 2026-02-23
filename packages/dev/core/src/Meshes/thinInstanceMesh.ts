@@ -91,9 +91,12 @@ declare module "./mesh" {
          * Applies a partial update to a buffer directly on the GPU
          * Note that the buffer located on the CPU is NOT updated! It's up to you to update it (or not) with the same data you pass to this method
          * @param kind name of the attribute to update. Use "matrix" to update the buffer of matrices
-         * @param dataOrLength the data to set in the GPU buffer, or length of data to update (starting from the offset). If you pass a length, make sure the underlying buffer on the CPU has been updated with the data you want to set on the GPU.
-         *  if a length is provided, it's the number of elements to update, so for example if kind is "matrix" and you pass 2 as length, it will update 2 matrices (2*16 floats) in the GPU buffer starting from the offset (in this case offset should also be a number of elements)
-         * @param offset the offset in the GPU buffer where to update the data
+         * @param dataOrLength the data to set in the GPU buffer, or the length (in elements) of data to update starting from the offset.
+         * If you pass a length (number), it is the number of elements to update. For example, if kind is "matrix" and you pass 2 as length, it will update 2 matrices (2*16 floats) in the GPU buffer starting from the offset; in this case {@link offset} should also be expressed as a number of elements.
+         * If you pass a Float32Array, {@link offset} is interpreted in floats in the underlying GPU buffer, consistent with low-level buffer update methods such as updateDirectly.
+         * @param offset the offset in the GPU buffer where to update the data:
+         *  - when {@link dataOrLength} is a number, this is an element offset (for example, a matrix index);
+         *  - when {@link dataOrLength} is a Float32Array, this is a float offset in the underlying buffer.
          */
         thinInstancePartialBufferUpdate(kind: string, dataOrLength: Float32Array | number, offset: number): void;
 
@@ -357,7 +360,7 @@ Mesh.prototype.thinInstancePartialBufferUpdate = function (kind: string, dataOrL
                         this._thinInstanceDataStorage.matrixData!.byteOffset + offset * 16 * Float32Array.BYTES_PER_ELEMENT,
                         dataOrLength * 16
                     ),
-                    offset
+                    offset * 16
                 );
             } else {
                 this._thinInstanceDataStorage.matrixBuffer.updateDirectly(dataOrLength, offset);
