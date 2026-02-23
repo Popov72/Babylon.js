@@ -383,7 +383,9 @@ export class AnimatorAvatar {
                         targetRootTransformNode,
                         targetRootPositionAnimation,
                         sourceGroundReferenceTransformNode,
-                        targetGroundReferenceTransformNode
+                        targetGroundReferenceTransformNode,
+                        lstTransformNodes,
+                        mapNodeNames
                     );
                     this._resetStates(sourceTransformNodeNameToNode);
                 }
@@ -866,7 +868,9 @@ export class AnimatorAvatar {
         targetRootTransformNode: TransformNode,
         targetRootPositionAnimation: Animation,
         sourceGroundReferenceTransformNode: TransformNode,
-        targetGroundReferenceTransformNode: TransformNode
+        targetGroundReferenceTransformNode: TransformNode,
+        sourceListTransformNodes: Set<TransformNode>,
+        mapNodeNames: Map<string, string>
     ) {
         const targetNodeInverseParentWorldMatrix = targetRootTransformNode.parent?.getWorldMatrix().invertToRef(TmpVectors.Matrix[0]) ?? Matrix.IdentityReadOnly;
 
@@ -893,10 +897,55 @@ export class AnimatorAvatar {
                 TmpVectors.Vector3[0]
             );
 
-            const offset = verticalAxis === 0 ? diffGroundReferences.x : verticalAxis === 1 ? diffGroundReferences.y : diffGroundReferences.z;
+            let groundReferenceOffset = verticalAxis === 0 ? diffGroundReferences.x : verticalAxis === 1 ? diffGroundReferences.y : diffGroundReferences.z;
+
+            // Try to find a bone in this frame that has a greater offset than the ground reference, to use it instead of the ground reference.
+            const targetRootToGroundReferenceDiff = targetRootTransformNode
+                .getAbsolutePosition()
+                .subtractToRef(targetGroundReferenceTransformNode.getAbsolutePosition(), TmpVectors.Vector3[0]);
+            const targetRootToGroundReferenceOffset =
+                verticalAxis === 0 ? targetRootToGroundReferenceDiff.x : verticalAxis === 1 ? targetRootToGroundReferenceDiff.y : targetRootToGroundReferenceDiff.z;
+
+            for (const sourceTransformNode of sourceListTransformNodes) {
+                if (sourceTransformNode === sourceGroundReferenceTransformNode) {
+                    continue;
+                }
+
+                const targetNodeName = mapNodeNames.get(sourceTransformNode.name) ?? sourceTransformNode.name;
+                if (!targetNodeName) {
+                    continue;
+                }
+
+                const targetBone = this.findBone(targetNodeName);
+                // let targetBone = this.findBoneByTransformNode(targetNodeName);
+                // if (!targetBone) {
+                //     targetBone = this.findBoneByName(targetNodeName);
+                // }
+                if (!targetBone) {
+                    continue;
+                }
+
+                const targetTransformNode = targetBone._linkedTransformNode;
+                if (!targetTransformNode) {
+                    continue;
+                }
+
+                sourceTransformNode.computeWorldMatrix(true);
+                targetTransformNode.computeWorldMatrix(true);
+
+                const targetRootToBoneDiff = targetRootTransformNode.getAbsolutePosition().subtractToRef(targetTransformNode.getAbsolutePosition(), TmpVectors.Vector3[1]);
+                const rootToBoneOffset = verticalAxis === 0 ? targetRootToBoneDiff.x : verticalAxis === 1 ? targetRootToBoneDiff.y : targetRootToBoneDiff.z;
+
+                if (Math.abs(rootToBoneOffset) > Math.abs(targetRootToGroundReferenceOffset) && Math.sign(rootToBoneOffset) === Math.sign(targetRootToGroundReferenceOffset)) {
+                    const diff = targetTransformNode.getAbsolutePosition().subtract(sourceTransformNode.getAbsolutePosition());
+                    const offset = verticalAxis === 0 ? diff.x : verticalAxis === 1 ? diff.y : diff.z;
+
+                    groundReferenceOffset = offset;
+                }
+            }
 
             const localOffset = Vector3.TransformNormalToRef(
-                new Vector3(verticalAxis === 0 ? offset : 0, verticalAxis === 1 ? offset : 0, verticalAxis === 2 ? offset : 0),
+                new Vector3(verticalAxis === 0 ? groundReferenceOffset : 0, verticalAxis === 1 ? groundReferenceOffset : 0, verticalAxis === 2 ? groundReferenceOffset : 0),
                 targetNodeInverseParentWorldMatrix,
                 TmpVectors.Vector3[1]
             );
