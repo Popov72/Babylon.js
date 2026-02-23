@@ -947,9 +947,6 @@ export class AnimatorAvatar {
                     }
 
                     const targetNodeName = mapNodeNames.get(sourceTransformNode.name) ?? sourceTransformNode.name;
-                    if (!targetNodeName) {
-                        continue;
-                    }
 
                     let targetBone = this.findBoneByTransformNode(targetNodeName);
                     if (!targetBone) {
@@ -959,8 +956,8 @@ export class AnimatorAvatar {
                         continue;
                     }
 
-                    sourceTransformNode.computeWorldMatrix(true);
-                    targetBone.computeWorldMatrix(true);
+                    sourceTransformNode.computeWorldMatrix();
+                    targetBone.computeWorldMatrix();
 
                     const targetBoneWorldPosition = targetBone._linkedTransformNode?.getAbsolutePosition() ?? targetBone.getAbsolutePosition();
                     const targetRootToBoneDiff = targetRootTransformNodeOrBone.getAbsolutePosition().subtractToRef(targetBoneWorldPosition, TmpVectors.Vector3[0]);
