@@ -62,11 +62,12 @@ export interface IRetargetOptions {
     fixGroundReference?: boolean;
 
     /**
-     * If true, adjusts the ground reference every frame during retargeting. fixGroundReference must be true for this to work.
-     * This ensures that the animated character maintains proper contact with the ground throughout the animation.
+     * If true, adjusts the ground reference dynamically during retargeting. fixGroundReference must be true for this to work.
+     * When enabled, the system will continuously adjust the ground reference point throughout the retargeting process to make sure it's the lowest point of the character.
+     * This allows for more accurate ground contact correction, especially in animations where groundReferenceNodeName is not always the lowest point (e.g., walking, running).
      * Default is false.
      */
-    fixGroundReferenceEveryFrame?: boolean;
+    fixGroundReferenceDynamicRefNode?: boolean;
 
     /**
      * The name of the root transform node in the source animation group (typically "Hips" or similar).
@@ -251,7 +252,7 @@ export class AnimatorAvatar {
             checkHierarchy: false,
             retargetAnimationKeys: true,
             fixGroundReference: false,
-            fixGroundReferenceEveryFrame: false,
+            fixGroundReferenceDynamicRefNode: false,
             fixRootPosition: true,
             ...options,
         };
@@ -421,7 +422,7 @@ export class AnimatorAvatar {
                         targetGroundReferenceTransformNodeOrBone,
                         lstSourceTransformNodes,
                         mapNodeNames,
-                        !!localOptions.fixGroundReferenceEveryFrame
+                        !!localOptions.fixGroundReferenceDynamicRefNode
                     );
                     this._resetStates(sourceTransformNodeNameToNode);
                 }
@@ -897,7 +898,7 @@ export class AnimatorAvatar {
         targetGroundReferenceTransformNodeOrBone: TransformNode | Bone,
         sourceListTransformNodes: Set<TransformNode>,
         mapNodeNames: Map<string, string>,
-        fixGroundReferenceEveryFrame: boolean
+        fixGroundReferenceDynamicRefNode: boolean
     ) {
         const targetNodeInverseParentWorldMatrix =
             targetRootTransformNodeOrBone instanceof TransformNode
@@ -928,7 +929,7 @@ export class AnimatorAvatar {
 
             let groundReferenceOffset = verticalAxis === 0 ? diffGroundReferences.x : verticalAxis === 1 ? diffGroundReferences.y : diffGroundReferences.z;
 
-            if (fixGroundReferenceEveryFrame) {
+            if (fixGroundReferenceDynamicRefNode) {
                 // Try to find a bone in this frame that has a greater offset than the ground reference, to use it instead of the ground reference.
                 const targetRootToGroundReferenceDiff = targetRootTransformNodeOrBone
                     .getAbsolutePosition()
@@ -958,11 +959,12 @@ export class AnimatorAvatar {
                     sourceTransformNode.computeWorldMatrix(true);
                     targetBone.computeWorldMatrix(true);
 
-                    const targetRootToBoneDiff = targetRootTransformNodeOrBone.getAbsolutePosition().subtractToRef(targetBone.getAbsolutePosition(), TmpVectors.Vector3[1]);
+                    const targetBoneWorldPosition = targetBone._linkedTransformNode?.getAbsolutePosition() ?? targetBone.getAbsolutePosition();
+                    const targetRootToBoneDiff = targetRootTransformNodeOrBone.getAbsolutePosition().subtractToRef(targetBoneWorldPosition, TmpVectors.Vector3[0]);
                     const rootToBoneOffset = verticalAxis === 0 ? targetRootToBoneDiff.x : verticalAxis === 1 ? targetRootToBoneDiff.y : targetRootToBoneDiff.z;
 
                     if (Math.abs(rootToBoneOffset) > Math.abs(targetRootToGroundReferenceOffset) && Math.sign(rootToBoneOffset) === Math.sign(targetRootToGroundReferenceOffset)) {
-                        const diff = targetBone.getAbsolutePosition().subtract(sourceTransformNode.getAbsolutePosition());
+                        const diff = targetBoneWorldPosition.subtractToRef(sourceTransformNode.getAbsolutePosition(), TmpVectors.Vector3[0]);
                         const offset = verticalAxis === 0 ? diff.x : verticalAxis === 1 ? diff.y : diff.z;
 
                         groundReferenceOffset = offset;
