@@ -411,6 +411,8 @@ export class AnimatorAvatar {
                     this._resetStates(sourceTransformNodeNameToNode);
                 }
 
+                const fixGroundReferenceDynamicRefNode = !!localOptions.fixGroundReferenceDynamicRefNode;
+
                 if (localOptions.fixGroundReference) {
                     this._fixGroundReference(
                         sourceAnimationGroup,
@@ -422,9 +424,15 @@ export class AnimatorAvatar {
                         targetGroundReferenceTransformNodeOrBone,
                         lstSourceTransformNodes,
                         mapNodeNames,
-                        !!localOptions.fixGroundReferenceDynamicRefNode
+                        fixGroundReferenceDynamicRefNode
                     );
                     this._resetStates(sourceTransformNodeNameToNode);
+                } else if (fixGroundReferenceDynamicRefNode) {
+                    if (this.showWarnings) {
+                        Logger.Warn(
+                            `RetargetAnimationGroup - Avatar '${this.name}', AnimationGroup '${animationGroup.name}': fixGroundReferenceDynamicRefNode option is set to true but fixGroundReference is false: dynamic ground reference node fixing process skipped.`
+                        );
+                    }
                 }
             }
         }
