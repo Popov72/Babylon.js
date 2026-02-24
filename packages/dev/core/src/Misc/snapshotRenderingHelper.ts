@@ -239,7 +239,7 @@ export class SnapshotRenderingHelper {
 
         this._log(
             "disableSnapshotRendering",
-            `called (refCount: ${this._disableRenderingRefCount == 0 ? 0 : this._disableRenderingRefCount + 1})${debugMessage ? ` - ${debugMessage}` : ""}`
+            `called (refCount: ${this._disableRenderingRefCount === 0 ? 0 : this._disableRenderingRefCount + 1})${debugMessage ? ` - ${debugMessage}` : ""}`
         );
 
         if (this._disableRenderingRefCount === 0) {
