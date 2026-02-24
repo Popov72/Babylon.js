@@ -250,11 +250,12 @@ export const NodeExplorerServiceDefinition: ServiceDefinition<[], [ISceneExplore
                                 const objectRenderer = FindMainObjectRenderer(scene.frameGraph);
                                 if (objectRenderer) {
                                     objectRenderer.camera = camera;
+                                    camera.attachControl(true);
                                 }
                             } else {
                                 scene.activeCamera = camera;
+                                camera.attachControl(true);
                             }
-                            camera.attachControl(true);
                         }
                     },
                     onChange: onChangeObservable,
