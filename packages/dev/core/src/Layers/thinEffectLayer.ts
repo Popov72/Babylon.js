@@ -947,12 +947,19 @@ export class ThinEffectLayer {
 
             const currentDepthWrite = engine.getDepthWrite();
             const currentColorWrite = engine.getColorWrite();
+            const currentDepthFunction = engine.getDepthFunction() || 0;
 
             if (material.disableDepthWrite) {
                 engine.setDepthWrite(false);
+            } else if (material.forceDepthWrite) {
+                engine.setDepthWrite(true);
             }
             if (material.disableColorWrite) {
                 engine.setColorWrite(false);
+            }
+
+            if (material.depthFunction !== 0) {
+                engine.setDepthFunction(material.depthFunction);
             }
 
             if (!hardwareInstancedRendering) {
@@ -1037,11 +1044,14 @@ export class ThinEffectLayer {
                 effect.setMatrix("world", world)
             );
 
-            if (material.disableDepthWrite) {
+            if (material.disableDepthWrite || material.forceDepthWrite) {
                 engine.setDepthWrite(currentDepthWrite);
             }
             if (material.disableColorWrite) {
                 engine.setColorWrite(currentColorWrite);
+            }
+            if (material.depthFunction !== 0) {
+                engine.setDepthFunction(currentDepthFunction);
             }
         } else {
             // Need to reset refresh rate of the main map
