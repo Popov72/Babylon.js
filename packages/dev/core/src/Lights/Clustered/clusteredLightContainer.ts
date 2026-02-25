@@ -183,6 +183,11 @@ export class ClusteredLightContainer extends Light {
         this._uniformBuffer.dispose();
         this._uniformBuffer = new UniformBuffer(this.getEngine(), undefined, undefined, this.name);
         this._buildUniformLayout();
+
+        // CLUSTLIGHT_SLICES is a shader define that sizes the vSliceRanges array in the UBO.
+        // Materials must recompile when depthSlices changes so the shader layout matches the rebuilt UBO.
+        // Otherwise, if depthSlices is reduced, the rebuilt UBO can be smaller than what the previously compiled shader expects, causing rendering to fail.
+        this._markMeshesAsLightDirty();
     }
 
     private readonly _proxyMaterial: ShaderMaterial;
