@@ -250,6 +250,7 @@ export const NodeExplorerServiceDefinition: ServiceDefinition<[], [ISceneExplore
                                 const objectRenderer = FindMainObjectRenderer(scene.frameGraph);
                                 if (objectRenderer) {
                                     objectRenderer.camera = camera;
+                                    onChangeObservable.notifyObservers(); // manual trigger, because scene.onActiveCameraChanged won't be triggered by the line above
                                     camera.attachControl(true);
                                 }
                             } else {
