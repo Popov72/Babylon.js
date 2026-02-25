@@ -221,6 +221,8 @@ export const NodeExplorerServiceDefinition: ServiceDefinition<[], [ISceneExplore
             },
         });
 
+        const getActiveCamera = () => (scene.frameGraph ? FindMainCamera(scene.frameGraph) : scene.activeCamera);
+
         const activeCameraCommandRegistration = sceneExplorerService.addEntityCommand({
             predicate: (entity: unknown) => entity instanceof Camera,
             order: DefaultCommandsOrder.CameraActive,
@@ -235,15 +237,13 @@ export const NodeExplorerServiceDefinition: ServiceDefinition<[], [ISceneExplore
                     type: "toggle",
                     displayName: "Activate and Attach Controls",
                     icon: () => {
-                        const activeCamera = scene.frameGraph ? FindMainCamera(scene.frameGraph) : scene.activeCamera;
-                        return activeCamera === camera ? <VideoFilled /> : <VideoRegular />;
+                        return getActiveCamera() === camera ? <VideoFilled /> : <VideoRegular />;
                     },
                     get isEnabled() {
-                        const activeCamera = scene.frameGraph ? FindMainCamera(scene.frameGraph) : scene.activeCamera;
-                        return activeCamera === camera;
+                        return getActiveCamera() === camera;
                     },
                     set isEnabled(enabled: boolean) {
-                        const activeCamera = scene.frameGraph ? FindMainCamera(scene.frameGraph) : scene.activeCamera;
+                        const activeCamera = getActiveCamera();
                         if (enabled && activeCamera !== camera) {
                             activeCamera?.detachControl();
                             if (scene.frameGraph) {
