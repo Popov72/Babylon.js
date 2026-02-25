@@ -104,6 +104,7 @@ import { _RetryWithInterval } from "./Misc/timingTools";
 import type { ObjectRenderer } from "./Rendering/objectRenderer";
 import type { BoundingBoxRenderer } from "./Rendering/boundingBoxRenderer";
 import type { BoundingBox } from "./Culling/boundingBox";
+import { FindMainCamera } from "./FrameGraph/frameGraphUtils";
 
 /**
  * Options for creating a scene uniform buffer
@@ -5309,8 +5310,31 @@ export class Scene implements IAnimatable, IClipPlanesHolder, IAssetContainer {
 
         this.onBeforeRenderObservable.notifyObservers(this);
 
+        // Customs render targets
+        this.onBeforeRenderTargetsRenderObservable.notifyObservers(this);
+
+        this._renderTargets.reset();
+        if (this.environmentTexture && this.environmentTexture.isRenderTarget) {
+            this._renderTargets.pushNoDuplicate(this.environmentTexture as RenderTargetTexture);
+        }
+
+        const currentActiveCamera = this._frameGraph ? FindMainCamera(this._frameGraph) : null;
+        if (this.renderTargetsEnabled) {
+            this._renderTargets.concatWithNoDuplicate(this.customRenderTargets);
+            Tools.StartPerformanceCounter("Custom render targets", this._renderTargets.length > 0);
+            for (let customIndex = 0; customIndex < this._renderTargets.length; customIndex++) {
+                const renderTarget = this._renderTargets.data[customIndex];
+                const activeCamera = renderTarget.activeCamera || currentActiveCamera;
+
+                this._renderRenderTarget(renderTarget, activeCamera, true, this.dumpNextRenderTargets);
+            }
+            Tools.EndPerformanceCounter("Custom render targets", this._renderTargets.length > 0);
+            this._renderId++;
+        }
+
+        this.onAfterRenderTargetsRenderObservable.notifyObservers(this);
+
         // We must keep these steps because the procedural texture component relies on them.
-        // TODO: move the procedural texture component to the frame graph.
         for (const step of this._beforeClearStage) {
             step.action();
         }
