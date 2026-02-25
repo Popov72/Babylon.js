@@ -5321,13 +5321,15 @@ export class Scene implements IAnimatable, IClipPlanesHolder, IAssetContainer {
         this.onBeforeRenderTargetsRenderObservable.notifyObservers(this);
 
         this._renderTargets.reset();
-        if (this.environmentTexture && this.environmentTexture.isRenderTarget) {
-            this._renderTargets.pushNoDuplicate(this.environmentTexture as RenderTargetTexture);
-        }
 
         const currentActiveCamera = this._frameGraph ? FindMainCamera(this._frameGraph) : null;
         if (this.renderTargetsEnabled) {
+            if (this.environmentTexture && this.environmentTexture.isRenderTarget) {
+                this._renderTargets.pushNoDuplicate(this.environmentTexture as RenderTargetTexture);
+            }
+
             this._renderTargets.concatWithNoDuplicate(this.customRenderTargets);
+
             Tools.StartPerformanceCounter("Custom render targets", this._renderTargets.length > 0);
             for (let customIndex = 0; customIndex < this._renderTargets.length; customIndex++) {
                 const renderTarget = this._renderTargets.data[customIndex];
