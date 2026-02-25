@@ -104,7 +104,6 @@ import { _RetryWithInterval } from "./Misc/timingTools";
 import type { ObjectRenderer } from "./Rendering/objectRenderer";
 import type { BoundingBoxRenderer } from "./Rendering/boundingBoxRenderer";
 import type { BoundingBox } from "./Culling/boundingBox";
-import { FindMainCamera } from "./FrameGraph/frameGraphUtils";
 
 /**
  * Options for creating a scene uniform buffer
@@ -5322,7 +5321,7 @@ export class Scene implements IAnimatable, IClipPlanesHolder, IAssetContainer {
 
         this._renderTargets.reset();
 
-        const currentActiveCamera = this._frameGraph ? FindMainCamera(this._frameGraph) : null;
+        const currentActiveCamera = this._frameGraph?.findMainCamera() ?? null;
         if (this.renderTargetsEnabled) {
             if (this.environmentTexture && this.environmentTexture.isRenderTarget) {
                 this._renderTargets.pushNoDuplicate(this.environmentTexture as RenderTargetTexture);
