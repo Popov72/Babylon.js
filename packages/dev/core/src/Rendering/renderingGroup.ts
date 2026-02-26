@@ -136,7 +136,7 @@ export class RenderingGroup {
         renderOpaqueMeshes: boolean = true,
         renderAlphaTestMeshes: boolean = true,
         renderTransparentMeshes: boolean = true,
-        customRenderTransparentSubMeshes?: (transparentSubMeshes: SmartArray<SubMesh>, renderingGroup: RenderingGroup) => void
+        customRenderTransparentSubMeshes?: (transparentSubMeshes: SmartArray<SubMesh>, renderingGroup?: RenderingGroup) => void
     ): void {
         if (customRenderFunction) {
             customRenderFunction(this._opaqueSubMeshes, this._alphaTestSubMeshes, this._transparentSubMeshes, this._depthOnlySubMeshes);
