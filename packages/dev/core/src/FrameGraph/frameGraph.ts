@@ -82,8 +82,7 @@ export class FrameGraph implements IDisposable {
     public pausedExecution = false;
 
     /**
-     * Indicates whether the automatic adding of newly created tasks to the frame graph is disabled. If false, when a task is created, it will automatically be added to the frame graph using FrameGraph.addTask.
-     * If true, newly created tasks won't be added to the frame graph until FrameGraph.addTask is called manually with the task as parameter (default is false).
+     * Indicates whether the automatic adding of newly created tasks to the frame graph is disabled. When false (default), tasks are automatically added to the frame graph when created. When true, tasks must be manually added by calling FrameGraph.addTask.
      */
     public disableAutomaticAddTasks = false;
 
