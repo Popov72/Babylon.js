@@ -82,6 +82,12 @@ export class FrameGraph implements IDisposable {
     public pausedExecution = false;
 
     /**
+     * Indicates whether the automatic adding of newly created tasks to the frame graph is disabled. If false, when a task is created, it will automatically be added to the frame graph using FrameGraph.addTask.
+     * If true, newly created tasks won't be added to the frame graph until FrameGraph.addTask is called manually with the task as parameter (default is false).
+     */
+    public disableAutomaticAddTasks = false;
+
+    /**
      * Gets the node render graph linked to the frame graph (if any)
      * @returns the linked node render graph or null if none
      */
@@ -163,6 +169,10 @@ export class FrameGraph implements IDisposable {
     public addTask(task: FrameGraphTask): void {
         if (this._currentProcessedTask !== null) {
             throw new Error(`FrameGraph.addTask: Can't add the task "${task.name}" while another task is currently building (task: ${this._currentProcessedTask.name}).`);
+        }
+
+        if (this._tasks.includes(task)) {
+            return;
         }
 
         this._tasks.push(task);

@@ -128,6 +128,10 @@ export abstract class FrameGraphTask {
         this.name = name;
         this._frameGraph = frameGraph;
         this._reset();
+
+        if (!frameGraph.disableAutomaticAddTasks) {
+            frameGraph.addTask(this);
+        }
     }
 
     /** @internal */
