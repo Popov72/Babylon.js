@@ -383,6 +383,7 @@ export class NodeRenderGraphBlock {
                     this._frameGraphTask.dependencies.add(dependenciesConnectedPoint.value as FrameGraphTextureHandle);
                 }
             }
+            this._frameGraph.addTask(this._frameGraphTask);
         }
 
         this.onBuildObservable.notifyObservers(this);
