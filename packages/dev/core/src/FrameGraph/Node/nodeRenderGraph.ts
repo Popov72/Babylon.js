@@ -173,7 +173,6 @@ export class NodeRenderGraph {
 
         this._frameGraph = new FrameGraph(this._scene, options.debugTextures, this);
         this._frameGraph.name = name;
-        this._frameGraph.disableAutomaticAddTasks = true;
 
         if (options.rebuildGraphOnEngineResize) {
             this._resizeObserver = this._engine.onResizeObservable.add(async () => {
