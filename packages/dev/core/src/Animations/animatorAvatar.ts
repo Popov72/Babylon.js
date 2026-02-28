@@ -89,7 +89,7 @@ export interface IRetargetOptions {
     mapNodeNames?: Map<string, string>;
 }
 
-type TransformNodeNameToNode = Map<string, { node: TransformNode; initialTransformations: { position: Vector3; scaling: Vector3; quaternion: Quaternion; rotation: Vector3 } }>;
+type TransformNodeNameToNode = Map<string, { node: TransformNode; initialTransformations: { position: Vector3; scaling: Vector3; quaternion?: Quaternion; rotation: Vector3 } }>;
 
 /**
  * Represents an animator avatar that manages meshes, skeletons and morph target managers for a hierarchical transform node and mesh structure.
@@ -163,8 +163,6 @@ export class AnimatorAvatar {
                 this._collectMesh(mesh);
             }
         });
-
-        this._computeBoneWorldMatrices();
     }
 
     private _collectMesh(mesh: AbstractMesh) {
@@ -268,20 +266,20 @@ export class AnimatorAvatar {
 
                 lstSourceTransformNodes.add(tn);
 
-                if (!tn.rotationQuaternion) {
-                    tn.rotationQuaternion = Quaternion.FromEulerAngles(tn.rotation.x, tn.rotation.y, tn.rotation.z);
-                    tn.rotation.setAll(0);
-                }
-
                 sourceTransformNodeNameToNode.set(mapNodeNames.get(tn.name) ?? tn.name, {
                     node: tn,
                     initialTransformations: {
                         position: tn.position.clone(),
                         scaling: tn.scaling.clone(),
-                        quaternion: tn.rotationQuaternion.clone(),
+                        quaternion: tn.rotationQuaternion?.clone(),
                         rotation: tn.rotation.clone(),
                     },
                 });
+
+                if (!tn.rotationQuaternion) {
+                    tn.rotationQuaternion = Quaternion.FromEulerAngles(tn.rotation.x, tn.rotation.y, tn.rotation.z);
+                    tn.rotation.setAll(0);
+                }
             }
         }
 
@@ -843,8 +841,8 @@ export class AnimatorAvatar {
             const { node, initialTransformations } = data;
             node.position.copyFrom(initialTransformations.position);
             node.scaling.copyFrom(initialTransformations.scaling);
-            if (node.rotationQuaternion) {
-                node.rotationQuaternion.copyFrom(initialTransformations.quaternion);
+            if (initialTransformations.quaternion) {
+                node.rotationQuaternion!.copyFrom(initialTransformations.quaternion);
             } else {
                 node.rotation.copyFrom(initialTransformations.rotation);
             }
