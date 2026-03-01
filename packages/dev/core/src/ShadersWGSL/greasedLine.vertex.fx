@@ -90,7 +90,12 @@ fn main(input : VertexInputs) -> FragmentInputs {
         vertexOutputs.position = vec4f(grlFinalPosition.xy + grlNormal.xy * grlSide, grlFinalPosition.z, grlFinalPosition.w);
     #else
         vertexOutputs.grlCounters = vertexInputs.grl_counters;
-        vertexOutputs.position = grlMatrix * vec4f((vertexInputs.position + vertexInputs.grl_offsets) + vertexInputs.grl_slopes * vertexInputs.grl_widths, 1.0) ;
+        #ifdef GREASED_LINE_USE_OFFSETS
+            let grlPositionOffset: vec3f = vertexInputs.grl_offsets;
+        #else
+            let grlPositionOffset: vec3f = vec3f(0.0);
+        #endif
+        vertexOutputs.position = grlMatrix * vec4f(vertexInputs.position + grlPositionOffset + vertexInputs.grl_slopes * vertexInputs.grl_widths, 1.0);
     #endif
 
     #define CUSTOM_VERTEX_MAIN_END
