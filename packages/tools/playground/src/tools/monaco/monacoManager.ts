@@ -288,6 +288,14 @@ export class MonacoManager {
         this.globalState.onManifestChangedObservable.notifyObservers();
     }
 
+    /** Updates the content of an existing file in the Monaco model. */
+    public updateFileContent(path: string, content: string) {
+        const model = this._files.getModel(path);
+        if (model) {
+            model.setValue(content);
+        }
+    }
+
     public removeFile(path: string) {
         this._files.removeFile(path);
         delete this.globalState.files[path];

@@ -84,6 +84,19 @@ export class MonacoComponent extends React.Component<IMonacoComponentProps, ICom
 
         this._monacoManager = new MonacoManager(gs);
 
+        // Expose a callback for external code (e.g. Inspector PlaygroundBridge) to add/update files
+        gs.addOrUpdateFile = (path: string, content: string) => {
+            if (gs.files[path] !== undefined) {
+                // File exists — update its content in both gs.files and the Monaco model
+                gs.files[path] = content;
+                this._monacoManager.updateFileContent(path, content);
+                this._monacoManager.switchActiveFile(path);
+            } else {
+                // New file — create it
+                this._monacoManager.addFile(path, content);
+            }
+        };
+
         // NOTE: This is a workaround currently needed when using Fluent. Specifically, Fluent currently manages focus (handling tab key events),
         // and only excludes elements with `contentEditable` set to `"true"`. Monaco does not set this attribute on its text editor elements by default.
         // Probably Fluent should be checking `isContentEditable` instead as `contentEditable` can be set to `"inherit"`, in which case `isContentEditable`

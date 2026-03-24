@@ -129,12 +129,32 @@ export class RenderingComponent extends React.Component<IRenderingComponentProps
         if (this._scene) {
             const inspectorV2Module: InspectorV2Module | undefined = (globalThis as any).INSPECTOR;
             if (inspectorV2Module?.ShowInspector) {
+                const gs = this.props.globalState;
+                const playgroundBridgeServiceDefinition = {
+                    friendlyName: "Playground Bridge",
+                    produces: [inspectorV2Module.PlaygroundBridgeIdentity],
+                    factory: () => ({
+                        addFileTab: (path: string, content: string) => {
+                            if (gs.addOrUpdateFile) {
+                                gs.addOrUpdateFile(path, content);
+                            }
+                        },
+                        getFileContent: (path: string): string | undefined => {
+                            return gs.files[path];
+                        },
+                        getEntryFilePath: (): string => {
+                            return gs.entryFilePath;
+                        },
+                    }),
+                };
+
                 const options = {
                     ...inspectorV2Module.ConvertOptions({
                         embedMode: true,
                     }),
                     showThemeSelector: false,
                     themeMode: Utilities.ReadStringFromStore("theme", "Light") === "Dark" ? "dark" : "light",
+                    serviceDefinitions: [playgroundBridgeServiceDefinition],
                 } as const;
                 this._inspectorV2Token = inspectorV2Module.ShowInspector(this._scene, options);
             } else {

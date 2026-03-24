@@ -110,6 +110,12 @@ export class GlobalState {
     public onV2HydrateRequiredObservable = new Observable<V2Manifest>();
     public onEngineSwitchDialogRequiredObservable = new Observable<IEngineSwitchDialogRequest>();
 
+    /**
+     * Callback set by the Monaco editor component to allow external code (e.g. the Inspector bridge)
+     * to add or update a file tab programmatically.
+     */
+    public addOrUpdateFile: ((path: string, content: string) => void) | null = null;
+
     public loadingCodeInProgress = false;
     public onCodeLoaded = new Observable<string>();
     public doNotRun = false;
