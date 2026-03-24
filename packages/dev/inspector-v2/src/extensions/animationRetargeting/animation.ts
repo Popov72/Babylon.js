@@ -398,6 +398,17 @@ export class AnimationSource {
         meshAnim.layerMask = ShadowLayerMask;
         meshAnim.isVisible = false;
 
+        // Auto-scale the animation hierarchy to fit the viewport (~2 units)
+        const boundingVectors = meshAnim.getHierarchyBoundingVectors(true);
+        const extendSize = boundingVectors.max.subtract(boundingVectors.min);
+        const maxDim = Math.max(extendSize.x, extendSize.y, extendSize.z);
+
+        if (maxDim > 3 || maxDim < 0.1) {
+            const scaleRatio = 2 / maxDim;
+            const s = this._rootNode.scaling;
+            this._rootNode.scaling.set(Math.sign(s.x) * scaleRatio, Math.sign(s.y) * scaleRatio, Math.sign(s.z) * scaleRatio);
+        }
+
         const initialNode = skeletonRoot;
         this._selectedTransformNode = initialNode;
         this._gizmoManager.attachToNode(initialNode);

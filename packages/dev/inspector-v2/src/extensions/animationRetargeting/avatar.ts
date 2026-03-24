@@ -309,7 +309,8 @@ export class Avatar {
         this._scaleRatio = 1;
         if (rescaleAvatar && (maxDim > 3 || maxDim < 0.1)) {
             this._scaleRatio = 2 / maxDim;
-            avatarRootNode.scaling.setAll(this._scaleRatio);
+            const s = avatarRootNode.scaling;
+            avatarRootNode.scaling.set(Math.sign(s.x) * this._scaleRatio, Math.sign(s.y) * this._scaleRatio, Math.sign(s.z) * this._scaleRatio);
         }
 
         // Delete avatar's own animation groups, keep only the reference animation
