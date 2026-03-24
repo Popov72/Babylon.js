@@ -3,10 +3,12 @@ import type { ArcRotateCamera } from "core/Cameras/arcRotateCamera";
 import type { ShadowGenerator } from "core/Lights/Shadows/shadowGenerator";
 import type { Scene } from "core/scene";
 import type { AnimationGroup } from "core/Animations/animationGroup";
-import type { AbstractMesh } from "core/Meshes/abstractMesh";
 import type { TransformNode } from "core/Meshes/transformNode";
 
+import type { AbstractMesh } from "core/Meshes/abstractMesh";
 import { Color3 } from "core/Maths/math.color";
+
+import { SceneTransfer } from "./sceneTransfer";
 import { Matrix, Quaternion, Vector3 } from "core/Maths/math.vector";
 import { StandardMaterial } from "core/Materials/standardMaterial";
 import { MeshBuilder } from "core/Meshes/meshBuilder";
@@ -30,7 +32,7 @@ export type GizmoType = "Position" | "Rotation" | "Scale";
 
 const ShadowLayerMask = 0x10000000;
 
-type BoneTransformations = Map<Bone, { position: Vector3; scaling: Vector3; quaternion: import("core/Maths/math.vector").Quaternion }>;
+type BoneTransformations = Map<Bone, { position: Vector3; scaling: Vector3; quaternion: Quaternion }>;
 
 export class Avatar {
     private _animatorAvatar: Nullable<AnimatorAvatar> = null;
@@ -43,6 +45,9 @@ export class Avatar {
     private _inRestPose = false;
     private _initialBoneTransformations: BoneTransformations = new Map();
     private _retargetedBoneTransformations: BoneTransformations = new Map();
+
+    // For scene-sourced avatars: manages node transfer between scenes
+    private readonly _sceneTransfer = new SceneTransfer();
 
     public readonly onLoadedObservable = new Observable<void>();
     public readonly onGizmoNodeSelectedObservable = new Observable<string>();
@@ -62,6 +67,9 @@ export class Avatar {
     }
     public get isLoaded(): boolean {
         return this._animatorAvatar !== null;
+    }
+    public get sceneTransfer(): SceneTransfer {
+        return this._sceneTransfer;
     }
     /** True when a retargeted animation is actively playing (not in rest pose). */
     public get isPlaying(): boolean {
@@ -98,7 +106,9 @@ export class Avatar {
         this._cleanScene();
     }
 
-    /** Returns the list of all bone names in the avatar skeleton, in hierarchy order. */
+    /** Returns the list of all bone names in the avatar skeleton, in hierarchy order.
+     * @returns Array of bone name strings.
+     */
     public getBoneNames(): string[] {
         if (!this._animatorAvatar) {
             return [];
@@ -107,7 +117,9 @@ export class Avatar {
         return skeleton.bones.map((b) => b.name);
     }
 
-    /** Returns bone options in hierarchy order, with indented labels for parenting. */
+    /** Returns bone options in hierarchy order, with indented labels for parenting.
+     * @returns Array of label/value pairs.
+     */
     public getBoneOptions(): { label: string; value: string }[] {
         if (!this._animatorAvatar) {
             return [];
@@ -167,6 +179,7 @@ export class Avatar {
     /**
      * Captures the current bone transformations (while in rest pose, possibly edited via gizmo)
      * as a `RestPoseDataUpdate`. All bone transformations are saved as absolute values.
+     * @returns The rest-pose data update array.
      */
     public saveAsRestPose(): RestPoseDataUpdate {
         const result: RestPoseDataUpdate = [];
@@ -260,6 +273,15 @@ export class Avatar {
         this._gizmoManager.dispose();
     }
 
+    public async loadFromSceneAsync(sourceScene: Scene, rootNodeName: string, rescaleAvatar: boolean, restPoseUpdate?: RestPoseDataUpdate): Promise<void> {
+        this._cleanScene();
+        const sourceRoot = this._sceneTransfer.transfer(sourceScene, this._scene, rootNodeName);
+        if (!sourceRoot) {
+            return;
+        }
+        this._setupAvatar(sourceRoot, rescaleAvatar, restPoseUpdate);
+    }
+
     private async _loadFileAsync(path: string, rescaleAvatar: boolean, restPoseUpdate?: RestPoseDataUpdate): Promise<void> {
         let result;
         if (path.startsWith("file:")) {
@@ -268,6 +290,10 @@ export class Avatar {
             result = await ImportMeshAsync(path, this._scene);
         }
         const avatarRootNode = result.meshes[0];
+        this._setupAvatar(avatarRootNode, rescaleAvatar, restPoseUpdate);
+    }
+
+    private _setupAvatar(avatarRootNode: AbstractMesh, rescaleAvatar: boolean, restPoseUpdate?: RestPoseDataUpdate): void {
         avatarRootNode.name = "avatar";
 
         this._animatorAvatar = new AnimatorAvatar("avatar", avatarRootNode);
@@ -312,7 +338,7 @@ export class Avatar {
         this._saveBoneTransformations(this._initialBoneTransformations);
 
         const [avatarSkeleton] = this._animatorAvatar.skeletons;
-        const skeletonViewer = new SkeletonViewer(avatarSkeleton, (avatarMesh ?? result.meshes[1]) as Mesh, this._scene, undefined, 0, {
+        const skeletonViewer = new SkeletonViewer(avatarSkeleton, (avatarMesh ?? avatarRootNode) as Mesh, this._scene, undefined, 0, {
             displayMode: SkeletonViewer.DISPLAY_SPHERE_AND_SPURS,
             displayOptions: {
                 showLocalAxes: false,
@@ -355,13 +381,29 @@ export class Avatar {
     }
 
     private _cleanScene(): void {
-        this._animatorAvatar?.dispose();
-        this._animatorAvatar = null;
+        // Dispose skeleton viewer and gizmo node first, before moving meshes back
         this._skeletonViewer?.dispose();
         this._skeletonViewer = null;
         this._gizmoSelectedNode?.dispose();
         this._gizmoSelectedNode = null;
         this._selectedBoneTransform = null;
+
+        // Remove shadow casters added by _setupAvatar
+        if (this._animatorAvatar?.rootNode) {
+            for (const mesh of this._animatorAvatar.rootNode.getChildMeshes()) {
+                this._shadowGenerator.removeShadowCaster(mesh);
+            }
+        }
+
+        // Restore scene-sourced nodes back to their original scene
+        if (this._sceneTransfer.isActive) {
+            this._sceneTransfer.restore();
+            // Don't dispose the animatorAvatar — its meshes belong to the PG scene
+            this._animatorAvatar = null;
+        } else {
+            this._animatorAvatar?.dispose();
+            this._animatorAvatar = null;
+        }
         this._scene.getAnimationGroupByName("avatar")?.dispose();
     }
 

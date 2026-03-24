@@ -3,6 +3,9 @@ import type { NamingSchemeManager, BoneEntry } from "./namingSchemeManager";
 import type { AvatarManager, StoredAvatar } from "./avatarManager";
 import type { AnimationManager, StoredAnimation } from "./animationManager";
 import type { Nullable } from "core/types";
+import type { Skeleton } from "core/Bones/skeleton";
+import type { Bone } from "core/Bones/bone";
+import type { Node } from "core/node";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
@@ -34,6 +37,7 @@ import type { TableColumnDefinition, TableColumnSizingOptions } from "@fluentui/
 import { Button } from "shared-ui-components/fluent/primitives/button";
 import { TextInput } from "shared-ui-components/fluent/primitives/textInput";
 import { StringDropdown } from "shared-ui-components/fluent/primitives/dropdown";
+import { Textarea } from "shared-ui-components/fluent/primitives/textarea";
 import {
     AddRegular,
     DeleteRegular,
@@ -161,11 +165,11 @@ const useStyles = makeStyles({
         overflow: "hidden",
         textOverflow: "ellipsis",
         whiteSpace: "pre",
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
     },
     mappingSelect: {
         flex: 1,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
         padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalXS}`,
         border: `1px solid ${tokens.colorNeutralStroke1}`,
         borderRadius: tokens.borderRadiusSmall,
@@ -175,7 +179,7 @@ const useStyles = makeStyles({
     },
     errorText: {
         color: tokens.colorPaletteRedForeground1,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
         flexShrink: 0,
     },
     actionRow: {
@@ -187,7 +191,7 @@ const useStyles = makeStyles({
     emptyMsg: {
         padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalS}`,
         color: tokens.colorNeutralForeground3,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
     },
     confirmSurface: {
         width: "380px",
@@ -218,6 +222,38 @@ const useStyles = makeStyles({
     titleButtons: {
         display: "flex",
         gap: tokens.spacingHorizontalXS,
+    },
+    dataGridFlex: {
+        flex: 1,
+        overflowY: "auto",
+    },
+    dataGridCompactTall: {
+        maxHeight: "160px",
+        overflowY: "auto",
+    },
+    dataGridCompact: {
+        maxHeight: "140px",
+        overflowY: "auto",
+    },
+    boneEditRow: {
+        display: "flex",
+        flex: 1,
+        minHeight: 0,
+        gap: tokens.spacingHorizontalS,
+    },
+    formLabelPadTop: {
+        paddingTop: "6px",
+        flexShrink: 0,
+    },
+    swapRow: {
+        display: "flex",
+        justifyContent: "center",
+    },
+    subtleText: {
+        color: tokens.colorNeutralForeground3,
+    },
+    hiddenInput: {
+        display: "none",
     },
 });
 
@@ -251,7 +287,11 @@ type RemappingRow = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Loads a stored avatar or animation into a scene (handles URL, file, and scene sources). */
+/**
+ * Loads a stored avatar or animation into a scene (handles URL, file, and scene sources).
+ * @param scene - The target scene.
+ * @param entry - The stored avatar or animation entry.
+ */
 async function LoadIntoScene(scene: Scene, entry: StoredAvatar | StoredAnimation, manager: { getFilesAsync(id: string, fileNames: string[]): Promise<File[]> }): Promise<void> {
     if (entry.source === "url" && entry.url) {
         await ImportMeshAsync(entry.url, scene);
@@ -283,9 +323,10 @@ const SchemesPanel: FunctionComponent<{
     manager: NamingSchemeManager;
     avatarManager: AvatarManager;
     animationManager: AnimationManager;
+    getCurrentScene: () => Scene | null;
     onMutate: () => void;
     onEditingChange: (editing: boolean) => void;
-}> = ({ manager, avatarManager, animationManager, onMutate, onEditingChange }) => {
+}> = ({ manager, avatarManager, animationManager, getCurrentScene, onMutate, onEditingChange }) => {
     const classes = useStyles();
     const [editing, setEditing] = useState<SchemeEdit | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -433,36 +474,64 @@ const SchemesPanel: FunctionComponent<{
                     if (!avatar) {
                         throw new Error(`Avatar "${name}" not found.`);
                     }
-                    await LoadIntoScene(scene, avatar, avatarManager);
 
-                    // Extract bone names from the first skeleton in hierarchy order (DFS)
-                    const skeleton = scene.skeletons[0];
-                    if (!skeleton) {
-                        throw new Error("No skeleton found in this avatar.");
-                    }
-                    const lines: string[] = [];
-                    const visitBone = (bone: import("core/Bones/bone").Bone, depth: number) => {
-                        lines.push("  ".repeat(depth) + bone.name);
-                        for (const child of bone.children) {
-                            visitBone(child, depth + 1);
+                    if (avatar.source === "scene") {
+                        // Read directly from PG scene
+                        const pgScene = getCurrentScene();
+                        if (!pgScene) {
+                            throw new Error("No active scene available.");
                         }
-                    };
-                    for (const bone of skeleton.bones) {
-                        if (!bone.parent) {
-                            visitBone(bone, 0);
+                        // Find the root node and look for a skeleton in its mesh hierarchy
+                        const rootNode = pgScene.getMeshByName(avatar.rootNodeName) ?? pgScene.getTransformNodeByName(avatar.rootNodeName);
+                        if (!rootNode) {
+                            throw new Error(`Root node "${avatar.rootNodeName}" not found in scene.`);
                         }
+                        let skeleton: Skeleton | null = null;
+                        const meshes = rootNode.getChildMeshes(false);
+                        for (const mesh of meshes) {
+                            if (mesh.skeleton) {
+                                skeleton = mesh.skeleton;
+                                break;
+                            }
+                        }
+                        if (!skeleton) {
+                            throw new Error("No skeleton found in this avatar's mesh hierarchy.");
+                        }
+                        const lines: string[] = [];
+                        const visitBone = (bone: Bone, depth: number) => {
+                            lines.push("  ".repeat(depth) + bone.name);
+                            for (const child of bone.children) {
+                                visitBone(child, depth + 1);
+                            }
+                        };
+                        for (const bone of skeleton.bones) {
+                            if (!bone.parent) {
+                                visitBone(bone, 0);
+                            }
+                        }
+                        setEditing({ ...editing, namesText: lines.join("\n") });
                     }
-                    setEditing({ ...editing, namesText: lines.join("\n") });
                 } else {
                     const animation = animationManager.getAnimationById(name);
                     if (!animation) {
                         throw new Error(`Animation "${name}" not found.`);
                     }
-                    await LoadIntoScene(scene, animation, animationManager);
+
+                    let targetScene: Scene;
+                    if (animation.source === "scene") {
+                        const pgScene = getCurrentScene();
+                        if (!pgScene) {
+                            throw new Error("No active scene available.");
+                        }
+                        targetScene = pgScene;
+                    } else {
+                        await LoadIntoScene(scene, animation, animationManager);
+                        targetScene = scene;
+                    }
 
                     // Collect animation target names, then sort by scene hierarchy (DFS order)
                     const targetNames = new Set<string>();
-                    for (const group of scene.animationGroups) {
+                    for (const group of targetScene.animationGroups) {
                         for (const ta of group.targetedAnimations) {
                             if (ta.target?.name) {
                                 targetNames.add(ta.target.name as string);
@@ -475,7 +544,7 @@ const SchemesPanel: FunctionComponent<{
                     // Walk scene in DFS order, include only animation targets
                     const lines: string[] = [];
                     const visited = new Set<string>();
-                    const walkNode = (node: import("core/node").Node, depth: number) => {
+                    const walkNode = (node: Node, depth: number) => {
                         if (targetNames.has(node.name) && !visited.has(node.name)) {
                             visited.add(node.name);
                             lines.push("  ".repeat(depth) + node.name);
@@ -484,7 +553,7 @@ const SchemesPanel: FunctionComponent<{
                             walkNode(child, depth + 1);
                         }
                     };
-                    for (const rootNode of scene.rootNodes) {
+                    for (const rootNode of targetScene.rootNodes) {
                         walkNode(rootNode, 0);
                     }
                     setEditing({ ...editing, namesText: lines.join("\n") });
@@ -496,7 +565,7 @@ const SchemesPanel: FunctionComponent<{
                 setIsPopulating(false);
             }
         },
-        [editing, avatarManager, animationManager]
+        [editing, avatarManager, animationManager, getCurrentScene]
     );
 
     const handleSave = useCallback(() => {
@@ -573,12 +642,12 @@ const SchemesPanel: FunctionComponent<{
                     <Button icon={AddRegular} label="Add" onClick={startAdd} disabled={!!editing} />
                 </div>
             </div>
-            {schemeNames.length === 0 && <span className={classes.emptyMsg}>No naming schemes defined.</span>}
+            {schemeNames.length === 0 && <Caption1 className={classes.emptyMsg}>No naming schemes defined.</Caption1>}
             <DataGrid
                 items={schemeRows}
                 columns={schemeColumns}
                 getRowId={(item) => item.name}
-                style={{ flex: editing ? undefined : 1, maxHeight: editing ? "160px" : undefined, overflowY: "auto" }}
+                className={mergeClasses(editing ? classes.dataGridCompactTall : classes.dataGridFlex)}
                 resizableColumns
                 columnSizingOptions={schemeColumnSizing}
             >
@@ -589,7 +658,7 @@ const SchemesPanel: FunctionComponent<{
                     {({ item, rowId }) => <DataGridRow<SchemeRow> key={rowId}>{({ renderCell }) => <DataGridCell>{renderCell(item)}</DataGridCell>}</DataGridRow>}
                 </DataGridBody>
             </DataGrid>
-            {!editing && error && <span className={classes.errorText}>{error}</span>}
+            {!editing && error && <Caption1 className={classes.errorText}>{error}</Caption1>}
             {editing && (
                 <div className={classes.editSectionFlex}>
                     <Body1Strong>{editing.originalName ? `Editing "${editing.originalName}"` : "New Scheme"}</Body1Strong>
@@ -617,18 +686,16 @@ const SchemesPanel: FunctionComponent<{
                         </Select>
                         {isPopulating && <Spinner size="tiny" />}
                     </div>
-                    <div style={{ display: "flex", flex: 1, minHeight: 0, gap: tokens.spacingHorizontalS }}>
-                        <Label className={classes.formLabel} style={{ paddingTop: "6px", flexShrink: 0 }}>
-                            Bone names
-                        </Label>
-                        <textarea
+                    <div className={classes.boneEditRow}>
+                        <Label className={mergeClasses(classes.formLabel, classes.formLabelPadTop)}>Bone names</Label>
+                        <Textarea
                             className={classes.boneTextarea}
                             value={editing.namesText}
                             placeholder="One bone name per line"
-                            onChange={(e) => setEditing({ ...editing, namesText: e.target.value })}
+                            onChange={(newVal) => setEditing({ ...editing, namesText: newVal })}
                         />
                     </div>
-                    {error && <span className={classes.errorText}>{error}</span>}
+                    {error && <Caption1 className={classes.errorText}>{error}</Caption1>}
                     <div className={classes.actionRow}>
                         <Button appearance="secondary" label="Cancel" onClick={handleCancel} />
                         <Button appearance="primary" label="Save" onClick={handleSave} />
@@ -882,12 +949,12 @@ const RemappingsPanel: FunctionComponent<{
                     <Button icon={AddRegular} label="Add" onClick={startAdd} disabled={!!editing || schemeNames.length < 2} />
                 </div>
             </div>
-            {allRemappings.length === 0 && <span className={classes.emptyMsg}>No remappings defined.</span>}
+            {allRemappings.length === 0 && <Caption1 className={classes.emptyMsg}>No remappings defined.</Caption1>}
             <DataGrid
                 items={allRemappings}
                 columns={remappingColumns}
                 getRowId={(item) => `${item.fromScheme}|${item.toScheme}`}
-                style={{ flex: editing ? undefined : 1, maxHeight: editing ? "140px" : undefined, overflowY: "auto" }}
+                className={mergeClasses(editing ? classes.dataGridCompact : classes.dataGridFlex)}
                 resizableColumns
                 columnSizingOptions={remappingColumnSizing}
             >
@@ -911,7 +978,7 @@ const RemappingsPanel: FunctionComponent<{
                             onChange={(v) => handleFromSchemeChange(v)}
                         />
                     </div>
-                    <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div className={classes.swapRow}>
                         <Button appearance="transparent" icon={ArrowBidirectionalUpDownRegular} title="Swap From / To schemes" onClick={handleSwapSchemes} />
                     </div>
                     <div className={classes.formRow}>
@@ -924,14 +991,14 @@ const RemappingsPanel: FunctionComponent<{
                             onChange={(v) => handleToSchemeChange(v)}
                         />
                     </div>
-                    {conflictLabel && <span className={classes.errorText}>A remapping "{conflictLabel}" already exists. Edit that remapping instead.</span>}
-                    <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>{fromSchemeEntries.length} bones — select the target bone for each, or leave blank.</Caption1>
+                    {conflictLabel && <Caption1 className={classes.errorText}>A remapping &quot;{conflictLabel}&quot; already exists. Edit that remapping instead.</Caption1>}
+                    <Caption1 className={classes.subtleText}>{fromSchemeEntries.length} bones — select the target bone for each, or leave blank.</Caption1>
                     <div className={classes.mappingTable}>
                         {fromSchemeEntries.map((entry) => (
                             <div key={entry.name} className={mergeClasses(classes.mappingRow, faultyBones.has(entry.name) ? classes.mappingRowError : undefined)}>
-                                <span className={classes.mappingBoneName} title={entry.name}>
+                                <Caption1 className={classes.mappingBoneName} title={entry.name}>
                                     {"\u00A0\u00A0".repeat(entry.depth) + entry.name}
-                                </span>
+                                </Caption1>
                                 <select
                                     className={classes.mappingSelect}
                                     value={editing.map.get(entry.name) ?? ""}
@@ -947,7 +1014,7 @@ const RemappingsPanel: FunctionComponent<{
                             </div>
                         ))}
                     </div>
-                    {error && <span className={classes.errorText}>{error}</span>}
+                    {error && <Caption1 className={classes.errorText}>{error}</Caption1>}
                     <div className={classes.actionRow}>
                         <Button appearance="secondary" label="Cancel" onClick={handleCancel} />
                         <Button appearance="primary" label="Save" onClick={handleSave} disabled={!!conflictLabel || faultyBones.size > 0} />
@@ -1081,6 +1148,7 @@ export const RetargetingConfigDialog: FunctionComponent<RetargetingConfigDialogP
                 }
             }}
         >
+            {/* Dynamic: depends on runtime resize value */}
             <DialogSurface
                 ref={surfaceRef as React.Ref<HTMLDivElement>}
                 className={classes.surface}
@@ -1098,7 +1166,7 @@ export const RetargetingConfigDialog: FunctionComponent<RetargetingConfigDialogP
                                 title="Import configuration"
                                 disabled={isEditing}
                             />
-                            <input ref={importInputRef} type="file" accept=".json" style={{ display: "none" }} onChange={handleImportFile} />
+                            <input ref={importInputRef} type="file" accept=".json" className={classes.hiddenInput} onChange={handleImportFile} />
                             <Button appearance="subtle" icon={DismissRegular} onClick={handleClose} title="Close" />
                         </div>
                     </div>
@@ -1227,6 +1295,7 @@ export const RetargetingConfigDialog: FunctionComponent<RetargetingConfigDialogP
                                 manager={manager}
                                 avatarManager={avatarManager}
                                 animationManager={animationManager}
+                                getCurrentScene={getCurrentScene}
                                 onMutate={onMutate}
                                 onEditingChange={onEditingChange}
                             />

@@ -64,7 +64,9 @@ export class HTMLConsole {
         };
     }
 
-    /** Appends the overlay element to the given container (should be position:relative). */
+    /** Appends the overlay element to the given container (should be position:relative).
+     * @param container - The container element to append to.
+     */
     public attachToContainer(container: HTMLElement): void {
         container.appendChild(this._element);
     }

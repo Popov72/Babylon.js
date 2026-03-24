@@ -21,7 +21,7 @@ import { HTMLConsole } from "./htmlConsole";
 import type { NamingSchemeManager } from "./namingSchemeManager";
 import type { AvatarManager, RestPoseDataUpdate } from "./avatarManager";
 import type { AnimationManager } from "./animationManager";
-import { SaveSnippet, TestPlaygroundCode } from "./helperFunctions";
+import { SaveSnippet, TestPlaygroundCode, ExportToSceneCode, ExportToSceneHeader, ExportToSceneHelpersCode } from "./helperFunctions";
 
 export type { GizmoType } from "./avatar";
 
@@ -87,6 +87,15 @@ export class RetargetingSceneManager {
 
         this.htmlConsole = new HTMLConsole();
         this._scene = new Scene(this._engine);
+
+        // Remove the retargeting scene from the engine's scenes list so it won't
+        // be auto-disposed when the engine is disposed (e.g. PG Play button).
+        // We manage the scene lifecycle ourselves in dispose().
+        const idx = this._engine.scenes.indexOf(this._scene);
+        if (idx !== -1) {
+            this._engine.scenes.splice(idx, 1);
+        }
+
         this._scene.environmentTexture = CubeTexture.CreateFromPrefilteredData("https://playground.babylonjs.com/textures/environment.env", this._scene);
 
         const camera1 = new ArcRotateCamera("camera1", 1.57, Math.PI / 2.2, 11.5, new Vector3(0, 0.8, 0), this._scene);
@@ -217,17 +226,86 @@ export class RetargetingSceneManager {
         this.onRetargetDoneObservable.notifyObservers();
     }
 
-    public async exportToPlaygroundAsync(avatarManager: AvatarManager, animationManager: AnimationManager): Promise<boolean> {
+    /**
+     * Generates retargeting code for "Export to Scene".
+     * Returns an object with helpers code and main function code, or null if not ready.
+     * For file-based entries, converts them to base64 data URLs.
+     * @param avatarManager - The avatar manager.
+     * @param animationManager - The animation manager.
+     * @param functionName - The name for the generated function.
+     * @returns Object with code strings, or null if not ready.
+     */
+    public async generateRetargetingCodeAsync(
+        avatarManager: AvatarManager,
+        animationManager: AnimationManager,
+        functionName: string
+    ): Promise<{ helpersCode: string; headerCode: string; functionCode: string; functionName: string } | null> {
+        if (!this._isRetargeted || !this._retargetOptions || !this._lastRetargetParams || !this.avatar || !this.animationSource) {
+            return null;
+        }
+
+        const params = this._lastRetargetParams;
+        const storedAvatar = avatarManager.getAvatar(params.avatarName);
+        const result = animationManager.getByDisplayName(params.animationName);
+        if (!storedAvatar || !result) {
+            return null;
+        }
+        const storedAnimation = result.entry;
+        const animationGroupIndex = result.mapping.index;
+
+        // Resolve URLs — for file-based entries, convert to base64 data URLs
+        let avatarUrl = storedAvatar.url ?? "";
+        let animationUrl = storedAnimation.url ?? "";
+
+        if (storedAvatar.source === "file" && storedAvatar.fileNames?.length) {
+            avatarUrl = await this._fileToDataUrlAsync(avatarManager, storedAvatar.id, storedAvatar.fileNames);
+        }
+        if (storedAnimation.source === "file" && storedAnimation.fileNames?.length) {
+            animationUrl = await this._fileToDataUrlAsync(animationManager, storedAnimation.id, storedAnimation.fileNames);
+        }
+
+        const boneTransformations = this.avatar.buildExportData(this._lastAvatarRestPose);
+        const animationTransformNodes = this.animationSource.buildExportData(this._lastAnimationRestPose);
+
+        const mapNodes: string[] = [];
+        const map = this._retargetOptions.mapNodeNames;
+        if (map) {
+            for (const [source, target] of map) {
+                mapNodes.push(source, target);
+            }
+        }
+
+        const optionsCopy = { ...this._retargetOptions, mapNodeNames: undefined, animationGroupName: `${storedAvatar.name} - ${params.animationName}` };
+
+        const functionCode = ExportToSceneCode.replace(/%functionName%/g, functionName)
+            .replace("%avatarSource%", storedAvatar.source === "scene" ? "scene" : "url")
+            .replace(/%avatarPath%/g, avatarUrl.replace(/"/g, '\\"'))
+            .replace(/%avatarRootNodeName%/g, storedAvatar.rootNodeName)
+            .replace(/%avatarRootNodeIndex%/g, String(storedAvatar.rootNodeIndex ?? 0))
+            .replace("%animationSource%", storedAnimation.source === "scene" ? "scene" : "url")
+            .replace(/%animationPath%/g, animationUrl.replace(/"/g, '\\"'))
+            .replace("%animationGroupIndex%", String(animationGroupIndex))
+            .replace("%retargetOptions%", JSON.stringify(optionsCopy, undefined, 8))
+            .replace("%avatarRestPoseUpdate%", JSON.stringify(boneTransformations))
+            .replace("%animationRestPoseUpdate%", JSON.stringify(animationTransformNodes))
+            .replace("%nameRemapping%", JSON.stringify(mapNodes));
+
+        return { helpersCode: ExportToSceneHelpersCode, headerCode: ExportToSceneHeader, functionCode, functionName };
+    }
+
+    public async exportToPlaygroundAsync(avatarManager: AvatarManager, animationManager: AnimationManager, onBeforeOpen?: () => void): Promise<boolean> {
         if (!this._isRetargeted || !this._retargetOptions || !this._lastRetargetParams || !this.avatar || !this.animationSource) {
             return false;
         }
 
         const params = this._lastRetargetParams;
         const storedAvatar = avatarManager.getAvatar(params.avatarName);
-        const storedAnimation = animationManager.getByDisplayName(params.animationName)?.entry;
-        if (!storedAvatar || !storedAnimation) {
+        const result = animationManager.getByDisplayName(params.animationName);
+        if (!storedAvatar || !result) {
             return false;
         }
+        const storedAnimation = result.entry;
+        const animationGroupIndex = result.mapping.index;
 
         // Resolve URLs — for file-based entries, convert main file to a base64 data URL
         let avatarUrl = storedAvatar.url ?? "";
@@ -237,7 +315,6 @@ export class RetargetingSceneManager {
             avatarUrl = await this._fileToDataUrlAsync(avatarManager, storedAvatar.id, storedAvatar.fileNames);
         }
         if (storedAnimation.source === "file" && storedAnimation.fileNames?.length) {
-            avatarUrl.length; // ensure avatar is resolved first
             animationUrl = await this._fileToDataUrlAsync(animationManager, storedAnimation.id, storedAnimation.fileNames);
         }
 
@@ -257,22 +334,32 @@ export class RetargetingSceneManager {
             }
         }
 
-        const optionsCopy = { ...this._retargetOptions, mapNodeNames: undefined };
+        const optionsCopy = { ...this._retargetOptions, mapNodeNames: undefined, animationGroupName: `${storedAvatar.name} - ${params.animationName}` };
         const code = TestPlaygroundCode.replace("%avatarPath%", avatarUrl.replace(/"/g, '\\"'))
             .replace("%animationPath%", animationUrl.replace(/"/g, '\\"'))
+            .replace(/%avatarRootNodeIndex%/g, String(storedAvatar.rootNodeIndex ?? 0))
+            .replace("%animationGroupIndex%", String(animationGroupIndex))
             .replace("%retargetOptions%", JSON.stringify(optionsCopy, undefined, 8))
             .replace("%avatarRestPoseUpdate%", JSON.stringify(boneTransformations))
             .replace("%animationRestPoseUpdate%", JSON.stringify(animationTransformNodes))
             .replace("%nameRemapping%", JSON.stringify(mapNodes));
 
-        SaveSnippet(code);
+        await SaveSnippet(code, onBeforeOpen);
         return true;
     }
 
-    /** Reads files from IndexedDB, finds the main scene file, and converts it to a base64 data URL. */
+    /**
+     * Reads files from IndexedDB and converts them to base64 data URLs.
+     * For single-file formats (.glb), returns just the data URL.
+     * For multi-file formats (.gltf + .bin + textures), returns a "file:" URL
+     * and includes code to register all companion files in FilesInputStore.
+     * @param manager - The manager providing file access.
+     * @param id - The entry id.
+     * @param fileNames - The file names to retrieve.
+     * @returns The data URL string.
+     */
     private async _fileToDataUrlAsync(manager: { getFilesAsync(id: string, fileNames: string[]): Promise<File[]> }, id: string, fileNames: string[]): Promise<string> {
         const files = await manager.getFilesAsync(id, fileNames);
-        // Find the main scene file (the one with a registered loader plugin)
         let mainFile: File | undefined;
         for (const file of files) {
             const ext = file.name.toLowerCase().split(".").pop();
@@ -284,7 +371,21 @@ export class RetargetingSceneManager {
         if (!mainFile) {
             return "";
         }
-        const buffer = await mainFile.arrayBuffer();
+
+        // For .glb (single file), convert directly to base64 data URL
+        if (files.length === 1 || mainFile.name.toLowerCase().endsWith(".glb")) {
+            return await this._fileToBase64Async(mainFile);
+        }
+
+        // For multi-file (.gltf + companions): convert all files to base64 and
+        // use a special "files:" prefix that the export templates will handle
+        const fileEntries = await Promise.all(files.map(async (file) => ({ name: file.name, dataUrl: await this._fileToBase64Async(file) })));
+        // Encode all files as a JSON blob after a "files:" prefix
+        return "files:" + JSON.stringify(fileEntries);
+    }
+
+    private async _fileToBase64Async(file: File): Promise<string> {
+        const buffer = await file.arrayBuffer();
         const bytes = new Uint8Array(buffer);
         let binary = "";
         for (let i = 0; i < bytes.byteLength; i++) {
@@ -294,19 +395,33 @@ export class RetargetingSceneManager {
     }
 
     public dispose(): void {
-        this.avatar?.dispose();
-        this.animationSource?.dispose();
+        try {
+            this.avatar?.dispose();
+        } catch {
+            // Ignore — engine/scene may already be disposed
+        }
+        try {
+            this.animationSource?.dispose();
+        } catch {
+            // Ignore
+        }
         this.htmlConsole.dispose();
-        this._scene?.dispose();
+        try {
+            this._scene?.dispose();
+        } catch {
+            // Ignore
+        }
 
-        // Restore original render loops instead of disposing the engine — we don't own it
-        if (this._engine) {
+        // Restore original render loops instead of disposing the engine — we don't own it.
+        // Guard against the engine already being disposed (e.g. PG Play button disposes
+        // the engine before our cleanup runs).
+        if (this._engine && !this._engine.isDisposed) {
             this._engine.stopRenderLoop();
             for (const loop of this._savedRenderLoops) {
                 this._engine.runRenderLoop(loop);
             }
-            this._savedRenderLoops = [];
         }
+        this._savedRenderLoops = [];
 
         this.avatar = null;
         this.animationSource = null;

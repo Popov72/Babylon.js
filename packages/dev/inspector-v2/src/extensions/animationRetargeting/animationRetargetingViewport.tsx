@@ -1,7 +1,7 @@
 import type { FunctionComponent } from "react";
 
 import type { Engine } from "core/Engines/engine";
-import { makeStyles } from "@fluentui/react-components";
+import { makeStyles, tokens, Body1 } from "@fluentui/react-components";
 import { useEffect, useRef } from "react";
 
 import { RetargetingSceneManager } from "./retargetingSceneManager";
@@ -22,7 +22,7 @@ const useStyles = makeStyles({
         justifyContent: "space-around",
         pointerEvents: "none",
         color: "rgba(255,255,255,0.7)",
-        fontSize: "13px",
+        fontSize: tokens.fontSizeBase200,
         fontFamily: "sans-serif",
     },
     consoleContainer: {
@@ -57,7 +57,11 @@ export const AnimationRetargetingViewport: FunctionComponent<AnimationRetargetin
 
         return () => {
             resizeObserver.disconnect();
-            manager.dispose();
+            try {
+                manager.dispose();
+            } catch {
+                // Ignore errors during dispose — the engine/scene may already be partially disposed
+            }
             managerRef.current = null;
         };
         // onManagerReady is intentionally not in deps - it's a stable callback from the service
@@ -66,8 +70,8 @@ export const AnimationRetargetingViewport: FunctionComponent<AnimationRetargetin
     return (
         <div ref={containerRef} className={classes.container}>
             <div className={classes.labels}>
-                <span>◀ Avatar</span>
-                <span>Animation ▶</span>
+                <Body1>◀ Avatar</Body1>
+                <Body1>Animation ▶</Body1>
             </div>
         </div>
     );

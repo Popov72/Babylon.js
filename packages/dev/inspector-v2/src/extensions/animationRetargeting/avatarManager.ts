@@ -15,7 +15,10 @@ export type StoredAvatar = {
     url?: string;
     fileNames?: string[];
     namingScheme: string;
+    /** Display name of the root node (for UI and scene-source lookup). */
     rootNodeName: string;
+    /** Index of the root node in the loaded scene's getNodes() array (url/file sources only). */
+    rootNodeIndex?: number;
     restPoseUpdate?: RestPoseDataUpdate;
     /** When true, this entry is transient and will be purged on next startup. */
     sessionOnly?: boolean;
@@ -161,6 +164,7 @@ export class AvatarManager {
      * Adds or replaces an avatar.
      * If the avatar has no `id`, one is generated automatically.
      * For file-based avatars, the files must already be stored in IndexedDB via `storeFilesAsync`.
+     * @param avatar - The avatar to add or replace.
      */
     public addAvatar(avatar: StoredAvatar): void {
         if (!avatar.id) {
@@ -177,6 +181,7 @@ export class AvatarManager {
 
     /**
      * Removes an avatar by id and its associated files from IndexedDB.
+     * @param id - The avatar id to remove.
      */
     public async removeAvatarAsync(id: string): Promise<void> {
         const avatar = this._avatars.find((a) => a.id === id);
@@ -192,6 +197,8 @@ export class AvatarManager {
 
     /**
      * Stores files in IndexedDB for a file-based avatar, keyed by its immutable id.
+     * @param avatarId - The avatar id.
+     * @param files - The files to store.
      * @returns The list of file names stored.
      */
     public async storeFilesAsync(avatarId: string, files: File[]): Promise<string[]> {
@@ -208,6 +215,9 @@ export class AvatarManager {
 
     /**
      * Retrieves files from IndexedDB for a file-based avatar and converts them to File objects.
+     * @param avatarId - The avatar id.
+     * @param fileNames - The file names to retrieve.
+     * @returns Array of File objects.
      */
     public async getFilesAsync(avatarId: string, fileNames: string[]): Promise<File[]> {
         const results = await Promise.all(
@@ -226,6 +236,7 @@ export class AvatarManager {
     /**
      * Returns all avatars in a JSON-serializable format, including base64-encoded file data for file-based entries.
      * Session-only entries are excluded from the export.
+     * @returns Array of stored avatars with optional file data.
      */
     public async exportDataAsync(): Promise<Array<StoredAvatar & { fileData?: Record<string, string> }>> {
         return await Promise.all(
@@ -249,6 +260,9 @@ export class AvatarManager {
 
     /**
      * Imports avatars, including restoring file-based entries to IndexedDB from base64 data.
+     * @param avatars - The avatars to import with optional file data.
+     * @param mode - "replace" clears all existing data first; "append" skips duplicates.
+     * @returns List of skipped entry descriptions.
      */
     public async importDataAsync(avatars: Array<StoredAvatar & { fileData?: Record<string, string> }>, mode: "replace" | "append"): Promise<string[]> {
         const skipped: string[] = [];
@@ -307,6 +321,7 @@ export class AvatarManager {
                 url: baseUrl + d.file,
                 namingScheme: d.scheme,
                 rootNodeName: "__root__",
+                rootNodeIndex: 0,
             });
         }
     }
@@ -328,6 +343,12 @@ export class AvatarManager {
         try {
             const data = this._settingsStore.readSetting(AvatarSettingDescriptor);
             this._avatars = data.avatars ?? [];
+            // Backward compat: ensure rootNodeIndex exists for url/file sources
+            for (const a of this._avatars) {
+                if (a.rootNodeIndex === undefined && a.source !== "scene") {
+                    a.rootNodeIndex = 0;
+                }
+            }
         } catch {
             this._avatars = [];
         }

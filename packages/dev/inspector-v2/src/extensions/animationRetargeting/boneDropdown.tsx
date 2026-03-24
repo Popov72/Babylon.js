@@ -1,4 +1,4 @@
-import { Dropdown, makeStyles, Option, useId } from "@fluentui/react-components";
+import { Dropdown, makeStyles, Option, useId, Body1 } from "@fluentui/react-components";
 import type { FunctionComponent } from "react";
 import { useContext, useEffect, useState } from "react";
 import { ToolContext } from "shared-ui-components/fluent/hoc/fluentToolWrapper";
@@ -23,12 +23,18 @@ const useStyles = makeStyles({
         whiteSpace: "nowrap",
         overflowX: "hidden",
     },
+    listbox: {
+        overflowX: "hidden",
+        minWidth: "max-content",
+    },
 });
 
 /**
  * A dropdown for bone/node selection.
  * Unlike the generic StringDropdown, the popup list auto-sizes to content width
  * (no matchTargetSize constraint) and hides horizontal overflow.
+ * @param props - The component props.
+ * @returns The rendered dropdown element.
  */
 export const BoneDropdown: FunctionComponent<BoneDropdownProps> = (props) => {
     BoneDropdown.displayName = "BoneDropdown";
@@ -49,11 +55,11 @@ export const BoneDropdown: FunctionComponent<BoneDropdownProps> = (props) => {
             disabled={props.disabled}
             size={size}
             className={classes.dropdown}
-            button={<span className={classes.buttonText}>{optionLabel}</span>}
+            button={<Body1 className={classes.buttonText}>{optionLabel}</Body1>}
             positioning={{ matchTargetSize: undefined, position: "below", align: "start" }}
-            listbox={{ style: { overflowX: "hidden", minWidth: "max-content" } }}
+            listbox={{ className: classes.listbox }}
             selectedOptions={[currentValue]}
-            value={optionLabel}
+            value={optionLabel ?? ""}
             onOptionSelect={(_evt, data) => {
                 if (data.optionValue !== undefined) {
                     setCurrentValue(data.optionValue);

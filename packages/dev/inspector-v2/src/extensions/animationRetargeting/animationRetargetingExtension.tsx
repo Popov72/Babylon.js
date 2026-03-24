@@ -4,10 +4,13 @@ import type { ServiceDefinition } from "../../modularity/serviceDefinition";
 import type { IShellService } from "../../services/shellService";
 import type { ISettingsStore } from "../../services/settingsStore";
 import type { ISceneContext } from "../../services/sceneContext";
+import type { IPlaygroundBridge } from "../../services/playgroundBridgeService";
 import { ShellServiceIdentity } from "../../services/shellService";
 import { SettingsStoreIdentity } from "../../services/settingsStore";
 import { SceneContextIdentity } from "../../services/sceneContext";
+import { PlaygroundBridgeIdentity } from "../../services/playgroundBridgeService";
 
+import type { IObserver } from "core/Misc/observable";
 import { Observable } from "core/Misc/observable";
 import { PersonRunningRegular } from "@fluentui/react-icons";
 
@@ -18,6 +21,18 @@ import type { RetargetingSceneManager } from "./retargetingSceneManager";
 import { NamingSchemeManager } from "./namingSchemeManager";
 import { AvatarManager } from "./avatarManager";
 import { AnimationManager } from "./animationManager";
+
+// Module-level reference to the playground bridge. Set by the BridgeConsumer service
+// when the inspector is opened from the Playground. Null otherwise.
+let PlaygroundBridge: IPlaygroundBridge | null = null;
+
+/**
+ * Returns the playground bridge if available (inspector opened from PG).
+ * @returns The playground bridge instance or null.
+ */
+export function GetPlaygroundBridge(): IPlaygroundBridge | null {
+    return PlaygroundBridge;
+}
 
 /**
  * Service definition for the Animation Retargeting extension.
@@ -58,6 +73,8 @@ export const AnimationRetargetingServiceDefinition: ServiceDefinition<[], [IShel
         let isEnabled = false;
         let viewportReg: IDisposable | null = null;
         let currentManager: RetargetingSceneManager | null = null;
+        let sceneDisposeObserver: IObserver | null = null;
+
         // Persists all panel UI state across remounts (e.g. when the panel is docked elsewhere)
         const allAvatars = avatarManager.getAllAvatars();
         const allDisplayNames = animationManager.getAllDisplayNames();
@@ -66,6 +83,14 @@ export const AnimationRetargetingServiceDefinition: ServiceDefinition<[], [IShel
             avatarName: allAvatars.length > 0 ? allAvatars[0].name : "",
             animationName: allDisplayNames.length > 0 ? allDisplayNames[0] : "",
         };
+
+        function cleanupViewport(): void {
+            sceneDisposeObserver?.remove();
+            sceneDisposeObserver = null;
+            viewportReg?.dispose();
+            viewportReg = null;
+            currentManager = null;
+        }
 
         function setEnabled(enabled: boolean): void {
             if (enabled === isEnabled) {
@@ -79,6 +104,14 @@ export const AnimationRetargetingServiceDefinition: ServiceDefinition<[], [IShel
                     return;
                 }
                 const engine = scene.getEngine() as Engine;
+
+                // When the PG scene is disposed (e.g. Play button), clean up immediately
+                // so the retargeting scene is torn down before the engine is fully disposed.
+                sceneDisposeObserver = scene.onDisposeObservable.add(() => {
+                    cleanupViewport();
+                    isEnabled = false;
+                    isEnabledObs.notifyObservers(false);
+                });
 
                 // Register the central-content viewport; the component uses the PG's engine
                 viewportReg = shellService.addCentralContent({
@@ -95,10 +128,7 @@ export const AnimationRetargetingServiceDefinition: ServiceDefinition<[], [IShel
                     ),
                 });
             } else {
-                // Dispose viewport — the component's useEffect cleanup will restore the PG's render loops
-                viewportReg?.dispose();
-                viewportReg = null;
-                currentManager = null;
+                cleanupViewport();
             }
 
             isEnabledObs.notifyObservers(enabled);
@@ -121,6 +151,7 @@ export const AnimationRetargetingServiceDefinition: ServiceDefinition<[], [IShel
                     onManagerReadyObs={onManagerReadyObs}
                     getCurrentManager={() => currentManager}
                     getCurrentScene={() => sceneContext.currentScene}
+                    getPlaygroundBridge={GetPlaygroundBridge}
                     namingSchemeManager={namingSchemeManager}
                     avatarManager={avatarManager}
                     animationManager={animationManager}
@@ -131,9 +162,18 @@ export const AnimationRetargetingServiceDefinition: ServiceDefinition<[], [IShel
             ),
         });
 
+        // When the PG scene changes (e.g. Play button), auto-disable so the old
+        // engine/scene references are released and render loops are restored cleanly.
+        const sceneObserver = sceneContext.currentSceneObservable.add(() => {
+            if (isEnabled) {
+                setEnabled(false);
+            }
+        });
+
         return {
             dispose: () => {
                 setEnabled(false);
+                sceneObserver.remove();
                 panelReg.dispose();
                 onManagerReadyObs.clear();
                 isEnabledObs.clear();
@@ -143,6 +183,24 @@ export const AnimationRetargetingServiceDefinition: ServiceDefinition<[], [IShel
     },
 };
 
+/**
+ * Optional service that wires the Playground bridge when the inspector is opened from the PG.
+ * If the bridge service is not registered (inspector opened outside PG), this service is simply
+ * never created and the extension works without it.
+ */
+const BridgeConsumerServiceDefinition: ServiceDefinition<[], [IPlaygroundBridge]> = {
+    friendlyName: "Animation Retargeting Bridge Consumer",
+    consumes: [PlaygroundBridgeIdentity],
+    factory: (bridge) => {
+        PlaygroundBridge = bridge;
+        return {
+            dispose: () => {
+                PlaygroundBridge = null;
+            },
+        };
+    },
+};
+
 export default {
-    serviceDefinitions: [AnimationRetargetingServiceDefinition],
+    serviceDefinitions: [AnimationRetargetingServiceDefinition, BridgeConsumerServiceDefinition],
 } as const;

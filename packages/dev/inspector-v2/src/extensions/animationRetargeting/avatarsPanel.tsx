@@ -32,10 +32,12 @@ import { Button } from "shared-ui-components/fluent/primitives/button";
 import { TextInput } from "shared-ui-components/fluent/primitives/textInput";
 import { StringDropdown } from "shared-ui-components/fluent/primitives/dropdown";
 import { AddRegular, DeleteRegular, EditRegular, ArrowUploadRegular, DocumentArrowLeftRegular } from "@fluentui/react-icons";
+import { Textarea } from "shared-ui-components/fluent/primitives/textarea";
 import { NullEngine } from "core/Engines/nullEngine";
 import { Scene } from "core/scene";
 import { ImportMeshAsync, SceneLoader } from "core/Loading/sceneLoader";
 import type { Node } from "core/node";
+import type { AbstractMesh } from "core/Meshes/abstractMesh";
 import { FilesInputStore } from "core/Misc/filesInputStore";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -92,13 +94,13 @@ const useStyles = makeStyles({
     },
     errorText: {
         color: tokens.colorPaletteRedForeground1,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
         flexShrink: 0,
     },
     emptyMsg: {
         padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalS}`,
         color: tokens.colorNeutralForeground3,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
     },
     confirmSurface: {
         width: "380px",
@@ -114,7 +116,7 @@ const useStyles = makeStyles({
         borderRadius: tokens.borderRadiusMedium,
         padding: `${tokens.spacingVerticalSNudge} ${tokens.spacingHorizontalS}`,
         fontFamily: "monospace",
-        fontSize: "11px",
+        fontSize: tokens.fontSizeBase100,
         backgroundColor: tokens.colorNeutralBackground1,
         color: tokens.colorNeutralForeground1,
     },
@@ -125,7 +127,7 @@ const useStyles = makeStyles({
         textAlign: "center",
         cursor: "pointer",
         color: tokens.colorNeutralForeground3,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
     },
     dropZoneActive: {
         border: `2px dashed ${tokens.colorCompoundBrandStroke}`,
@@ -140,7 +142,7 @@ const useStyles = makeStyles({
     },
     nodeRow: {
         padding: `0 ${tokens.spacingHorizontalS}`,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
         lineHeight: "13px",
         fontFamily: "monospace",
         cursor: "pointer",
@@ -149,6 +151,29 @@ const useStyles = makeStyles({
     nodeRowSelected: {
         backgroundColor: tokens.colorBrandBackground2,
         fontWeight: "bold",
+    },
+    dataGridFlex: {
+        flex: 1,
+        overflowY: "auto",
+    },
+    dataGridCompact: {
+        maxHeight: "140px",
+        overflowY: "auto",
+    },
+    hiddenInput: {
+        display: "none",
+    },
+    subtleText: {
+        color: tokens.colorNeutralForeground3,
+    },
+    spinnerInline: {
+        display: "inline-block",
+    },
+    formRowAlignStart: {
+        alignItems: "flex-start",
+    },
+    formLabelPadTop: {
+        paddingTop: "6px",
     },
 });
 
@@ -161,6 +186,9 @@ type AvatarEdit = {
     sourceType: "url" | "file" | "scene";
     url: string;
     files: File[];
+    /** Index into the nodeList array — used for unique selection in the dialog. */
+    rootNodeIndex: number;
+    /** Name of the root node — for display and scene-source lookup. */
     rootNodeName: string;
     namingScheme: string;
     restPoseJson: string;
@@ -170,6 +198,8 @@ type AvatarEdit = {
 type NodeInfo = {
     name: string;
     depth: number;
+    /** Index in scene.meshes (-1 if not a mesh). */
+    meshIndex: number;
     /** Pre-computed tree prefix using box-drawing characters (e.g. "│  ├─ "). */
     prefix: string;
 };
@@ -180,8 +210,13 @@ type NodeInfo = {
  * Recursively builds a flat node list with tree-drawing prefixes.
  * `ancestorContinues` tracks, for each ancestor depth, whether a vertical line should continue
  * (i.e. the ancestor has more siblings below it).
+ * @param node - The current node.
+ * @param depth - The current depth level.
+ * @param list - The flat list being built.
+ * @param ancestorContinues - Tracks vertical line continuation per depth.
+ * @param meshes - Optional meshes array for mesh index lookup.
  */
-function BuildNodeList(node: Node, depth: number, list: NodeInfo[], ancestorContinues: boolean[]): void {
+function BuildNodeList(node: Node, depth: number, list: NodeInfo[], ancestorContinues: boolean[], meshes?: AbstractMesh[]): void {
     let prefix = "";
     if (depth > 0) {
         // Draw continuation lines for ancestors
@@ -192,13 +227,14 @@ function BuildNodeList(node: Node, depth: number, list: NodeInfo[], ancestorCont
         const isLast = !ancestorContinues[depth];
         prefix += isLast ? "└─ " : "├─ ";
     }
-    list.push({ name: node.name, depth, prefix });
+    const meshIndex = meshes ? meshes.indexOf(node as AbstractMesh) : -1;
+    list.push({ name: node.name, depth, meshIndex, prefix });
 
     const children = node.getChildren();
     for (let i = 0; i < children.length; i++) {
         const isLastChild = i === children.length - 1;
         ancestorContinues[depth + 1] = !isLastChild;
-        BuildNodeList(children[i], depth + 1, list, ancestorContinues);
+        BuildNodeList(children[i], depth + 1, list, ancestorContinues, meshes);
     }
 }
 
@@ -206,6 +242,9 @@ function BuildNodeList(node: Node, depth: number, list: NodeInfo[], ancestorCont
  * Detects the best matching naming scheme by checking how many node names
  * appear in each scheme. Returns the scheme with the most matches
  * (minimum 10 required), or null if none qualify.
+ * @param nodeNames - Set of node names to match against schemes.
+ * @param namingSchemeManager - The naming scheme manager.
+ * @returns The best matching scheme name, or null.
  */
 function DetectNamingScheme(nodeNames: Set<string>, namingSchemeManager: NamingSchemeManager): string | null {
     const schemeNames = namingSchemeManager.getAllSchemeNames();
@@ -359,13 +398,13 @@ export const AvatarsPanel: FunctionComponent<{
                 // Build the node tree from root nodes
                 const nodes: NodeInfo[] = [];
                 const rootNodes = scene.rootNodes;
+                const meshList = [...scene.meshes];
                 for (let i = 0; i < rootNodes.length; i++) {
                     const ancestorContinues: boolean[] = [];
                     ancestorContinues[0] = i < rootNodes.length - 1;
-                    BuildNodeList(rootNodes[i], 0, nodes, ancestorContinues);
+                    BuildNodeList(rootNodes[i], 0, nodes, ancestorContinues, meshList);
                 }
                 setNodeList(nodes);
-
                 // Auto-select first node and optionally detect the naming scheme
                 if (nodes.length > 0) {
                     let detectedScheme: string | null = null;
@@ -394,10 +433,35 @@ export const AvatarsPanel: FunctionComponent<{
                         if (!prev) {
                             return prev;
                         }
+                        // Resolve rootNodeIndex: use existing if valid, else find by name, else default to 0
+                        let idx = prev.rootNodeIndex;
+                        if (idx < 0 && prev.rootNodeName) {
+                            idx = nodes.findIndex((n) => n.name === prev.rootNodeName);
+                        }
+                        if (idx < 0) {
+                            idx = 0;
+                        }
+
+                        // Detect naming scheme from the selected node's subtree
+                        let scheme = detectedScheme;
+                        if (!scheme) {
+                            const selectedDepth = nodes[idx].depth;
+                            const descendantNames = new Set<string>();
+                            descendantNames.add(nodes[idx].name);
+                            for (let j = idx + 1; j < nodes.length; j++) {
+                                if (nodes[j].depth <= selectedDepth) {
+                                    break;
+                                }
+                                descendantNames.add(nodes[j].name);
+                            }
+                            scheme = DetectNamingScheme(descendantNames, namingSchemeManager);
+                        }
+
                         return {
                             ...prev,
-                            rootNodeName: prev.rootNodeName || nodes[0].name,
-                            ...(detectedScheme ? { namingScheme: detectedScheme } : {}),
+                            rootNodeIndex: idx,
+                            rootNodeName: prev.rootNodeName || nodes[idx].name,
+                            ...(scheme ? { namingScheme: scheme } : {}),
                         };
                     });
                 }
@@ -420,6 +484,7 @@ export const AvatarsPanel: FunctionComponent<{
             sourceType: "url",
             url: "",
             files: [],
+            rootNodeIndex: -1,
             rootNodeName: "",
             namingScheme: schemeNames[0] ?? "",
             restPoseJson: "",
@@ -437,6 +502,7 @@ export const AvatarsPanel: FunctionComponent<{
                 sourceType: avatar.source,
                 url: avatar.url ?? "",
                 files: [],
+                rootNodeIndex: -1,
                 rootNodeName: avatar.rootNodeName,
                 namingScheme: avatar.namingScheme,
                 restPoseJson: avatar.restPoseUpdate ? JSON.stringify(avatar.restPoseUpdate, undefined, 2) : "",
@@ -456,6 +522,11 @@ export const AvatarsPanel: FunctionComponent<{
                         BuildNodeList(rootNodes[i], 0, nodes, ancestorContinues);
                     }
                     setNodeList(nodes);
+                    // Resolve rootNodeIndex from the stored name
+                    const foundIdx = nodes.findIndex((n) => n.name === avatar.rootNodeName);
+                    if (foundIdx >= 0) {
+                        setEditing((prev) => (prev ? { ...prev, rootNodeIndex: foundIdx } : prev));
+                    }
                 }
             } else if (avatar.source === "url" && avatar.url) {
                 void loadPreview("url", avatar.url, [], false);
@@ -482,6 +553,7 @@ export const AvatarsPanel: FunctionComponent<{
             sourceType: "scene",
             url: "",
             files: [],
+            rootNodeIndex: -1,
             rootNodeName: "",
             namingScheme: schemeNames[0] ?? "",
             restPoseJson: "",
@@ -499,10 +571,21 @@ export const AvatarsPanel: FunctionComponent<{
         }
         setNodeList(nodes);
 
-        // Auto-detect naming scheme
+        // Auto-detect naming scheme from the first (default-selected) node's subtree
         let detectedScheme: string | null = null;
-        const nodeNames = new Set(nodes.map((n) => n.name));
-        detectedScheme = DetectNamingScheme(nodeNames, namingSchemeManager);
+        if (nodes.length > 0) {
+            const firstDepth = nodes[0].depth;
+            const descendantNames = new Set<string>();
+            descendantNames.add(nodes[0].name);
+            for (let j = 1; j < nodes.length; j++) {
+                if (nodes[j].depth <= firstDepth) {
+                    break;
+                }
+                descendantNames.add(nodes[j].name);
+            }
+            detectedScheme = DetectNamingScheme(descendantNames, namingSchemeManager);
+        }
+        // Fallback: try skeleton bone names
         if (!detectedScheme) {
             const boneNames = new Set<string>();
             for (const mesh of scene.meshes) {
@@ -524,6 +607,7 @@ export const AvatarsPanel: FunctionComponent<{
                 }
                 return {
                     ...prev,
+                    rootNodeIndex: 0,
                     rootNodeName: nodes[0].name,
                     ...(detectedScheme ? { namingScheme: detectedScheme } : {}),
                 };
@@ -594,6 +678,7 @@ export const AvatarsPanel: FunctionComponent<{
                 }
             }
 
+            const selectedNode = editing.rootNodeIndex >= 0 ? nodeList[editing.rootNodeIndex] : undefined;
             const avatar: StoredAvatar = {
                 id: avatarId,
                 name: editing.name.trim(),
@@ -602,6 +687,7 @@ export const AvatarsPanel: FunctionComponent<{
                 fileNames: editing.sourceType === "file" ? fileNames : undefined,
                 namingScheme: editing.namingScheme,
                 rootNodeName: editing.rootNodeName,
+                rootNodeIndex: editing.sourceType !== "scene" && selectedNode ? selectedNode.meshIndex : undefined,
                 restPoseUpdate,
                 sessionOnly: editing.sessionOnly,
             };
@@ -717,12 +803,12 @@ export const AvatarsPanel: FunctionComponent<{
                     <Button icon={DocumentArrowLeftRegular} label="Import from scene" onClick={startImportFromScene} disabled={!!editing || !getCurrentScene()} />
                 </div>
             </div>
-            {allAvatars.length === 0 && <span className={classes.emptyMsg}>No custom avatars defined.</span>}
+            {allAvatars.length === 0 && <Caption1 className={classes.emptyMsg}>No custom avatars defined.</Caption1>}
             <DataGrid
                 items={allAvatars}
                 columns={avatarColumns}
                 getRowId={(item) => item.id}
-                style={{ flex: editing ? undefined : 1, maxHeight: editing ? "140px" : undefined, overflowY: "auto" }}
+                className={mergeClasses(editing ? classes.dataGridCompact : classes.dataGridFlex)}
                 resizableColumns
                 columnSizingOptions={avatarColumnSizing}
             >
@@ -782,27 +868,45 @@ export const AvatarsPanel: FunctionComponent<{
                         >
                             <ArrowUploadRegular />
                             <div>Drop file(s) here or click to browse</div>
-                            <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} onChange={handleFileInput} />
+                            <input ref={fileInputRef} type="file" multiple className={classes.hiddenInput} onChange={handleFileInput} />
                         </div>
                     )}
 
                     {/* Loading indicator */}
                     {isLoading && (
-                        <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
-                            Loading… <Spinner size="tiny" style={{ display: "inline-block" }} />
+                        <Caption1 className={classes.subtleText}>
+                            Loading… <Spinner size="tiny" className={classes.spinnerInline} />
                         </Caption1>
                     )}
 
                     {/* Node tree */}
                     {nodeList.length > 0 && (
                         <>
-                            <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Select the root node of the avatar ({nodeList.length} nodes found):</Caption1>
+                            <Caption1 className={classes.subtleText}>Select the root node of the avatar ({nodeList.length} nodes found):</Caption1>
                             <div className={classes.nodeTree}>
-                                {nodeList.map((node) => (
+                                {nodeList.map((node, idx) => (
                                     <div
-                                        key={node.name}
-                                        className={mergeClasses(classes.nodeRow, editing.rootNodeName === node.name ? classes.nodeRowSelected : undefined)}
-                                        onClick={() => setEditing({ ...editing, rootNodeName: node.name })}
+                                        key={idx}
+                                        className={mergeClasses(classes.nodeRow, editing.rootNodeIndex === idx ? classes.nodeRowSelected : undefined)}
+                                        onClick={() => {
+                                            // Collect descendant names from the selected node for naming scheme detection
+                                            const selectedDepth = node.depth;
+                                            const descendantNames = new Set<string>();
+                                            descendantNames.add(node.name);
+                                            for (let j = idx + 1; j < nodeList.length; j++) {
+                                                if (nodeList[j].depth <= selectedDepth) {
+                                                    break;
+                                                }
+                                                descendantNames.add(nodeList[j].name);
+                                            }
+                                            const detected = DetectNamingScheme(descendantNames, namingSchemeManager);
+                                            setEditing({
+                                                ...editing,
+                                                rootNodeIndex: idx,
+                                                rootNodeName: node.name,
+                                                ...(detected ? { namingScheme: detected } : {}),
+                                            });
+                                        }}
                                     >
                                         {node.prefix + node.name}
                                     </div>
@@ -823,19 +927,17 @@ export const AvatarsPanel: FunctionComponent<{
                     </div>
 
                     {/* Rest pose data */}
-                    <div className={classes.formRow} style={{ alignItems: "flex-start" }}>
-                        <Label className={classes.formLabel} style={{ paddingTop: "6px" }}>
-                            Rest pose data
-                        </Label>
-                        <textarea
+                    <div className={mergeClasses(classes.formRow, classes.formRowAlignStart)}>
+                        <Label className={mergeClasses(classes.formLabel, classes.formLabelPadTop)}>Rest pose data</Label>
+                        <Textarea
                             className={classes.restPoseTextarea}
                             value={editing.restPoseJson}
                             placeholder='JSON array (optional). Use gizmos + "Save as rest pose" to generate this data.'
-                            onChange={(e) => setEditing({ ...editing, restPoseJson: e.target.value })}
+                            onChange={(newVal) => setEditing({ ...editing, restPoseJson: newVal })}
                         />
                     </div>
 
-                    {error && <span className={classes.errorText}>{error}</span>}
+                    {error && <Caption1 className={classes.errorText}>{error}</Caption1>}
                     <div className={classes.actionRow}>
                         <Button appearance="secondary" label="Cancel" onClick={handleCancel} />
                         <Button appearance="primary" label="Save" onClick={handleSave} />

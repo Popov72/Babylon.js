@@ -2,11 +2,12 @@ import type { FunctionComponent } from "react";
 import type { Observable } from "core/Misc/observable";
 import type { Nullable } from "core/types";
 import type { Scene } from "core/scene";
+import type { IPlaygroundBridge } from "../../services/playgroundBridgeService";
 import { FilesInputStore } from "core/Misc/filesInputStore";
 import { SceneLoader } from "core/Loading/sceneLoader";
 import { SceneSerializer } from "core/Misc/sceneSerializer";
 import type { Transform } from "../../components/properties/transformProperties";
-import { makeStyles, tokens, Body1Strong } from "@fluentui/react-components";
+import { makeStyles, tokens, Body1Strong, Caption1 } from "@fluentui/react-components";
 import { Button } from "shared-ui-components/fluent/primitives/button";
 import { ArrowClockwiseRegular, EyeRegular, EyeOffRegular, WindowConsoleRegular, SettingsRegular, InfoRegular } from "@fluentui/react-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -29,6 +30,13 @@ import { UXContextProvider } from "../../components/uxContextProvider";
  * Mirrors gui.ts _getSourceTransformNodeList: returns animation transform nodes filtered
  * to only those that have a bone remapping entry for the current avatar/animation pair.
  * Matches original PG behaviour for "Root node" and "Ground ref. node" dropdowns.
+ * @param names - List of all transform node names.
+ * @param animName - The animation display name.
+ * @param avatarName - The avatar name.
+ * @param namingSchemeManager - The naming scheme manager.
+ * @param avatarManager - The avatar manager.
+ * @param animationManager - The animation manager.
+ * @returns Filtered list of bone names.
  */
 function BuildFilteredBoneList(
     names: string[],
@@ -90,7 +98,7 @@ const useStyles = makeStyles({
         alignItems: "center",
         justifyContent: "center",
         color: tokens.colorNeutralForeground3,
-        fontSize: "13px",
+        fontSize: tokens.fontSizeBase200,
         fontStyle: "italic",
     },
     boneDropdownLabel: {
@@ -117,7 +125,7 @@ const useStyles = makeStyles({
     },
     loadingText: {
         padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
         color: tokens.colorNeutralForeground3,
     },
     dropdownRow: {
@@ -133,7 +141,7 @@ const useStyles = makeStyles({
     },
     errorHint: {
         color: tokens.colorPaletteRedForeground1,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
         paddingLeft: tokens.spacingHorizontalL,
     },
 });
@@ -209,6 +217,7 @@ export type AnimationRetargetingPanelProps = {
     onManagerReadyObs: Observable<RetargetingSceneManager>;
     getCurrentManager: () => RetargetingSceneManager | null;
     getCurrentScene: () => Nullable<Scene>;
+    getPlaygroundBridge: () => IPlaygroundBridge | null;
     namingSchemeManager: NamingSchemeManager;
     avatarManager: AvatarManager;
     animationManager: AnimationManager;
@@ -225,6 +234,7 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
     onManagerReadyObs,
     getCurrentManager,
     getCurrentScene,
+    getPlaygroundBridge,
     namingSchemeManager,
     avatarManager,
     animationManager,
@@ -298,6 +308,7 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
     const [isAnimLoaded, setIsAnimLoaded] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isRetargeted, setIsRetargeted] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [isAvatarPlaying, setIsAvatarPlaying] = useState(false);
     const [isAnimPlaying, setIsAnimPlaying] = useState(false);
 
@@ -433,6 +444,9 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
          * Attaches observable listeners to `manager` and either triggers fresh loads
          * (triggerLoads=true, first enable) or restores state from the existing scene
          * (triggerLoads=false, panel remount after docking elsewhere).
+         * @param manager - The retargeting scene manager.
+         * @param triggerLoads - Whether to trigger fresh loads.
+         * @returns Void.
          */
         const setupManager = (manager: RetargetingSceneManager, triggerLoads: boolean) => {
             managerRef.current = manager;
@@ -542,15 +556,16 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
                 setIsAvatarPlaying(false);
                 setIsAnimPlaying(false);
                 const storedAv = avatarManager.getAvatar(s.avatarName);
-                const storedAn = animationManager.getByDisplayName(s.animationName)?.entry;
+                const animResult = animationManager.getByDisplayName(s.animationName);
+                const storedAn = animResult?.entry;
+                const animGroupIndex = animResult?.mapping.index ?? 0;
                 if (storedAv) {
                     if (storedAv.source === "scene") {
                         const pgScene = getCurrentScene();
                         if (pgScene) {
                             const rootMesh = pgScene.getMeshByName(storedAv.rootNodeName);
                             if (rootMesh) {
-                                const serialized = JSON.stringify(SceneSerializer.SerializeMesh(rootMesh, false, true));
-                                void manager.avatar!.loadAsync("data:" + serialized, s.avatarRescaleAvatar, storedAv.restPoseUpdate);
+                                void manager.avatar!.loadFromSceneAsync(pgScene, storedAv.rootNodeName, s.avatarRescaleAvatar, storedAv.restPoseUpdate);
                             }
                         }
                     } else if (storedAv.source === "url" && storedAv.url) {
@@ -574,18 +589,27 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
                     }
                 }
                 if (storedAn) {
-                    const loadAndPlayAsync = async (path: string) => {
-                        await manager.animationSource!.loadAsync(path, storedAn.restPoseUpdate, storedAn.rootNodeName);
-                        manager.animationSource?.play(stateSnapshotRef.current.animationSpeed);
+                    const loadAnimAsync = async (path: string) => {
+                        await manager.animationSource!.loadAsync(path, storedAn.restPoseUpdate, storedAn.rootNodeName, animGroupIndex);
+                        manager.animationSource?.setSkeletonVisible(true);
                     };
                     if (storedAn.source === "scene") {
                         const pgScene = getCurrentScene();
                         if (pgScene) {
-                            const serialized = JSON.stringify(SceneSerializer.Serialize(pgScene));
-                            void loadAndPlayAsync("data:" + serialized);
+                            const doSerializeAndLoadAsync = async () => {
+                                const serialized = JSON.stringify(SceneSerializer.Serialize(pgScene));
+                                await loadAnimAsync("data:" + serialized);
+                            };
+                            // If the avatar was transferred from the scene, temporarily restore it
+                            // so the serializer captures the full scene
+                            if (manager.avatar?.sceneTransfer.isActive) {
+                                void manager.avatar.sceneTransfer.withRestoredSourceAsync(doSerializeAndLoadAsync);
+                            } else {
+                                void doSerializeAndLoadAsync();
+                            }
                         }
                     } else if (storedAn.source === "url" && storedAn.url) {
-                        void loadAndPlayAsync(storedAn.url);
+                        void loadAnimAsync(storedAn.url);
                     } else if (storedAn.source === "file" && storedAn.fileNames?.length) {
                         void (async () => {
                             const files = await animationManager.getFilesAsync(storedAn.id, storedAn.fileNames!);
@@ -599,7 +623,7 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
                                 }
                             }
                             if (sceneFile) {
-                                void loadAndPlayAsync("file:" + sceneFile.name);
+                                void loadAnimAsync("file:" + sceneFile.name);
                             }
                         })();
                     }
@@ -679,11 +703,7 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
             if (storedAvatar.source === "scene") {
                 const pgScene = getCurrentScene();
                 if (pgScene) {
-                    const rootMesh = pgScene.getMeshByName(storedAvatar.rootNodeName);
-                    if (rootMesh) {
-                        const serialized = JSON.stringify(SceneSerializer.SerializeMesh(rootMesh, false, true));
-                        void manager.avatar.loadAsync("data:" + serialized, rescale, storedAvatar.restPoseUpdate);
-                    }
+                    void manager.avatar.loadFromSceneAsync(pgScene, storedAvatar.rootNodeName, rescale, storedAvatar.restPoseUpdate);
                 }
             } else if (storedAvatar.source === "url" && storedAvatar.url) {
                 void manager.avatar.loadAsync(storedAvatar.url, rescale, storedAvatar.restPoseUpdate);
@@ -712,7 +732,9 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
             if (!manager?.animationSource) {
                 return;
             }
-            const storedAnimation = animationManager.getByDisplayName(name)?.entry;
+            const animResult = animationManager.getByDisplayName(name);
+            const storedAnimation = animResult?.entry;
+            const animGroupIdx = animResult?.mapping.index ?? 0;
             if (!storedAnimation) {
                 return;
             }
@@ -724,7 +746,9 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
             if (storedAnimation.source === "scene") {
                 const pgScene = getCurrentScene();
                 if (pgScene) {
-                    const serialized = JSON.stringify(SceneSerializer.Serialize(pgScene));
+                    const serializeFn = () => JSON.stringify(SceneSerializer.Serialize(pgScene));
+                    // If the avatar was transferred from the scene, temporarily restore it
+                    const serialized = manager.avatar?.sceneTransfer.isActive ? await manager.avatar.sceneTransfer.withRestoredSourceAsync(serializeFn) : serializeFn();
                     loadPath = "data:" + serialized;
                 }
             } else if (storedAnimation.source === "url" && storedAnimation.url) {
@@ -746,9 +770,8 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
             }
 
             if (loadPath) {
-                await manager.animationSource.loadAsync(loadPath, storedAnimation.restPoseUpdate, storedAnimation.rootNodeName);
+                await manager.animationSource.loadAsync(loadPath, storedAnimation.restPoseUpdate, storedAnimation.rootNodeName, animGroupIdx);
                 manager.animationSource!.setSkeletonVisible(true);
-                manager.animationSource?.play(stateSnapshotRef.current.animationSpeed);
             }
         },
         [animationManager, getCurrentScene]
@@ -852,13 +875,85 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
                             disabled={!isAvatarLoaded || !isAnimLoaded || isLoading || (rootNodeName !== "Auto" && rootNodeName === groundReferenceNodeName)}
                         />
                         <ButtonLine
-                            label="Export to Playground"
+                            label={isExporting ? "Exporting…" : "Export to Playground"}
                             title="Export the retargeted animation as a Babylon.js Playground snippet"
                             onClick={() => {
-                                void managerRef.current?.exportToPlaygroundAsync(avatarManager, animationManager);
+                                setIsExporting(true);
+                                void (async () => {
+                                    try {
+                                        await managerRef.current?.exportToPlaygroundAsync(avatarManager, animationManager, () => setIsExporting(false));
+                                    } catch {
+                                        setIsExporting(false);
+                                    }
+                                })();
                             }}
-                            disabled={!isRetargeted}
+                            disabled={!isRetargeted || isExporting}
                         />
+                        {getPlaygroundBridge() && (
+                            <ButtonLine
+                                label="Export to Scene"
+                                title="Export the retargeting code as a new file tab in the current Playground"
+                                onClick={() => {
+                                    const bridge = getPlaygroundBridge();
+                                    if (bridge) {
+                                        void (async () => {
+                                            // Read existing retargeting.ts to find existing function names
+                                            const existingContent = bridge.getFileContent("retargeting.ts");
+                                            const existingFunctions = new Set<string>();
+                                            if (existingContent) {
+                                                const regex = /export\s+async\s+function\s+(retargetAnimation\d*)\s*\(/g;
+                                                let match;
+                                                while ((match = regex.exec(existingContent)) !== null) {
+                                                    existingFunctions.add(match[1]);
+                                                }
+                                            }
+
+                                            // Find the next available function name
+                                            let functionName = "retargetAnimation";
+                                            if (existingFunctions.has(functionName)) {
+                                                let counter = 2;
+                                                while (existingFunctions.has(`retargetAnimation${counter}`)) {
+                                                    counter++;
+                                                }
+                                                functionName = `retargetAnimation${counter}`;
+                                            }
+
+                                            const result = await managerRef.current?.generateRetargetingCodeAsync(avatarManager, animationManager, functionName);
+                                            if (result) {
+                                                // Always write/update the helpers file
+                                                bridge.addFileTab("retarget.helpers.ts", result.helpersCode);
+
+                                                // Create or append to retargeting.ts
+                                                let newContent: string;
+                                                if (existingContent) {
+                                                    newContent = existingContent + result.functionCode;
+                                                } else {
+                                                    newContent = result.headerCode + result.functionCode;
+                                                }
+                                                bridge.addFileTab("retargeting.ts", newContent);
+
+                                                // Collect all function names now in the file
+                                                existingFunctions.add(functionName);
+
+                                                // Add/update the import in the entry file
+                                                const entryPath = bridge.getEntryFilePath();
+                                                const entryContent = bridge.getFileContent(entryPath) ?? "";
+                                                const importLine = `import { ${[...existingFunctions].join(", ")} } from "./retargeting";`;
+                                                const importRegex = /import\s*\{[^}]*\}\s*from\s*["']\.\/retargeting["'];?\s*\n?/;
+                                                let updatedEntry: string;
+                                                if (importRegex.test(entryContent)) {
+                                                    updatedEntry = entryContent.replace(importRegex, importLine + "\n");
+                                                } else {
+                                                    updatedEntry = importLine + "\n" + entryContent;
+                                                }
+                                                bridge.addFileTab(entryPath, updatedEntry);
+                                            }
+                                        })();
+                                    }
+                                }}
+                                disabled={!isRetargeted}
+                            />
+                        )}
                     </div>
                     <div className={classes.scrollContent}>
                         {loadingText && <div className={classes.loadingText}>{loadingText}</div>}
@@ -1163,7 +1258,7 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
                                     </div>
                                 </div>
                                 {rootNodeName !== "Auto" && rootNodeName === groundReferenceNodeName && (
-                                    <span className={classes.errorHint}>Root node and Ground ref. node must be different.</span>
+                                    <Caption1 className={classes.errorHint}>Root node and Ground ref. node must be different.</Caption1>
                                 )}
                                 <div className={classes.boneDropdownWrapper}>
                                     <Body1Strong className={classes.boneDropdownLabel}>Ground ref. node</Body1Strong>

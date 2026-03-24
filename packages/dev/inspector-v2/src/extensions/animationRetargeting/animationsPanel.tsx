@@ -33,6 +33,7 @@ import { Button } from "shared-ui-components/fluent/primitives/button";
 import { TextInput } from "shared-ui-components/fluent/primitives/textInput";
 import { StringDropdown } from "shared-ui-components/fluent/primitives/dropdown";
 import { AddRegular, DeleteRegular, EditRegular, ArrowUploadRegular, DocumentArrowLeftRegular } from "@fluentui/react-icons";
+import { Textarea } from "shared-ui-components/fluent/primitives/textarea";
 import { NullEngine } from "core/Engines/nullEngine";
 import { Scene } from "core/scene";
 import { ImportMeshAsync, SceneLoader } from "core/Loading/sceneLoader";
@@ -93,13 +94,18 @@ const useStyles = makeStyles({
     },
     errorText: {
         color: tokens.colorPaletteRedForeground1,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
+        flexShrink: 0,
+    },
+    warningText: {
+        color: tokens.colorPaletteYellowForeground1,
+        fontSize: tokens.fontSizeBase200,
         flexShrink: 0,
     },
     emptyMsg: {
         padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalS}`,
         color: tokens.colorNeutralForeground3,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
     },
     confirmSurface: {
         width: "380px",
@@ -115,7 +121,7 @@ const useStyles = makeStyles({
         borderRadius: tokens.borderRadiusMedium,
         padding: `${tokens.spacingVerticalSNudge} ${tokens.spacingHorizontalS}`,
         fontFamily: "monospace",
-        fontSize: "11px",
+        fontSize: tokens.fontSizeBase100,
         backgroundColor: tokens.colorNeutralBackground1,
         color: tokens.colorNeutralForeground1,
     },
@@ -126,7 +132,7 @@ const useStyles = makeStyles({
         textAlign: "center",
         cursor: "pointer",
         color: tokens.colorNeutralForeground3,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
     },
     dropZoneActive: {
         border: `2px dashed ${tokens.colorCompoundBrandStroke}`,
@@ -144,7 +150,7 @@ const useStyles = makeStyles({
         alignItems: "center",
         padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalS}`,
         gap: tokens.spacingHorizontalS,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
         borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
         ":last-child": { borderBottom: "none" },
     },
@@ -160,7 +166,7 @@ const useStyles = makeStyles({
     },
     animRowError: {
         color: tokens.colorPaletteRedForeground1,
-        fontSize: "11px",
+        fontSize: tokens.fontSizeBase100,
         flexShrink: 0,
     },
     nodeTree: {
@@ -173,7 +179,7 @@ const useStyles = makeStyles({
     },
     nodeRow: {
         padding: `0 ${tokens.spacingHorizontalS}`,
-        fontSize: "12px",
+        fontSize: tokens.fontSizeBase200,
         lineHeight: "13px",
         fontFamily: "monospace",
         cursor: "pointer",
@@ -182,6 +188,29 @@ const useStyles = makeStyles({
     nodeRowSelected: {
         backgroundColor: tokens.colorBrandBackground2,
         fontWeight: "bold",
+    },
+    dataGridFlex: {
+        flex: 1,
+        overflowY: "auto",
+    },
+    dataGridCompact: {
+        maxHeight: "140px",
+        overflowY: "auto",
+    },
+    hiddenInput: {
+        display: "none",
+    },
+    subtleText: {
+        color: tokens.colorNeutralForeground3,
+    },
+    spinnerInline: {
+        display: "inline-block",
+    },
+    formRowAlignStart: {
+        alignItems: "flex-start",
+    },
+    formLabelPadTop: {
+        paddingTop: "6px",
     },
 });
 
@@ -201,6 +230,9 @@ type AnimationEdit = {
     files: File[];
     /** One row per animation group found in the file. */
     mappings: AnimationGroupMapping[];
+    /** Index into the nodeList array — used for unique selection in the dialog. */
+    rootNodeIndex: number;
+    /** Display name of the root node. */
     rootNodeName: string;
     namingScheme: string;
     restPoseJson: string;
@@ -231,6 +263,9 @@ function BuildNodeList(node: Node, depth: number, list: NodeInfo[], ancestorCont
  * Detects the best matching naming scheme by checking how many target names
  * appear in each scheme. Returns the scheme with the most matches
  * (minimum 10 required), or null if none qualify.
+ * @param targetNames - Set of animation target names.
+ * @param namingSchemeManager - The naming scheme manager.
+ * @returns The best matching scheme name, or null.
  */
 function DetectNamingScheme(targetNames: Set<string>, namingSchemeManager: NamingSchemeManager): string | null {
     const schemeNames = namingSchemeManager.getAllSchemeNames();
@@ -270,6 +305,7 @@ export const AnimationsPanel: FunctionComponent<{
     const classes = useStyles();
     const [editing, setEditing] = useState<AnimationEdit | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [warning, setWarning] = useState<string | null>(null);
     const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -420,10 +456,19 @@ export const AnimationsPanel: FunctionComponent<{
                         groupName: g.name,
                         displayName: existingByIndex.get(i) ?? "",
                     }));
+                    // Resolve rootNodeIndex
+                    let idx = prev.rootNodeIndex;
+                    if (idx < 0 && prev.rootNodeName) {
+                        idx = nodes.findIndex((n) => n.name === prev.rootNodeName);
+                    }
+                    if (idx < 0) {
+                        idx = 0;
+                    }
                     return {
                         ...prev,
                         mappings: newMappings,
-                        rootNodeName: prev.rootNodeName || (nodes.length > 0 ? nodes[0].name : ""),
+                        rootNodeIndex: idx,
+                        rootNodeName: prev.rootNodeName || (nodes.length > 0 ? (nodes[idx]?.name ?? "") : ""),
                         ...(detectedScheme ? { namingScheme: detectedScheme } : {}),
                     };
                 });
@@ -446,6 +491,7 @@ export const AnimationsPanel: FunctionComponent<{
             url: "",
             files: [],
             mappings: [],
+            rootNodeIndex: -1,
             rootNodeName: "",
             namingScheme: schemeNames[0] ?? "",
             restPoseJson: "",
@@ -463,6 +509,7 @@ export const AnimationsPanel: FunctionComponent<{
                 url: animation.url ?? "",
                 files: [],
                 mappings: animation.animations.map((m) => ({ ...m })),
+                rootNodeIndex: -1,
                 rootNodeName: animation.rootNodeName ?? "",
                 namingScheme: animation.namingScheme,
                 restPoseJson: animation.restPoseUpdate ? JSON.stringify(animation.restPoseUpdate, undefined, 2) : "",
@@ -480,6 +527,11 @@ export const AnimationsPanel: FunctionComponent<{
                         BuildNodeList(rootNodes[i], 0, nodes, ancestorContinues);
                     }
                     setNodeList(nodes);
+                    // Resolve rootNodeIndex from the stored name
+                    const foundIdx = nodes.findIndex((n) => n.name === animation.rootNodeName);
+                    if (foundIdx >= 0) {
+                        setEditing((prev) => (prev ? { ...prev, rootNodeIndex: foundIdx } : prev));
+                    }
                 }
             } else if (animation.source === "url" && animation.url) {
                 void loadPreview("url", animation.url, [], false);
@@ -505,6 +557,24 @@ export const AnimationsPanel: FunctionComponent<{
             return;
         }
 
+        // Pause any playing animations and go to frame 0 so we capture the correct rest pose
+        let hadPlayingAnimations = false;
+        for (const group of groups) {
+            if (group.isPlaying) {
+                hadPlayingAnimations = true;
+                group.pause();
+                group.goToFrame(0);
+            }
+        }
+        if (hadPlayingAnimations) {
+            setWarning(
+                "Playing animations have been stopped. Animations should not be playing during import to ensure correct rest pose data. " +
+                    "The first frame will be used as the rest pose, but it may not be accurate if the animation was already running."
+            );
+        } else {
+            setWarning(null);
+        }
+
         // Build mappings from scene animation groups
         const mappings: AnimationGroupMapping[] = groups.map((g, i) => ({
             index: i,
@@ -523,7 +593,6 @@ export const AnimationsPanel: FunctionComponent<{
         setNodeList(nodes);
 
         // Auto-detect naming scheme from animation targets
-        let detectedScheme: string | null = null;
         const targetNames = new Set<string>();
         for (const group of groups) {
             for (const ta of group.targetedAnimations) {
@@ -532,7 +601,7 @@ export const AnimationsPanel: FunctionComponent<{
                 }
             }
         }
-        detectedScheme = DetectNamingScheme(targetNames, namingSchemeManager);
+        const detectedScheme = DetectNamingScheme(targetNames, namingSchemeManager);
 
         setEditingWithNotify({
             id: null,
@@ -541,6 +610,7 @@ export const AnimationsPanel: FunctionComponent<{
             url: "",
             files: [],
             mappings,
+            rootNodeIndex: 0,
             rootNodeName: nodes.length > 0 ? nodes[0].name : "",
             namingScheme: detectedScheme ?? schemeNames[0] ?? "",
             restPoseJson: "",
@@ -552,6 +622,7 @@ export const AnimationsPanel: FunctionComponent<{
     const handleCancel = useCallback(() => {
         setEditingWithNotify(null);
         setError(null);
+        setWarning(null);
         setNodeList([]);
         tempSceneRef.current?.dispose();
         tempSceneRef.current = null;
@@ -775,12 +846,12 @@ export const AnimationsPanel: FunctionComponent<{
                     <Button icon={DocumentArrowLeftRegular} label="Import from scene" onClick={startImportFromScene} disabled={!!editing || !getCurrentScene()} />
                 </div>
             </div>
-            {allAnimations.length === 0 && <span className={classes.emptyMsg}>No custom animations defined.</span>}
+            {allAnimations.length === 0 && <Caption1 className={classes.emptyMsg}>No custom animations defined.</Caption1>}
             <DataGrid
                 items={allAnimations}
                 columns={animationColumns}
                 getRowId={(item) => item.id}
-                style={{ flex: editing ? undefined : 1, maxHeight: editing ? "140px" : undefined, overflowY: "auto" }}
+                className={mergeClasses(editing ? classes.dataGridCompact : classes.dataGridFlex)}
                 resizableColumns
                 columnSizingOptions={animationColumnSizing}
             >
@@ -840,21 +911,21 @@ export const AnimationsPanel: FunctionComponent<{
                         >
                             <ArrowUploadRegular />
                             <div>Drop file(s) here or click to browse</div>
-                            <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} onChange={handleFileInput} />
+                            <input ref={fileInputRef} type="file" multiple className={classes.hiddenInput} onChange={handleFileInput} />
                         </div>
                     )}
 
                     {/* Loading indicator */}
                     {isLoading && (
-                        <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
-                            Loading… <Spinner size="tiny" style={{ display: "inline-block" }} />
+                        <Caption1 className={classes.subtleText}>
+                            Loading… <Spinner size="tiny" className={classes.spinnerInline} />
                         </Caption1>
                     )}
 
                     {/* Animation group mapping table */}
                     {editing.mappings.length > 0 && (
                         <>
-                            <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
+                            <Caption1 className={classes.subtleText}>
                                 Assign display names to animation groups ({editing.mappings.length} found). Leave empty to exclude an animation.
                             </Caption1>
                             <div className={classes.animList}>
@@ -862,9 +933,9 @@ export const AnimationsPanel: FunctionComponent<{
                                     const rowError = getMappingError(mapping);
                                     return (
                                         <div key={mapping.index} className={classes.animRow}>
-                                            <span className={classes.animRowName} title={mapping.groupName}>
+                                            <Caption1 className={classes.animRowName} title={mapping.groupName}>
                                                 {mapping.groupName}
-                                            </span>
+                                            </Caption1>
                                             <Input
                                                 className={classes.animRowInput}
                                                 size="small"
@@ -872,7 +943,7 @@ export const AnimationsPanel: FunctionComponent<{
                                                 value={mapping.displayName}
                                                 onChange={(_, d) => updateMappingDisplayName(mapping.index, d.value)}
                                             />
-                                            {rowError && <span className={classes.animRowError}>{rowError}</span>}
+                                            {rowError && <Caption1 className={classes.animRowError}>{rowError}</Caption1>}
                                         </div>
                                     );
                                 })}
@@ -883,13 +954,31 @@ export const AnimationsPanel: FunctionComponent<{
                     {/* Node tree for root node selection */}
                     {nodeList.length > 0 && (
                         <>
-                            <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>Select the root node for skeleton creation ({nodeList.length} nodes found):</Caption1>
+                            <Caption1 className={classes.subtleText}>Select the root node for skeleton creation ({nodeList.length} nodes found):</Caption1>
                             <div className={classes.nodeTree}>
-                                {nodeList.map((node) => (
+                                {nodeList.map((node, idx) => (
                                     <div
-                                        key={node.name}
-                                        className={mergeClasses(classes.nodeRow, editing.rootNodeName === node.name ? classes.nodeRowSelected : undefined)}
-                                        onClick={() => setEditing({ ...editing, rootNodeName: node.name })}
+                                        key={idx}
+                                        className={mergeClasses(classes.nodeRow, editing.rootNodeIndex === idx ? classes.nodeRowSelected : undefined)}
+                                        onClick={() => {
+                                            // Collect descendant names for naming scheme detection
+                                            const selectedDepth = node.depth;
+                                            const descendantNames = new Set<string>();
+                                            descendantNames.add(node.name);
+                                            for (let j = idx + 1; j < nodeList.length; j++) {
+                                                if (nodeList[j].depth <= selectedDepth) {
+                                                    break;
+                                                }
+                                                descendantNames.add(nodeList[j].name);
+                                            }
+                                            const detected = DetectNamingScheme(descendantNames, namingSchemeManager);
+                                            setEditing({
+                                                ...editing,
+                                                rootNodeIndex: idx,
+                                                rootNodeName: node.name,
+                                                ...(detected ? { namingScheme: detected } : {}),
+                                            });
+                                        }}
                                     >
                                         {node.prefix + node.name}
                                     </div>
@@ -910,19 +999,18 @@ export const AnimationsPanel: FunctionComponent<{
                     </div>
 
                     {/* Rest pose data */}
-                    <div className={classes.formRow} style={{ alignItems: "flex-start" }}>
-                        <Label className={classes.formLabel} style={{ paddingTop: "6px" }}>
-                            Rest pose data
-                        </Label>
-                        <textarea
+                    <div className={mergeClasses(classes.formRow, classes.formRowAlignStart)}>
+                        <Label className={mergeClasses(classes.formLabel, classes.formLabelPadTop)}>Rest pose data</Label>
+                        <Textarea
                             className={classes.restPoseTextarea}
                             value={editing.restPoseJson}
                             placeholder='JSON array (optional). Use gizmos + "Save as rest pose" to generate this data.'
-                            onChange={(e) => setEditing({ ...editing, restPoseJson: e.target.value })}
+                            onChange={(newVal) => setEditing({ ...editing, restPoseJson: newVal })}
                         />
                     </div>
 
-                    {error && <span className={classes.errorText}>{error}</span>}
+                    {warning && <Caption1 className={classes.warningText}>{warning}</Caption1>}
+                    {error && <Caption1 className={classes.errorText}>{error}</Caption1>}
                     <div className={classes.actionRow}>
                         <Button appearance="secondary" label="Cancel" onClick={handleCancel} />
                         <Button appearance="primary" label="Save" onClick={handleSave} />

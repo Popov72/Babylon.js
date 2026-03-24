@@ -162,7 +162,9 @@ export class AnimationManager {
         return this._animations;
     }
 
-    /** Returns all non-empty display names across all stored animation files. */
+    /** Returns all non-empty display names across all stored animation files.
+     * @returns Array of display name strings.
+     */
     public getAllDisplayNames(): string[] {
         const names: string[] = [];
         for (const entry of this._animations) {
@@ -175,7 +177,10 @@ export class AnimationManager {
         return names;
     }
 
-    /** Finds the stored animation file and specific mapping for a given display name. */
+    /** Finds the stored animation file and specific mapping for a given display name.
+     * @param displayName - The display name to look up.
+     * @returns The stored animation entry and mapping, or undefined.
+     */
     public getByDisplayName(displayName: string): { entry: StoredAnimation; mapping: AnimationGroupMapping } | undefined {
         if (!displayName) {
             return undefined;
@@ -194,7 +199,11 @@ export class AnimationManager {
         return this._animations.find((a) => a.id === id);
     }
 
-    /** Checks whether a display name is already used by any animation (optionally excluding a specific file id). */
+    /** Checks whether a display name is already used by any animation (optionally excluding a specific file id).
+     * @param displayName - The display name to check.
+     * @param excludeFileId - Optional file id to exclude from the check.
+     * @returns True if the display name is already in use.
+     */
     public isDisplayNameUsed(displayName: string, excludeFileId?: string): boolean {
         for (const entry of this._animations) {
             if (excludeFileId && entry.id === excludeFileId) {
@@ -213,6 +222,7 @@ export class AnimationManager {
      * Adds or replaces an animation.
      * If the animation has no `id`, one is generated automatically.
      * For file-based animations, the files must already be stored in IndexedDB via `storeFilesAsync`.
+     * @param animation - The animation to add or replace.
      */
     public addAnimation(animation: StoredAnimation): void {
         if (!animation.id) {
@@ -229,6 +239,7 @@ export class AnimationManager {
 
     /**
      * Removes an animation by id and its associated files from IndexedDB.
+     * @param id - The animation id to remove.
      */
     public async removeAnimationAsync(id: string): Promise<void> {
         const animation = this._animations.find((a) => a.id === id);
@@ -244,6 +255,8 @@ export class AnimationManager {
 
     /**
      * Stores files in IndexedDB for a file-based animation, keyed by its immutable id.
+     * @param animationId - The animation id.
+     * @param files - The files to store.
      * @returns The list of file names stored.
      */
     public async storeFilesAsync(animationId: string, files: File[]): Promise<string[]> {
@@ -260,6 +273,9 @@ export class AnimationManager {
 
     /**
      * Retrieves files from IndexedDB for a file-based animation and converts them to File objects.
+     * @param animationId - The animation id.
+     * @param fileNames - The file names to retrieve.
+     * @returns Array of File objects.
      */
     public async getFilesAsync(animationId: string, fileNames: string[]): Promise<File[]> {
         const results = await Promise.all(
@@ -278,6 +294,7 @@ export class AnimationManager {
     /**
      * Returns all animations in a JSON-serializable format, including base64-encoded file data for file-based entries.
      * Session-only entries are excluded from the export.
+     * @returns Array of stored animations with optional file data.
      */
     public async exportDataAsync(): Promise<Array<StoredAnimation & { fileData?: Record<string, string> }>> {
         return await Promise.all(
@@ -301,6 +318,9 @@ export class AnimationManager {
 
     /**
      * Imports animations, including restoring file-based entries to IndexedDB from base64 data.
+     * @param animations - The animations to import with optional file data.
+     * @param mode - "replace" clears all existing data first; "append" skips duplicates.
+     * @returns List of skipped entry descriptions.
      */
     public async importDataAsync(animations: Array<StoredAnimation & { fileData?: Record<string, string> }>, mode: "replace" | "append"): Promise<string[]> {
         const skipped: string[] = [];

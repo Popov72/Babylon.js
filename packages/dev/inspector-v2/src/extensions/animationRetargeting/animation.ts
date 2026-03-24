@@ -6,6 +6,7 @@ import type { AnimationGroup } from "core/Animations/animationGroup";
 import type { AbstractMesh } from "core/Meshes/abstractMesh";
 import type { TransformNode } from "core/Meshes/transformNode";
 import type { Vector3, Quaternion } from "core/Maths/math.vector";
+import type { Skeleton } from "core/Bones/skeleton";
 import type { RestPoseDataUpdate } from "./avatarManager";
 
 import { Color3 } from "core/Maths/math.color";
@@ -78,16 +79,18 @@ export class AnimationSource {
         this._gizmoManager.coordinatesMode = GizmoCoordinatesMode.Local;
     }
 
-    public async loadAsync(path: string, restPoseUpdate?: RestPoseDataUpdate, skeletonRootNodeName?: string): Promise<void> {
+    public async loadAsync(path: string, restPoseUpdate?: RestPoseDataUpdate, skeletonRootNodeName?: string, animationGroupIndex = 0): Promise<void> {
         this._cleanScene();
-        await this._loadFileAsync(path, restPoseUpdate, skeletonRootNodeName);
+        await this._loadFileAsync(path, restPoseUpdate, skeletonRootNodeName, animationGroupIndex);
     }
 
     public clearScene(): void {
         this._cleanScene();
     }
 
-    /** Returns a sorted list of transform node names targeted by the animation group. */
+    /** Returns a sorted list of transform node names targeted by the animation group.
+     * @returns Sorted list of transform node names.
+     */
     public getTransformNodeNames(): string[] {
         if (!this._animationGroup || !this._rootNode) {
             return [];
@@ -118,7 +121,9 @@ export class AnimationSource {
         return listSorted;
     }
 
-    /** Returns transform node options in hierarchy order, with indented labels for parenting. */
+    /** Returns transform node options in hierarchy order, with indented labels for parenting.
+     * @returns Array of label/value pairs.
+     */
     public getTransformNodeOptions(): { label: string; value: string }[] {
         if (!this._animationGroup || !this._rootNode) {
             return [];
@@ -158,7 +163,10 @@ export class AnimationSource {
         this._saveTransformNodes();
     }
 
-    /** Builds the rest-pose export data for the playground code generator. */
+    /** Builds the rest-pose export data for the playground code generator.
+     * @param restPoseUpdate - Optional existing rest-pose data.
+     * @returns The rest-pose data update array.
+     */
     public buildExportData(restPoseUpdate?: RestPoseDataUpdate): RestPoseDataUpdate {
         return restPoseUpdate ? [...restPoseUpdate] : [];
     }
@@ -192,6 +200,7 @@ export class AnimationSource {
     /**
      * Captures the current transform node transformations (while in rest pose, possibly edited via gizmo)
      * as a `RestPoseDataUpdate`. All transform node transformations are saved as absolute values.
+     * @returns The rest-pose data update array.
      */
     public saveAsRestPose(): RestPoseDataUpdate {
         const result: RestPoseDataUpdate = [];
@@ -226,7 +235,9 @@ export class AnimationSource {
         this._updateGizmoEnabled(enabled, type);
     }
 
-    /** Attaches the gizmo to the transform node with the given name (called when user picks from the dropdown). */
+    /** Attaches the gizmo to the transform node with the given name (called when user picks from the dropdown).
+     * @param nodeName - The name of the transform node to attach the gizmo to.
+     */
     public attachGizmoToTransformNode(nodeName: string): void {
         if (!this._rootNode) {
             return;
@@ -275,34 +286,55 @@ export class AnimationSource {
         this._gizmoManager.dispose();
     }
 
-    private async _loadFileAsync(path: string, restPoseUpdate?: RestPoseDataUpdate, skeletonRootNodeName?: string): Promise<void> {
+    private async _loadFileAsync(path: string, restPoseUpdate?: RestPoseDataUpdate, skeletonRootNodeName?: string, animationGroupIndex = 0): Promise<void> {
+        // Track meshes before loading so we can identify newly added ones
+        const meshesBefore = new Set(this._scene.meshes);
+
         if (path.startsWith("file:")) {
             await AppendSceneAsync(path.substring(5), this._scene, { rootUrl: "file:" });
         } else {
             await AppendSceneAsync(path, this._scene);
         }
 
-        this._rootNode = this._scene.getMeshByName("__root__");
+        // Find the newly added root node (avoid collision with existing nodes named "__root__")
+        this._rootNode = null;
+        for (const mesh of this._scene.meshes) {
+            if (!meshesBefore.has(mesh) && !mesh.parent) {
+                this._rootNode = mesh;
+                break;
+            }
+        }
         if (!this._rootNode) {
             return;
         }
         this._rootNode.name = "reference";
+
+        // Dispose ALL newly added meshes except the animation root node itself.
+        // The animation side only needs transform nodes for the skeleton, not meshes.
+        // This also cleans up duplicate avatar meshes from serialized PG scene data.
+        for (const mesh of [...this._scene.meshes]) {
+            if (!meshesBefore.has(mesh) && mesh !== this._rootNode) {
+                mesh.dispose(false, false);
+            }
+        }
 
         // Keep only our 2 cameras; remove any cameras loaded from the file
         while (this._scene.cameras.length > 2) {
             this._scene.cameras[2].dispose();
         }
 
-        // Keep only the first animation group (not the "avatar" retargeted one)
+        // Keep only the animation group at the requested index (skip "avatar" retargeted ones)
         this._animationGroup = null;
         const lstAnimDelete = new Set<AnimationGroup>();
+        let currentIndex = 0;
         for (const animGroup of this._scene.animationGroups) {
             if (animGroup.name !== "avatar") {
-                if (!this._animationGroup) {
+                if (currentIndex === animationGroupIndex) {
                     this._animationGroup = animGroup;
                 } else {
                     lstAnimDelete.add(animGroup);
                 }
+                currentIndex++;
             }
         }
         lstAnimDelete.forEach((anim) => anim.dispose());
@@ -311,9 +343,10 @@ export class AnimationSource {
             return;
         }
         this._animationGroup.name = "reference";
+        this._animationGroup.stop();
 
         // Delete all skeletons loaded from the animation file (we don't need them)
-        const skeletonsDelete = new Set<import("core/Bones/skeleton").Skeleton>();
+        const skeletonsDelete = new Set<Skeleton>();
         for (const skeleton of this._scene.skeletons) {
             if (skeleton.name !== "avatar") {
                 skeletonsDelete.add(skeleton);

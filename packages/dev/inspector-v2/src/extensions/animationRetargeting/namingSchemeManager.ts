@@ -148,6 +148,8 @@ export class NamingSchemeManager {
 
     /**
      * Returns the list of bone entries for the given scheme, or undefined if it does not exist.
+     * @param name - The scheme name to look up.
+     * @returns Array of bone entries or undefined.
      */
     public getNamingScheme(name: string): BoneEntry[] | undefined {
         const scheme = this._schemes.get(name);
@@ -156,6 +158,7 @@ export class NamingSchemeManager {
 
     /**
      * Returns the names of all registered naming schemes.
+     * @returns Array of scheme name strings.
      */
     public getAllSchemeNames(): string[] {
         return Array.from(this._schemes.keys());
@@ -164,6 +167,7 @@ export class NamingSchemeManager {
     /**
      * Returns all stored remappings as an array of { fromScheme, toScheme } pairs.
      * These reflect the direction in which remappings were originally added.
+     * @returns Array of remapping pairs.
      */
     public getAllRemappings(): Array<{ fromScheme: string; toScheme: string }> {
         return this._remappings.map((r) => ({ fromScheme: r.fromScheme, toScheme: r.toScheme }));
@@ -233,6 +237,7 @@ export class NamingSchemeManager {
 
     /**
      * Removes a naming scheme and all remappings that reference it.
+     * @param name - The scheme name to remove.
      * @throws Error if the scheme does not exist.
      */
     public removeNamingScheme(name: string): void {
@@ -255,6 +260,9 @@ export class NamingSchemeManager {
      *
      * If a remapping between these two schemes already exists (in either direction), it is replaced.
      *
+     * @param fromSchemeName - Source naming scheme.
+     * @param toSchemeName - Target naming scheme.
+     * @param map - Map from source names to target names.
      * @throws Error if either scheme does not exist, or if any map entry violates the constraints.
      */
     public addRemapping(fromSchemeName: string, toSchemeName: string, map: Map<string, string>): void {
@@ -295,6 +303,8 @@ export class NamingSchemeManager {
      * For example, if a→b and b→c are stored, `getRemapping("a","c")` composes them.
      * Likewise, since a→b implies b→a, `getRemapping("c","a")` is also derivable.
      *
+     * @param fromSchemeName - Source naming scheme.
+     * @param toSchemeName - Target naming scheme.
      * @returns A Map from names in `fromSchemeName` to names in `toSchemeName`, or undefined if
      *          no path exists between the two schemes.
      */
@@ -328,7 +338,11 @@ export class NamingSchemeManager {
         return undefined;
     }
 
-    /** Returns the single-step map from one scheme to an adjacent one (forward or inverse). */
+    /** Returns the single-step map from one scheme to an adjacent one (forward or inverse).
+     * @param fromScheme - Source scheme name.
+     * @param toScheme - Target scheme name.
+     * @returns The direct map or undefined.
+     */
     private _getDirectMap(fromScheme: string, toScheme: string): Map<string, string> | undefined {
         for (const r of this._remappings) {
             if (r.fromScheme === fromScheme && r.toScheme === toScheme) {
@@ -347,7 +361,10 @@ export class NamingSchemeManager {
         return undefined;
     }
 
-    /** Composes the per-step maps along a BFS (Breadth-First Search) path into a single from→to map. */
+    /** Composes the per-step maps along a BFS (Breadth-First Search) path into a single from→to map.
+     * @param path - Array of scheme names forming the path.
+     * @returns The composed map or undefined.
+     */
     private _composePath(path: string[]): Map<string, string> | undefined {
         let result = this._getDirectMap(path[0], path[1]);
         if (!result) {
@@ -369,6 +386,7 @@ export class NamingSchemeManager {
 
     /**
      * Returns all naming schemes and remappings in a JSON-serializable format.
+     * @returns Object with schemes and remappings data.
      */
     public exportData(): { schemes: Record<string, BoneEntry[]>; remappings: Array<{ fromScheme: string; toScheme: string; map: [string, string][] }> } {
         const schemes: Record<string, BoneEntry[]> = {};
@@ -433,6 +451,8 @@ export class NamingSchemeManager {
 
     /**
      * Removes the remapping between the two given schemes (regardless of the direction it was stored in).
+     * @param schemeAName - First scheme name.
+     * @param schemeBName - Second scheme name.
      * @throws Error if no such remapping exists.
      */
     public removeRemapping(schemeAName: string, schemeBName: string): void {
