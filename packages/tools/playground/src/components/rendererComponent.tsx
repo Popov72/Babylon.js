@@ -133,7 +133,7 @@ export class RenderingComponent extends React.Component<IRenderingComponentProps
                 const playgroundBridgeServiceDefinition = {
                     friendlyName: "Playground Bridge",
                     produces: [inspectorV2Module.PlaygroundBridgeIdentity],
-                    factory: () => ({
+                    factory: (): any => ({
                         addFileTab: (path: string, content: string) => {
                             if (gs.addOrUpdateFile) {
                                 gs.addOrUpdateFile(path, content);
