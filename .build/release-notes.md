@@ -1,28 +1,40 @@
 
 ### Addons
 
-- Unclamp luminance - by [kircher1](https://github.com/kircher1) ([#18099](https://github.com/BabylonJS/Babylon.js/pull/18099))
+- Migrate from Jest to Vitest - by [RaananW](https://github.com/RaananW) ([#18136](https://github.com/BabylonJS/Babylon.js/pull/18136))
 
 ### Core
 
-- Unclamp luminance - by [kircher1](https://github.com/kircher1) ([#18099](https://github.com/BabylonJS/Babylon.js/pull/18099))
-- Volumetric Lighting: Check for support and throw descriptive error - by [ryantrem](https://github.com/ryantrem) ([#18096](https://github.com/BabylonJS/Babylon.js/pull/18096))
-- Geo cam keyboard fix on mac - [_Bug Fix_] by [georginahalpern](https://github.com/georginahalpern) ([#18093](https://github.com/BabylonJS/Babylon.js/pull/18093))
-- Shadows: Fix crash when creating a shadow depth wrapper - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#18091](https://github.com/BabylonJS/Babylon.js/pull/18091))
-- Simplify array membership check using includes() - by [github-actions[bot]](https://github.com/apps/github-actions) ([#18089](https://github.com/BabylonJS/Babylon.js/pull/18089))
+- fix: properly report errors when loading invalid HDR texture files - [_Bug Fix_] by [RaananW](https://github.com/RaananW) ([#18153](https://github.com/BabylonJS/Babylon.js/pull/18153))
+- Add instance support for CollisionObservable - [_Bug Fix_] by [CedricGuillemet](https://github.com/CedricGuillemet) ([#18152](https://github.com/BabylonJS/Babylon.js/pull/18152))
+- Implement delayed loading for EquiRectangularCubeTexture - by [kzhsw](https://github.com/kzhsw) ([#18141](https://github.com/BabylonJS/Babylon.js/pull/18141))
+- Migrate from Jest to Vitest - by [RaananW](https://github.com/RaananW) ([#18136](https://github.com/BabylonJS/Babylon.js/pull/18136))
+- Preserve Float64 precision for instance buffer floating origin offset - [_Bug Fix_] by [georginahalpern](https://github.com/georginahalpern) ([#18137](https://github.com/BabylonJS/Babylon.js/pull/18137))
+
+### GUI
+
+- Migrate from Jest to Vitest - by [RaananW](https://github.com/RaananW) ([#18136](https://github.com/BabylonJS/Babylon.js/pull/18136))
+
+### Inspector
+
+- Migrate from Jest to Vitest - by [RaananW](https://github.com/RaananW) ([#18136](https://github.com/BabylonJS/Babylon.js/pull/18136))
 
 ### Loaders
 
+- Migrate from Jest to Vitest - by [RaananW](https://github.com/RaananW) ([#18136](https://github.com/BabylonJS/Babylon.js/pull/18136))
 
-### Playground
+### Lottie Player
 
-- New engine change dialog replacing the old modal - by [VicenteCartas](https://github.com/VicenteCartas) ([#18095](https://github.com/BabylonJS/Babylon.js/pull/18095))
-- Playground: Try fixing problems with playground loading - [_Bug Fix_] by [Popov72](https://github.com/Popov72) ([#18086](https://github.com/BabylonJS/Babylon.js/pull/18086))
+- Migrate from Jest to Vitest - by [RaananW](https://github.com/RaananW) ([#18136](https://github.com/BabylonJS/Babylon.js/pull/18136))
+
+### Sandbox
+
+- fix(sandbox): use network-first strategy for versioned Babylon.js resources in service worker - [_Bug Fix_] by [RaananW](https://github.com/RaananW) ([#18145](https://github.com/BabylonJS/Babylon.js/pull/18145))
+
+### Serializers
+
+- Migrate from Jest to Vitest - by [RaananW](https://github.com/RaananW) ([#18136](https://github.com/BabylonJS/Babylon.js/pull/18136))
 
 ### Smart Filters
 
-- Decouple smart-filters buildTools from circular dependency chain - by [RaananW](https://github.com/RaananW) ([#18034](https://github.com/BabylonJS/Babylon.js/pull/18034))
-
-### Viewer
-
-- Viewer Configurator: Reduce allowed min width - by [ryantrem](https://github.com/ryantrem) ([#18084](https://github.com/BabylonJS/Babylon.js/pull/18084))
+- Migrate from Jest to Vitest - by [RaananW](https://github.com/RaananW) ([#18136](https://github.com/BabylonJS/Babylon.js/pull/18136))
