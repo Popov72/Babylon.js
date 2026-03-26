@@ -180,9 +180,16 @@ function GetModuleDeclaration(
         if (!devPackageName) {
             if (externalName) {
                 if (externalName === "@fortawesome" || externalName === "@fluentui" || externalName === "@recast-navigation") {
-                    // replace with any
-                    const matchRegex = new RegExp(`([ <])(${alias}[^,;\n>) ]*)([^\\w])`, "g");
-                    processedLines = processedLines.replace(matchRegex, `$1any$3`);
+                    // Replace type references with "any", but skip declaration sites (e.g. "export type ThemeMode")
+                    // to avoid producing invalid syntax like "export type any = ...".
+                    const matchRegex = new RegExp(`([ <])(${alias})([^\\w])`, "g");
+                    processedLines = processedLines.replace(matchRegex, (match, p1: string, _alias: string, p3: string, offset: number) => {
+                        const precedingText = processedLines.slice(0, offset + p1.length);
+                        if (/\b(?:type|class|var|const|let|function|interface|enum|namespace)\s+$/.test(precedingText)) {
+                            return match;
+                        }
+                        return `${p1}any${p3}`;
+                    });
                     return;
                 }
             }
@@ -417,9 +424,16 @@ function GetPackageDeclaration(
             if (!localDevPackageMap) {
                 if (externalName) {
                     if (externalName === "@fortawesome" || externalName === "@fluentui" || externalName === "@recast-navigation") {
-                        // replace with any
-                        const matchRegex = new RegExp(`([ <])(${alias}[^,;\n>) ]*)([^\\w])`, "g");
-                        processedSource = processedSource.replace(matchRegex, `$1any$3`);
+                        // Replace type references with "any", but skip declaration sites (e.g. "export type ThemeMode")
+                        // to avoid producing invalid syntax like "export type any = ...".
+                        const matchRegex = new RegExp(`([ <])(${alias})([^\\w])`, "g");
+                        processedSource = processedSource.replace(matchRegex, (match, p1: string, _alias: string, p3: string, offset: number) => {
+                            const precedingText = processedSource.slice(0, offset + p1.length);
+                            if (/\b(?:type|class|var|const|let|function|interface|enum|namespace)\s+$/.test(precedingText)) {
+                                return match;
+                            }
+                            return `${p1}any${p3}`;
+                        });
                         return;
                     } else if (externalName === "react") {
                         const matchRegex = new RegExp(`([ <])(${alias})([^\\w])`, "g");
