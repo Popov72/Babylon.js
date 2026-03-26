@@ -1865,20 +1865,20 @@
         },
         {
             "title": "Scissor test",
-            "playgroundId": "#W7E7CF#38",
+            "playgroundId": "#W7E7CF#34",
             "excludedEngines": ["webgl1"],
             "referenceImage": "scissor-test.png"
         },
         {
             "title": "Scissor test with 0.9 hardware scaling",
-            "playgroundId": "#W7E7CF#38",
+            "playgroundId": "#W7E7CF#34",
             "replace": "//options//, hardwareScalingLevel = 0.9;",
             "excludedEngines": ["webgl1"],
             "referenceImage": "scissor-test-2.png"
         },
         {
             "title": "Scissor test with 1.5 hardware scaling",
-            "playgroundId": "#W7E7CF#38",
+            "playgroundId": "#W7E7CF#34",
             "replace": "//options//, hardwareScalingLevel = 1.5;",
             "excludedEngines": ["webgl1"],
             "referenceImage": "scissor-test-3.png"

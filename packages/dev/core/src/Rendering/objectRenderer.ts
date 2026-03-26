@@ -238,18 +238,12 @@ export class ObjectRenderer {
     ) => void;
 
     /**
-     * An event triggered before rendering the objects.
-     * Note: This observable is also triggered during readiness checks (e.g. when calling scene.isReady()),
-     * in which case the render target is not bound to the output. Observers should avoid performing
-     * GPU state changes (such as clearing or modifying the framebuffer) unless the render target is actually bound.
+     * An event triggered before rendering the objects
      */
     public readonly onBeforeRenderObservable = new Observable<number>();
 
     /**
-     * An event triggered after rendering the objects.
-     * Note: This observable is also triggered during readiness checks (e.g. when calling scene.isReady()),
-     * in which case the render target is not bound to the output. Observers should avoid performing
-     * GPU state changes (such as clearing or modifying the framebuffer) unless the render target is actually bound.
+     * An event triggered after rendering the objects
      */
     public readonly onAfterRenderObservable = new Observable<number>();
 

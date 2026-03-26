@@ -332,12 +332,12 @@ export class RenderTargetTexture extends Texture implements IRenderTargetTexture
     }
 
     /**
-     * An event triggered before the texture is bound to the output.
+     * An event triggered when the texture is unbind.
      */
     public onBeforeBindObservable = new Observable<RenderTargetTexture>();
 
     /**
-     * An event triggered after the texture is unbound.
+     * An event triggered when the texture is unbind.
      */
     public onAfterUnbindObservable = new Observable<RenderTargetTexture>();
 
