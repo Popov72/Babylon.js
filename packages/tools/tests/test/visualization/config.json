@@ -3843,6 +3843,12 @@
             "playgroundId": "#AWPYHM#1",
             "referenceImage": "vertexPullingIsUnIndexed.png",
             "excludedEngines": ["webgl1"]
+        },
+        {
+            "title": "Vertex Pulling - UV Channels 1-6",
+            "playgroundId": "#0SA2NH#2",
+            "referenceImage": "vertexPullingUVChannels.png",
+            "excludedEngines": ["webgl1"]
         }
     ]
 }
