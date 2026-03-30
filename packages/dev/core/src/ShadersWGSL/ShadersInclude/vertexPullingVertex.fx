@@ -24,6 +24,22 @@ uvUpdated = vp_readUV(uniforms.vp_uv_info, vpVertexIndex);
 uv2Updated = vp_readUV2(uniforms.vp_uv2_info, vpVertexIndex);
 #endif
 
+#ifdef UV3
+var uv3Updated: vec2f = vp_readUV3(uniforms.vp_uv3_info, vpVertexIndex);
+#endif
+
+#ifdef UV4
+var uv4Updated: vec2f = vp_readUV4(uniforms.vp_uv4_info, vpVertexIndex);
+#endif
+
+#ifdef UV5
+var uv5Updated: vec2f = vp_readUV5(uniforms.vp_uv5_info, vpVertexIndex);
+#endif
+
+#ifdef UV6
+var uv6Updated: vec2f = vp_readUV6(uniforms.vp_uv6_info, vpVertexIndex);
+#endif
+
 #ifdef VERTEXCOLOR
 colorUpdated = vp_readColor(uniforms.vp_color_info, vpVertexIndex);
 #endif

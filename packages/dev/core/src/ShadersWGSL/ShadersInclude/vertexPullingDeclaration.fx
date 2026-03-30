@@ -33,6 +33,30 @@ uniform vp_uv2_info : vec4f;
 #define VP_UV2_SUPPORTED
 #endif
 
+#ifdef UV3
+var<storage, read> uv3 : array<f32>;
+uniform vp_uv3_info : vec4f;
+#define VP_UV3_SUPPORTED
+#endif
+
+#ifdef UV4
+var<storage, read> uv4 : array<f32>;
+uniform vp_uv4_info : vec4f;
+#define VP_UV4_SUPPORTED
+#endif
+
+#ifdef UV5
+var<storage, read> uv5 : array<f32>;
+uniform vp_uv5_info : vec4f;
+#define VP_UV5_SUPPORTED
+#endif
+
+#ifdef UV6
+var<storage, read> uv6 : array<f32>;
+uniform vp_uv6_info : vec4f;
+#define VP_UV6_SUPPORTED
+#endif
+
 #ifdef VERTEXCOLOR
 var<storage, read> color : array<f32>;
 uniform vp_color_info : vec4f;
@@ -205,6 +229,82 @@ fn vp_readUV2(info : vec4f, vertexIndex : u32) -> vec2f {
     return vec2f(
         vp_readUV2Value(offset, dataType, normalized),
         vp_readUV2Value(offset + cs, dataType, normalized)
+    );
+}
+#endif
+
+#ifdef UV3
+fn vp_readUV3Value(byteOffset : u32, dataType : u32, normalized : bool) -> f32 {
+    return vp_convertToFloat(bitcast<u32>(uv3[byteOffset / 4u]), byteOffset % 4u, dataType, normalized);
+}
+
+fn vp_readUV3(info : vec4f, vertexIndex : u32) -> vec2f {
+    let baseOffset = u32(info.x);
+    let stride = u32(info.y);
+    let dataType = u32(info.z);
+    let normalized = info.w != 0.0;
+    let offset = baseOffset + vertexIndex * stride;
+    let cs = vp_componentSize(dataType);
+    return vec2f(
+        vp_readUV3Value(offset, dataType, normalized),
+        vp_readUV3Value(offset + cs, dataType, normalized)
+    );
+}
+#endif
+
+#ifdef UV4
+fn vp_readUV4Value(byteOffset : u32, dataType : u32, normalized : bool) -> f32 {
+    return vp_convertToFloat(bitcast<u32>(uv4[byteOffset / 4u]), byteOffset % 4u, dataType, normalized);
+}
+
+fn vp_readUV4(info : vec4f, vertexIndex : u32) -> vec2f {
+    let baseOffset = u32(info.x);
+    let stride = u32(info.y);
+    let dataType = u32(info.z);
+    let normalized = info.w != 0.0;
+    let offset = baseOffset + vertexIndex * stride;
+    let cs = vp_componentSize(dataType);
+    return vec2f(
+        vp_readUV4Value(offset, dataType, normalized),
+        vp_readUV4Value(offset + cs, dataType, normalized)
+    );
+}
+#endif
+
+#ifdef UV5
+fn vp_readUV5Value(byteOffset : u32, dataType : u32, normalized : bool) -> f32 {
+    return vp_convertToFloat(bitcast<u32>(uv5[byteOffset / 4u]), byteOffset % 4u, dataType, normalized);
+}
+
+fn vp_readUV5(info : vec4f, vertexIndex : u32) -> vec2f {
+    let baseOffset = u32(info.x);
+    let stride = u32(info.y);
+    let dataType = u32(info.z);
+    let normalized = info.w != 0.0;
+    let offset = baseOffset + vertexIndex * stride;
+    let cs = vp_componentSize(dataType);
+    return vec2f(
+        vp_readUV5Value(offset, dataType, normalized),
+        vp_readUV5Value(offset + cs, dataType, normalized)
+    );
+}
+#endif
+
+#ifdef UV6
+fn vp_readUV6Value(byteOffset : u32, dataType : u32, normalized : bool) -> f32 {
+    return vp_convertToFloat(bitcast<u32>(uv6[byteOffset / 4u]), byteOffset % 4u, dataType, normalized);
+}
+
+fn vp_readUV6(info : vec4f, vertexIndex : u32) -> vec2f {
+    let baseOffset = u32(info.x);
+    let stride = u32(info.y);
+    let dataType = u32(info.z);
+    let normalized = info.w != 0.0;
+    let offset = baseOffset + vertexIndex * stride;
+    let cs = vp_componentSize(dataType);
+    return vec2f(
+        vp_readUV6Value(offset, dataType, normalized),
+        vp_readUV6Value(offset + cs, dataType, normalized)
     );
 }
 #endif
