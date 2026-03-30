@@ -3837,6 +3837,12 @@
             "playgroundId": "#CT4C3C#2",
             "referenceImage": "vertexPullingMorphBones.png",
             "excludedEngines": ["webgl1"]
+        },
+        {
+            "title": "Vertex Pulling - isUnIndexed with index buffer",
+            "playgroundId": "#AWPYHM#1",
+            "referenceImage": "vertexPullingIsUnIndexed.png",
+            "excludedEngines": ["webgl1"]
         }
     ]
 }
