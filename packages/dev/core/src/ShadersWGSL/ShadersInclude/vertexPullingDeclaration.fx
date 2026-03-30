@@ -57,12 +57,6 @@ uniform vp_uv6_info : vec4f;
 #define VP_UV6_SUPPORTED
 #endif
 
-#ifdef UV7
-var<storage, read> uv7 : array<f32>;
-uniform vp_uv7_info : vec4f;
-#define VP_UV7_SUPPORTED
-#endif
-
 #ifdef VERTEXCOLOR
 var<storage, read> color : array<f32>;
 uniform vp_color_info : vec4f;
@@ -311,25 +305,6 @@ fn vp_readUV6(info : vec4f, vertexIndex : u32) -> vec2f {
     return vec2f(
         vp_readUV6Value(offset, dataType, normalized),
         vp_readUV6Value(offset + cs, dataType, normalized)
-    );
-}
-#endif
-
-#ifdef UV7
-fn vp_readUV7Value(byteOffset : u32, dataType : u32, normalized : bool) -> f32 {
-    return vp_convertToFloat(bitcast<u32>(uv7[byteOffset / 4u]), byteOffset % 4u, dataType, normalized);
-}
-
-fn vp_readUV7(info : vec4f, vertexIndex : u32) -> vec2f {
-    let baseOffset = u32(info.x);
-    let stride = u32(info.y);
-    let dataType = u32(info.z);
-    let normalized = info.w != 0.0;
-    let offset = baseOffset + vertexIndex * stride;
-    let cs = vp_componentSize(dataType);
-    return vec2f(
-        vp_readUV7Value(offset, dataType, normalized),
-        vp_readUV7Value(offset + cs, dataType, normalized)
     );
 }
 #endif

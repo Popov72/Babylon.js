@@ -3846,7 +3846,7 @@
         },
         {
             "title": "Vertex Pulling - UV Channels 1-6",
-            "playgroundId": "#0SA2NH#2",
+            "playgroundId": "#0SA2NH#4",
             "referenceImage": "vertexPullingUVChannels.png",
             "excludedEngines": ["webgl1"]
         }
