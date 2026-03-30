@@ -24,11 +24,13 @@ uniform vp_tangent_info : vec4f;
 #ifdef UV1
 var<storage, read> uv : array<f32>;
 uniform vp_uv_info : vec4f;
+#define VP_UV1_SUPPORTED
 #endif
 
 #ifdef UV2
 var<storage, read> uv2 : array<f32>;
 uniform vp_uv2_info : vec4f;
+#define VP_UV2_SUPPORTED
 #endif
 
 #ifdef VERTEXCOLOR
