@@ -39,8 +39,7 @@ import { PBRSheenConfiguration } from "./pbrSheenConfiguration";
 import { PBRSubSurfaceConfiguration } from "./pbrSubSurfaceConfiguration";
 import { DetailMapConfiguration } from "../material.detailMapConfiguration";
 import { AddClipPlaneUniforms, BindClipPlane } from "../clipPlaneMaterialHelper";
-import { PrepareVertexPullingUniforms, BindVertexPullingUniforms } from "../vertexPullingHelper.functions";
-import type { IVertexPullingMetadata } from "../vertexPullingHelper.functions";
+import { PrepareVertexPullingUniforms, BindVertexPullingUniforms, type IVertexPullingMetadata } from "../vertexPullingHelper.functions";
 import {
     BindBonesParameters,
     BindFogParameters,

@@ -32,8 +32,7 @@ import { EffectFallbacks } from "./effectFallbacks";
 import { type Effect, type IEffectCreationOptions } from "./effect";
 import { DetailMapConfiguration } from "./material.detailMapConfiguration";
 import { AddClipPlaneUniforms, BindClipPlane } from "./clipPlaneMaterialHelper";
-import { PrepareVertexPullingUniforms, BindVertexPullingUniforms } from "./vertexPullingHelper.functions";
-import type { IVertexPullingMetadata } from "./vertexPullingHelper.functions";
+import { PrepareVertexPullingUniforms, BindVertexPullingUniforms, type IVertexPullingMetadata } from "./vertexPullingHelper.functions";
 import {
     BindBonesParameters,
     BindFogParameters,

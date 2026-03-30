@@ -17,8 +17,7 @@ import { MaterialDefines } from "../materialDefines";
 import { ImageProcessingDefinesMixin } from "../imageProcessingConfiguration.defines";
 import { EffectFallbacks } from "../effectFallbacks";
 import { AddClipPlaneUniforms, BindClipPlane } from "../clipPlaneMaterialHelper";
-import { PrepareVertexPullingUniforms, BindVertexPullingUniforms } from "../vertexPullingHelper.functions";
-import type { IVertexPullingMetadata } from "../vertexPullingHelper.functions";
+import { PrepareVertexPullingUniforms, BindVertexPullingUniforms, type IVertexPullingMetadata } from "../vertexPullingHelper.functions";
 import {
     BindBonesParameters,
     BindFogParameters,
