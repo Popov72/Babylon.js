@@ -3840,7 +3840,7 @@
         },
         {
             "title": "Vertex Pulling - isUnIndexed with index buffer",
-            "playgroundId": "#AWPYHM#1",
+            "playgroundId": "#AWPYHM#4",
             "referenceImage": "vertexPullingIsUnIndexed.png",
             "excludedEngines": ["webgl1"]
         },
