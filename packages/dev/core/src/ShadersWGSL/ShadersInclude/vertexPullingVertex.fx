@@ -40,6 +40,10 @@ var uv5Updated: vec2f = vp_readUV5(uniforms.vp_uv5_info, vpVertexIndex);
 var uv6Updated: vec2f = vp_readUV6(uniforms.vp_uv6_info, vpVertexIndex);
 #endif
 
+#ifdef UV7
+var uv7Updated: vec2f = vp_readUV7(uniforms.vp_uv7_info, vpVertexIndex);
+#endif
+
 #ifdef VERTEXCOLOR
 colorUpdated = vp_readColor(uniforms.vp_color_info, vpVertexIndex);
 #endif

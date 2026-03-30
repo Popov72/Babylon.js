@@ -17,13 +17,11 @@ attribute tangent: vec4f;
 attribute uv: vec2f;
 #endif
 #include<uvAttributeDeclaration>[2..7]
-#include<mainUVVaryingDeclaration>[1..7]
 #ifdef VERTEXCOLOR
 attribute color: vec4f;
 #endif
-#else
-#include<mainUVVaryingDeclaration>[1..7]
 #endif
+#include<mainUVVaryingDeclaration>[1..7]
 
 #include<helperFunctions>
 #include<pbrBRDFFunctions>
