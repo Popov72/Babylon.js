@@ -1,5 +1,5 @@
+import { type GlobalState } from "../globalState";
 import { Logger } from "@dev/core";
-import type { GlobalState } from "../globalState";
 
 // One-shot session flag for user-initiated engine reloads.
 const ManualEngineSwitchReloadStorageKey = "playground-manual-engine-switch-reload";
