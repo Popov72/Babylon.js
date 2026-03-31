@@ -1,6 +1,34 @@
-import type { ISettingsStore, SettingDescriptor } from "../../services/settingsStore";
+import { type ISettingsStore, type SettingDescriptor } from "../../services/settingsStore";
 
-export type RestPoseDataUpdate = Array<{ name: string; data: { position?: number[]; scaling?: number[]; quaternion?: number[] } }>;
+export type RestPoseDataUpdate = Array<{
+    /**
+     *
+     */
+    name: string /**
+     *
+     */;
+    /**
+     *
+     */
+    data: {
+        /**
+         *
+         */
+        position?: number[] /**
+         *
+         */;
+        /**
+         *
+         */
+        scaling?: number[] /**
+         *
+         */;
+        /**
+         *
+         */
+        quaternion?: number[];
+    };
+}>;
 
 const IDBName = "BabylonInspector_AnimRetargeting";
 const IDBStore = "avatarFiles";
@@ -10,15 +38,33 @@ const IDBStore = "avatarFiles";
 export type StoredAvatar = {
     /** Unique, immutable identifier generated at creation time. Used as the IndexedDB key prefix. */
     id: string;
+    /**
+     *
+     */
     name: string;
+    /**
+     *
+     */
     source: "url" | "file" | "scene";
+    /**
+     *
+     */
     url?: string;
+    /**
+     *
+     */
     fileNames?: string[];
+    /**
+     *
+     */
     namingScheme: string;
     /** Display name of the root node (for UI and scene-source lookup). */
     rootNodeName: string;
     /** Index of the root node in the loaded scene's getNodes() array (url/file sources only). */
     rootNodeIndex?: number;
+    /**
+     *
+     */
     restPoseUpdate?: RestPoseDataUpdate;
     /** When true, this entry is transient and will be purged on next startup. */
     sessionOnly?: boolean;
@@ -139,6 +185,9 @@ async function IdbDeletePrefix(prefix: string): Promise<void> {
 
 // ─── AvatarManager ────────────────────────────────────────────────────────────
 
+/**
+ *
+ */
 export class AvatarManager {
     private _avatars: StoredAvatar[] = [];
 
@@ -238,12 +287,26 @@ export class AvatarManager {
      * Session-only entries are excluded from the export.
      * @returns Array of stored avatars with optional file data.
      */
-    public async exportDataAsync(): Promise<Array<StoredAvatar & { fileData?: Record<string, string> }>> {
+    public async exportDataAsync(): Promise<
+        Array<
+            StoredAvatar & {
+                /**
+                 *
+                 */
+                fileData?: Record<string, string>;
+            }
+        >
+    > {
         return await Promise.all(
             this._avatars
                 .filter((avatar) => !avatar.sessionOnly)
                 .map(async (avatar) => {
-                    const entry: StoredAvatar & { fileData?: Record<string, string> } = { ...avatar };
+                    const entry: StoredAvatar & {
+                        /**
+                         *
+                         */
+                        fileData?: Record<string, string>;
+                    } = { ...avatar };
                     if (avatar.source === "file" && avatar.fileNames?.length) {
                         const files = await this.getFilesAsync(avatar.id, avatar.fileNames);
                         const pairs = await Promise.all(files.map(async (file) => [file.name, await BlobToBase64(file)] as const));
@@ -264,7 +327,17 @@ export class AvatarManager {
      * @param mode - "replace" clears all existing data first; "append" skips duplicates.
      * @returns List of skipped entry descriptions.
      */
-    public async importDataAsync(avatars: Array<StoredAvatar & { fileData?: Record<string, string> }>, mode: "replace" | "append"): Promise<string[]> {
+    public async importDataAsync(
+        avatars: Array<
+            StoredAvatar & {
+                /**
+                 *
+                 */
+                fileData?: Record<string, string>;
+            }
+        >,
+        mode: "replace" | "append"
+    ): Promise<string[]> {
         const skipped: string[] = [];
 
         if (mode === "replace") {
@@ -306,7 +379,18 @@ export class AvatarManager {
             return;
         }
         const baseUrl = "https://assets.babylonjs.com/mixamo/Characters/";
-        const defaults: { name: string; file: string; scheme: string }[] = [
+        const defaults: {
+            /**
+             *
+             */
+            name: string /**
+             *
+             */;
+            file: string /**
+             *
+             */;
+            scheme: string;
+        }[] = [
             { name: "Big Vegas", file: "Big Vegas.glb", scheme: "Mixamo" },
             { name: "Mousey", file: "Ch14_nonPBR.glb", scheme: "Mixamo" },
             { name: "Goblin", file: "goblin_d_shareyko.glb", scheme: "Mixamo" },

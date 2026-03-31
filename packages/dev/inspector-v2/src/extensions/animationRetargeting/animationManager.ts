@@ -1,5 +1,5 @@
-import type { ISettingsStore, SettingDescriptor } from "../../services/settingsStore";
-import type { RestPoseDataUpdate } from "./avatarManager";
+import { type ISettingsStore, type SettingDescriptor } from "../../services/settingsStore";
+import { type RestPoseDataUpdate } from "./avatarManager";
 
 const IDBName = "BabylonInspector_AnimRetargeting";
 const IDBStore = "animationFiles";
@@ -21,14 +21,29 @@ export type StoredAnimation = {
     id: string;
     /** User-chosen name for this animation file entry (shown in the list). */
     name: string;
+    /**
+     *
+     */
     source: "url" | "file" | "scene";
+    /**
+     *
+     */
     url?: string;
+    /**
+     *
+     */
     fileNames?: string[];
+    /**
+     *
+     */
     namingScheme: string;
     /** User-selected root node for skeleton creation. */
     rootNodeName: string;
     /** One entry per animation group in the file. */
     animations: AnimationGroupMapping[];
+    /**
+     *
+     */
     restPoseUpdate?: RestPoseDataUpdate;
     /** When true, this entry is transient and will be purged on next startup. */
     sessionOnly?: boolean;
@@ -149,6 +164,9 @@ async function IdbDeletePrefix(prefix: string): Promise<void> {
 
 // ─── AnimationManager ─────────────────────────────────────────────────────────
 
+/**
+ *
+ */
 export class AnimationManager {
     private _animations: StoredAnimation[] = [];
 
@@ -181,7 +199,17 @@ export class AnimationManager {
      * @param displayName - The display name to look up.
      * @returns The stored animation entry and mapping, or undefined.
      */
-    public getByDisplayName(displayName: string): { entry: StoredAnimation; mapping: AnimationGroupMapping } | undefined {
+    public getByDisplayName(displayName: string):
+        | {
+              /**
+               *
+               */
+              entry: StoredAnimation /**
+               *
+               */;
+              mapping: AnimationGroupMapping;
+          }
+        | undefined {
         if (!displayName) {
             return undefined;
         }
@@ -296,12 +324,26 @@ export class AnimationManager {
      * Session-only entries are excluded from the export.
      * @returns Array of stored animations with optional file data.
      */
-    public async exportDataAsync(): Promise<Array<StoredAnimation & { fileData?: Record<string, string> }>> {
+    public async exportDataAsync(): Promise<
+        Array<
+            StoredAnimation & {
+                /**
+                 *
+                 */
+                fileData?: Record<string, string>;
+            }
+        >
+    > {
         return await Promise.all(
             this._animations
                 .filter((animation) => !animation.sessionOnly)
                 .map(async (animation) => {
-                    const entry: StoredAnimation & { fileData?: Record<string, string> } = { ...animation };
+                    const entry: StoredAnimation & {
+                        /**
+                         *
+                         */
+                        fileData?: Record<string, string>;
+                    } = { ...animation };
                     if (animation.source === "file" && animation.fileNames?.length) {
                         const files = await this.getFilesAsync(animation.id, animation.fileNames);
                         const pairs = await Promise.all(files.map(async (file) => [file.name, await BlobToBase64(file)] as const));
@@ -322,7 +364,17 @@ export class AnimationManager {
      * @param mode - "replace" clears all existing data first; "append" skips duplicates.
      * @returns List of skipped entry descriptions.
      */
-    public async importDataAsync(animations: Array<StoredAnimation & { fileData?: Record<string, string> }>, mode: "replace" | "append"): Promise<string[]> {
+    public async importDataAsync(
+        animations: Array<
+            StoredAnimation & {
+                /**
+                 *
+                 */
+                fileData?: Record<string, string>;
+            }
+        >,
+        mode: "replace" | "append"
+    ): Promise<string[]> {
         const skipped: string[] = [];
 
         if (mode === "replace") {
@@ -364,7 +416,24 @@ export class AnimationManager {
             return;
         }
         const baseUrl = "https://assets.babylonjs.com/mixamo/Animations/";
-        const defaults: { name: string; file: string; scheme: string; displayName: string; rootNode: string }[] = [
+        const defaults: {
+            /**
+             *
+             */
+            name: string /**
+             *
+             */;
+            file: string /**
+             *
+             */;
+            scheme: string /**
+             *
+             */;
+            displayName: string /**
+             *
+             */;
+            rootNode: string;
+        }[] = [
             { name: "Rumba Dancing", file: "Rumba Dancing.glb", scheme: "Mixamo", displayName: "Rumba Dancing", rootNode: "mixamorig:Hips" },
             { name: "Hip Hop Dancing", file: "Hip Hop Dancing.glb", scheme: "Mixamo", displayName: "Hip Hop Dancing", rootNode: "mixamorig:Hips" },
             { name: "Sitting Clap", file: "Sitting Clap.glb", scheme: "Mixamo", displayName: "Sitting Clap", rootNode: "mixamorig:Hips" },
@@ -403,29 +472,38 @@ export class AnimationManager {
         try {
             const data = this._settingsStore.readSetting(AnimationSettingDescriptor);
             // Migrate old format: entries with `animationGroupName` but no `animations` array
-            this._animations = (data.animations ?? []).map((entry: StoredAnimation & { animationGroupName?: string }) => {
-                if (!entry.animations) {
-                    entry.animations = [];
-                    if (entry.animationGroupName) {
-                        entry.animations.push({
-                            index: 0,
-                            groupName: entry.animationGroupName,
-                            displayName: entry.name || entry.animationGroupName,
-                        });
+            this._animations = (data.animations ?? []).map(
+                (
+                    entry: StoredAnimation & {
+                        /**
+                         *
+                         */
+                        animationGroupName?: string;
+                    }
+                ) => {
+                    if (!entry.animations) {
+                        entry.animations = [];
+                        if (entry.animationGroupName) {
+                            entry.animations.push({
+                                index: 0,
+                                groupName: entry.animationGroupName,
+                                displayName: entry.name || entry.animationGroupName,
+                            });
+                        }
+                        if (!entry.name) {
+                            entry.name = entry.animationGroupName ?? "Unnamed";
+                        }
+                        delete entry.animationGroupName;
                     }
                     if (!entry.name) {
-                        entry.name = entry.animationGroupName ?? "Unnamed";
+                        entry.name = "Unnamed";
                     }
-                    delete entry.animationGroupName;
+                    if (!entry.rootNodeName) {
+                        entry.rootNodeName = "";
+                    }
+                    return entry as StoredAnimation;
                 }
-                if (!entry.name) {
-                    entry.name = "Unnamed";
-                }
-                if (!entry.rootNodeName) {
-                    entry.rootNodeName = "";
-                }
-                return entry as StoredAnimation;
-            });
+            );
         } catch {
             this._animations = [];
         }

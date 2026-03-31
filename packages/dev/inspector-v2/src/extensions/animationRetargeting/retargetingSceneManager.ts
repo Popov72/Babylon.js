@@ -1,6 +1,6 @@
-import type { Nullable } from "core/types";
-import type { IRetargetOptions } from "core/Animations/animatorAvatar";
-import type { Engine } from "core/Engines/engine";
+import { type Nullable } from "core/types";
+import { type IRetargetOptions } from "core/Animations/animatorAvatar";
+import { type Engine } from "core/Engines/engine";
 
 import { ArcRotateCamera } from "core/Cameras/arcRotateCamera";
 import { Vector3 } from "core/Maths/math.vector";
@@ -18,30 +18,75 @@ import { Scene } from "core/scene";
 import { Avatar } from "./avatar";
 import { AnimationSource } from "./animation";
 import { HTMLConsole } from "./htmlConsole";
-import type { NamingSchemeManager } from "./namingSchemeManager";
-import type { AvatarManager, RestPoseDataUpdate } from "./avatarManager";
-import type { AnimationManager } from "./animationManager";
+import { type NamingSchemeManager } from "./namingSchemeManager";
+import { type AvatarManager, type RestPoseDataUpdate } from "./avatarManager";
+import { type AnimationManager } from "./animationManager";
 import { SaveSnippet, TestPlaygroundCode, ExportToSceneCode, ExportToSceneHeader, ExportToSceneHelpersCode } from "./helperFunctions";
 
 export type { GizmoType } from "./avatar";
 
+/**
+ *
+ */
 export interface IRetargetingParams {
     // Avatar
+    /**
+     *
+     */
     avatarName: string;
+    /**
+     *
+     */
     avatarRescaleAvatar: boolean;
+    /**
+     *
+     */
     avatarAnimSpeed: number;
     // Animation
+    /**
+     *
+     */
     animationName: string;
+    /**
+     *
+     */
     animationSpeed: number;
     // Retarget
+    /**
+     *
+     */
     fixAnimations: boolean;
+    /**
+     *
+     */
     checkHierarchy: boolean;
+    /**
+     *
+     */
     retargetAnimationKeys: boolean;
+    /**
+     *
+     */
     fixRootPosition: boolean;
+    /**
+     *
+     */
     fixGroundReference: boolean;
+    /**
+     *
+     */
     fixGroundReferenceDynamicRefNode: boolean;
+    /**
+     *
+     */
     rootNodeName: string;
+    /**
+     *
+     */
     groundReferenceNodeName: string;
+    /**
+     *
+     */
     groundReferenceVerticalAxis: "" | "X" | "Y" | "Z";
 }
 
@@ -51,13 +96,25 @@ const SharedLayerMask = 0x30000000;
 const ShadowLayerMask1 = 0x10000000;
 const ShadowLayerMask2 = 0x20000000;
 
+/**
+ *
+ */
 export class RetargetingSceneManager {
     private _engine: Nullable<Engine> = null;
     private _scene: Nullable<Scene> = null;
     private _savedRenderLoops: Array<() => void> = [];
 
+    /**
+     *
+     */
     public avatar: Nullable<Avatar> = null;
+    /**
+     *
+     */
     public animationSource: Nullable<AnimationSource> = null;
+    /**
+     *
+     */
     public htmlConsole!: HTMLConsole;
 
     private _retargetOptions: Nullable<IRetargetOptions> = null;
@@ -66,6 +123,9 @@ export class RetargetingSceneManager {
     private _lastAnimationRestPose: RestPoseDataUpdate | undefined;
     private _isRetargeted = false;
 
+    /**
+     *
+     */
     public readonly onRetargetDoneObservable = new Observable<void>();
 
     public get isRetargeted(): boolean {
@@ -239,7 +299,21 @@ export class RetargetingSceneManager {
         avatarManager: AvatarManager,
         animationManager: AnimationManager,
         functionName: string
-    ): Promise<{ helpersCode: string; headerCode: string; functionCode: string; functionName: string } | null> {
+    ): Promise<{
+        /**
+         *
+         */
+        helpersCode: string /**
+         *
+         */;
+        headerCode: string /**
+         *
+         */;
+        functionCode: string /**
+         *
+         */;
+        functionName: string;
+    } | null> {
         if (!this._isRetargeted || !this._retargetOptions || !this._lastRetargetParams || !this.avatar || !this.animationSource) {
             return null;
         }

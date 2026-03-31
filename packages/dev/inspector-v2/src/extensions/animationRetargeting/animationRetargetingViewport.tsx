@@ -1,8 +1,7 @@
-import type { FunctionComponent } from "react";
+import { type FunctionComponent, useEffect, useRef } from "react";
 
-import type { Engine } from "core/Engines/engine";
+import { type Engine } from "core/Engines/engine";
 import { makeStyles, tokens, Body1 } from "@fluentui/react-components";
-import { useEffect, useRef } from "react";
 
 import { RetargetingSceneManager } from "./retargetingSceneManager";
 
@@ -35,6 +34,10 @@ type AnimationRetargetingViewportProps = {
     onManagerReady: (manager: RetargetingSceneManager) => void;
 };
 
+/**
+ * Overlay component for the animation retargeting viewport.
+ * @returns The React element.
+ */
 export const AnimationRetargetingViewport: FunctionComponent<AnimationRetargetingViewportProps> = ({ engine, onManagerReady }) => {
     const classes = useStyles();
     const containerRef = useRef<HTMLDivElement>(null);

@@ -1,16 +1,15 @@
-import type { Nullable } from "core/types";
-import type { ArcRotateCamera } from "core/Cameras/arcRotateCamera";
-import type { ShadowGenerator } from "core/Lights/Shadows/shadowGenerator";
-import type { Scene } from "core/scene";
-import type { AnimationGroup } from "core/Animations/animationGroup";
-import type { AbstractMesh } from "core/Meshes/abstractMesh";
-import type { TransformNode } from "core/Meshes/transformNode";
-import type { Vector3, Quaternion } from "core/Maths/math.vector";
-import type { Skeleton } from "core/Bones/skeleton";
-import type { RestPoseDataUpdate } from "./avatarManager";
+import { type Nullable } from "core/types";
+import { type ArcRotateCamera } from "core/Cameras/arcRotateCamera";
+import { type ShadowGenerator } from "core/Lights/Shadows/shadowGenerator";
+import { type Scene } from "core/scene";
+import { type AnimationGroup } from "core/Animations/animationGroup";
+import { type AbstractMesh } from "core/Meshes/abstractMesh";
+import { type TransformNode } from "core/Meshes/transformNode";
+import { type Vector3, type Quaternion, Matrix } from "core/Maths/math.vector";
+import { type Skeleton } from "core/Bones/skeleton";
+import { type RestPoseDataUpdate } from "./avatarManager";
 
 import { Color3 } from "core/Maths/math.color";
-import { Matrix } from "core/Maths/math.vector";
 import { StandardMaterial } from "core/Materials/standardMaterial";
 import { MeshBuilder } from "core/Meshes/meshBuilder";
 import { Mesh } from "core/Meshes/mesh";
@@ -26,7 +25,7 @@ import { CreateSkeletonFromTransformNodeHierarchy } from "core/Bones/skeleton.fu
 import "core/Culling/ray";
 
 import { DistancePointToLine } from "./helperFunctions";
-import type { GizmoType } from "./avatar";
+import { type GizmoType } from "./avatar";
 
 const ShadowLayerMask = 0x20000000;
 
@@ -49,8 +48,17 @@ export class AnimationSource {
     private _restPoseTransformNodeTransformations: TransformNodeTransformations = new Map();
     private _retargetedTransformNodeTransformations: TransformNodeTransformations = new Map();
 
+    /**
+     *
+     */
     public readonly onLoadedObservable = new Observable<void>();
+    /**
+     *
+     */
     public readonly onGizmoNodeSelectedObservable = new Observable<string>();
+    /**
+     *
+     */
     public readonly onPlayingObservable = new Observable<boolean>();
 
     public get animationGroup(): Nullable<AnimationGroup> {

@@ -1,4 +1,4 @@
-import type { Nullable } from "core/types";
+import { type Nullable } from "core/types";
 
 import { Observable } from "core/Misc/observable";
 import { Logger } from "core/Misc/logger";

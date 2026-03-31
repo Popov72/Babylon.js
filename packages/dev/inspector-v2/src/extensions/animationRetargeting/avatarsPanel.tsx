@@ -1,9 +1,8 @@
-import type { FunctionComponent } from "react";
-import type { AvatarManager, StoredAvatar, RestPoseDataUpdate } from "./avatarManager";
-import type { NamingSchemeManager } from "./namingSchemeManager";
-import type { Nullable } from "core/types";
+import { type FunctionComponent, useState, useCallback, useRef, useEffect } from "react";
+import { type AvatarManager, type StoredAvatar, type RestPoseDataUpdate } from "./avatarManager";
+import { type NamingSchemeManager } from "./namingSchemeManager";
+import { type Nullable } from "core/types";
 
-import { useState, useCallback, useRef, useEffect } from "react";
 import {
     Input,
     Label,
@@ -26,8 +25,10 @@ import {
     DataGridHeaderCell,
     DataGridCell,
     createTableColumn,
+    type TableColumnDefinition,
+    type TableColumnSizingOptions,
 } from "@fluentui/react-components";
-import type { TableColumnDefinition, TableColumnSizingOptions } from "@fluentui/react-components";
+
 import { Button } from "shared-ui-components/fluent/primitives/button";
 import { TextInput } from "shared-ui-components/fluent/primitives/textInput";
 import { StringDropdown } from "shared-ui-components/fluent/primitives/dropdown";
@@ -36,8 +37,8 @@ import { Textarea } from "shared-ui-components/fluent/primitives/textarea";
 import { NullEngine } from "core/Engines/nullEngine";
 import { Scene } from "core/scene";
 import { ImportMeshAsync, SceneLoader } from "core/Loading/sceneLoader";
-import type { Node } from "core/node";
-import type { AbstractMesh } from "core/Meshes/abstractMesh";
+import { type Node } from "core/node";
+import { type AbstractMesh } from "core/Meshes/abstractMesh";
 import { FilesInputStore } from "core/Misc/filesInputStore";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -274,6 +275,10 @@ function DetectNamingScheme(nodeNames: Set<string>, namingSchemeManager: NamingS
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+/**
+ * Avatars tab panel for the retargeting config dialog.
+ * @returns The React element.
+ */
 export const AvatarsPanel: FunctionComponent<{
     avatarManager: AvatarManager;
     namingSchemeManager: NamingSchemeManager;
@@ -284,7 +289,12 @@ export const AvatarsPanel: FunctionComponent<{
     const classes = useStyles();
     const [editing, setEditing] = useState<AvatarEdit | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+    const [confirmDelete, setConfirmDelete] = useState<{
+        id: string /**
+         *
+         */;
+        name: string;
+    } | null>(null);
     const [nodeList, setNodeList] = useState<NodeInfo[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);

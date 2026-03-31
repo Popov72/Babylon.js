@@ -1,8 +1,8 @@
-import type { Nullable } from "core/types";
-import type { Scene } from "core/scene";
-import type { Node } from "core/node";
-import type { Skeleton } from "core/Bones/skeleton";
-import type { Material } from "core/Materials/material";
+import { type Nullable } from "core/types";
+import { type Scene } from "core/scene";
+import { type Node } from "core/node";
+import { type Skeleton } from "core/Bones/skeleton";
+import { type Material } from "core/Materials/material";
 
 import { AbstractMesh } from "core/Meshes/abstractMesh";
 

@@ -1,11 +1,11 @@
-import type { Nullable } from "core/types";
-import type { ArcRotateCamera } from "core/Cameras/arcRotateCamera";
-import type { ShadowGenerator } from "core/Lights/Shadows/shadowGenerator";
-import type { Scene } from "core/scene";
-import type { AnimationGroup } from "core/Animations/animationGroup";
-import type { TransformNode } from "core/Meshes/transformNode";
+import { type Nullable } from "core/types";
+import { type ArcRotateCamera } from "core/Cameras/arcRotateCamera";
+import { type ShadowGenerator } from "core/Lights/Shadows/shadowGenerator";
+import { type Scene } from "core/scene";
+import { type AnimationGroup } from "core/Animations/animationGroup";
+import { type TransformNode } from "core/Meshes/transformNode";
 
-import type { AbstractMesh } from "core/Meshes/abstractMesh";
+import { type AbstractMesh } from "core/Meshes/abstractMesh";
 import { Color3 } from "core/Maths/math.color";
 
 import { SceneTransfer } from "./sceneTransfer";
@@ -20,12 +20,12 @@ import { UtilityLayerRenderer } from "core/Rendering/utilityLayerRenderer";
 import { AnimatorAvatar } from "core/Animations/animatorAvatar";
 import { SkeletonViewer } from "core/Debug/skeletonViewer";
 import { ImportMeshAsync } from "core/Loading/sceneLoader";
-import type { Bone } from "core/Bones/bone";
+import { type Bone } from "core/Bones/bone";
 
 // Side-effect import needed for scene.createPickingRay (prototype-augmented)
 import "core/Culling/ray";
 
-import type { RestPoseDataUpdate } from "./avatarManager";
+import { type RestPoseDataUpdate } from "./avatarManager";
 import { DistancePointToLine } from "./helperFunctions";
 
 export type GizmoType = "Position" | "Rotation" | "Scale";
@@ -34,6 +34,9 @@ const ShadowLayerMask = 0x10000000;
 
 type BoneTransformations = Map<Bone, { position: Vector3; scaling: Vector3; quaternion: Quaternion }>;
 
+/**
+ *
+ */
 export class Avatar {
     private _animatorAvatar: Nullable<AnimatorAvatar> = null;
     private _animationGroup: Nullable<AnimationGroup> = null;
@@ -49,8 +52,17 @@ export class Avatar {
     // For scene-sourced avatars: manages node transfer between scenes
     private readonly _sceneTransfer = new SceneTransfer();
 
+    /**
+     *
+     */
     public readonly onLoadedObservable = new Observable<void>();
+    /**
+     *
+     */
     public readonly onGizmoNodeSelectedObservable = new Observable<string>();
+    /**
+     *
+     */
     public readonly onPlayingObservable = new Observable<boolean>();
 
     public get animatorAvatar(): Nullable<AnimatorAvatar> {
@@ -120,7 +132,15 @@ export class Avatar {
     /** Returns bone options in hierarchy order, with indented labels for parenting.
      * @returns Array of label/value pairs.
      */
-    public getBoneOptions(): { label: string; value: string }[] {
+    public getBoneOptions(): {
+        /**
+         *
+         */
+        label: string /**
+         *
+         */;
+        value: string;
+    }[] {
         if (!this._animatorAvatar) {
             return [];
         }
@@ -188,7 +208,18 @@ export class Avatar {
         }
         const [skeleton] = this._animatorAvatar.skeletons;
         for (const bone of skeleton.bones) {
-            const data: { position?: number[]; scaling?: number[]; quaternion?: number[] } = {};
+            const data: {
+                /**
+                 *
+                 */
+                position?: number[] /**
+                 *
+                 */;
+                scaling?: number[] /**
+                 *
+                 */;
+                quaternion?: number[];
+            } = {};
             data.position = bone.position.asArray();
             data.scaling = bone.scaling.asArray();
             if (bone.rotationQuaternion) {

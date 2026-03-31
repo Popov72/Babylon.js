@@ -1,4 +1,4 @@
-import type { ISettingsStore, SettingDescriptor } from "../../services/settingsStore";
+import { type ISettingsStore, type SettingDescriptor } from "../../services/settingsStore";
 
 const NamingSchemeSettingDescriptor: SettingDescriptor<StoredData> = {
     key: "AnimRetargeting/NamingSchemes",
@@ -9,7 +9,18 @@ const NamingSchemeSettingDescriptor: SettingDescriptor<StoredData> = {
  * A bone/node entry in a naming scheme.
  * `depth` encodes the parent-child hierarchy: a depth-N entry is a child of the nearest preceding entry with depth N-1.
  */
-export type BoneEntry = { name: string; depth: number };
+export type BoneEntry = {
+    /**
+     *
+     */
+    name: string /**
+     *
+     */;
+    /**
+     *
+     */
+    depth: number;
+};
 
 // prettier-ignore
 const MixamoBones: BoneEntry[] = [

@@ -1,13 +1,12 @@
-import type { FunctionComponent } from "react";
-import type { NamingSchemeManager, BoneEntry } from "./namingSchemeManager";
-import type { AvatarManager, StoredAvatar } from "./avatarManager";
-import type { AnimationManager, StoredAnimation } from "./animationManager";
-import type { Nullable } from "core/types";
-import type { Skeleton } from "core/Bones/skeleton";
-import type { Bone } from "core/Bones/bone";
-import type { Node } from "core/node";
+import { type FunctionComponent, useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { type NamingSchemeManager, type BoneEntry } from "./namingSchemeManager";
+import { type AvatarManager, type StoredAvatar } from "./avatarManager";
+import { type AnimationManager, type StoredAnimation } from "./animationManager";
+import { type Nullable } from "core/types";
+import { type Skeleton } from "core/Bones/skeleton";
+import { type Bone } from "core/Bones/bone";
+import { type Node } from "core/node";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
     Dialog,
     DialogBody,
@@ -32,8 +31,9 @@ import {
     DataGridHeaderCell,
     DataGridCell,
     createTableColumn,
+    type TableColumnDefinition,
+    type TableColumnSizingOptions,
 } from "@fluentui/react-components";
-import type { TableColumnDefinition, TableColumnSizingOptions } from "@fluentui/react-components";
 import { Button } from "shared-ui-components/fluent/primitives/button";
 import { TextInput } from "shared-ui-components/fluent/primitives/textInput";
 import { StringDropdown } from "shared-ui-components/fluent/primitives/dropdown";
@@ -1036,13 +1036,17 @@ export type RetargetingConfigDialogProps = {
     onClose: () => void;
 };
 
+/**
+ * Dialog component for managing retargeting configuration (avatars, animations, schemes, remappings).
+ * @returns The React element.
+ */
 export const RetargetingConfigDialog: FunctionComponent<RetargetingConfigDialogProps> = ({ manager, avatarManager, animationManager, getCurrentScene, open, onClose }) => {
     const classes = useStyles();
     const [activeTab, setActiveTab] = useState<"avatars" | "animations" | "schemes" | "remappings">("avatars");
     const [version, setVersion] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
     const [confirmClose, setConfirmClose] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const [pendingImport, setPendingImport] = useState<any>(null);
     const [importResult, setImportResult] = useState<string | null>(null);
     const surfaceRef = useRef<HTMLElement>(null);

@@ -2,6 +2,13 @@ import { Logger } from "core/Misc/logger";
 
 let CurrentSnippetToken = "";
 
+/**
+ * Computes the squared distance from a point to a line defined by origin and direction.
+ * @param point - The point.
+ * @param origin - The line origin.
+ * @param direction - The line direction.
+ * @returns The squared distance.
+ */
 export function DistancePointToLine(
     point: { x: number; y: number; z: number },
     origin: { x: number; y: number; z: number },
@@ -56,6 +63,12 @@ function PackSnippetData(code: string) {
     });
 }
 
+/**
+ * Saves code as a Playground snippet and opens it in a new tab.
+ * @param code - The code to save.
+ * @param onBeforeOpen - Optional callback invoked just before opening the new tab.
+ * @returns A promise that resolves when the snippet is saved and opened.
+ */
 export async function SaveSnippet(code: string, onBeforeOpen?: () => void): Promise<void> {
     return await new Promise<void>((resolve, reject) => {
         const xmlHttp = new XMLHttpRequest();

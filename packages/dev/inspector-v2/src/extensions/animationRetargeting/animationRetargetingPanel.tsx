@@ -1,28 +1,28 @@
-import type { FunctionComponent } from "react";
-import type { Observable } from "core/Misc/observable";
-import type { Nullable } from "core/types";
-import type { Scene } from "core/scene";
-import type { IPlaygroundBridge } from "../../services/playgroundBridgeService";
+import { type FunctionComponent, useCallback, useEffect, useRef, useState } from "react";
+import { type Observable } from "core/Misc/observable";
+import { type Nullable } from "core/types";
+import { type Scene } from "core/scene";
+import { type IPlaygroundBridge } from "../../services/playgroundBridgeService";
 import { FilesInputStore } from "core/Misc/filesInputStore";
 import { SceneLoader } from "core/Loading/sceneLoader";
 import { SceneSerializer } from "core/Misc/sceneSerializer";
-import type { Transform } from "../../components/properties/transformProperties";
+import { type Transform, TransformProperties } from "../../components/properties/transformProperties";
 import { makeStyles, tokens, Body1Strong, Caption1 } from "@fluentui/react-components";
 import { Button } from "shared-ui-components/fluent/primitives/button";
 import { ArrowClockwiseRegular, EyeRegular, EyeOffRegular, WindowConsoleRegular, SettingsRegular, InfoRegular } from "@fluentui/react-icons";
-import { useCallback, useEffect, useRef, useState } from "react";
+
 import { Accordion as BabylonAccordion, AccordionSection as BabylonAccordionSection } from "shared-ui-components/fluent/primitives/accordion";
 import { SwitchPropertyLine } from "shared-ui-components/fluent/hoc/propertyLines/switchPropertyLine";
 import { SyncedSliderPropertyLine } from "shared-ui-components/fluent/hoc/propertyLines/syncedSliderPropertyLine";
 import { StringDropdownPropertyLine } from "shared-ui-components/fluent/hoc/propertyLines/dropdownPropertyLine";
 import { BoneDropdown } from "./boneDropdown";
 import { ButtonLine } from "shared-ui-components/fluent/hoc/buttonLine";
-import { TransformProperties } from "../../components/properties/transformProperties";
-import type { RetargetingSceneManager } from "./retargetingSceneManager";
-import type { NamingSchemeManager } from "./namingSchemeManager";
-import type { AvatarManager } from "./avatarManager";
-import type { AnimationManager } from "./animationManager";
-import type { GizmoType } from "./avatar";
+
+import { type RetargetingSceneManager } from "./retargetingSceneManager";
+import { type NamingSchemeManager } from "./namingSchemeManager";
+import { type AvatarManager } from "./avatarManager";
+import { type AnimationManager } from "./animationManager";
+import { type GizmoType } from "./avatar";
 import { RetargetingConfigDialog } from "./retargetingConfigDialog";
 import { UXContextProvider } from "../../components/uxContextProvider";
 
@@ -159,28 +159,97 @@ const VerticalAxisOptions: { label: string; value: string }[] = [
 ];
 
 export type PanelStateStore = {
+    /**
+     *
+     */
     avatarName: string;
+    /**
+     *
+     */
     avatarRescaleAvatar: boolean;
+    /**
+     *
+     */
     avatarAnimSpeed: number;
+    /**
+     *
+     */
     avatarShowSkeleton: boolean;
+    /**
+     *
+     */
     avatarShowSkeletonLocalAxes: boolean;
+    /**
+     *
+     */
     avatarGizmoEnabled: boolean;
+    /**
+     *
+     */
     avatarGizmoType: string;
+    /**
+     *
+     */
     avatarGizmoSelectedNode: string;
+    /**
+     *
+     */
     animationName: string;
+    /**
+     *
+     */
     animationSpeed: number;
+    /**
+     *
+     */
     animationShowSkeletonLocalAxes: boolean;
+    /**
+     *
+     */
     animationGizmoEnabled: boolean;
+    /**
+     *
+     */
     animationGizmoType: string;
+    /**
+     *
+     */
     animationGizmoSelectedNode: string;
+    /**
+     *
+     */
     fixAnimations: boolean;
+    /**
+     *
+     */
     checkHierarchy: boolean;
+    /**
+     *
+     */
     retargetAnimationKeys: boolean;
+    /**
+     *
+     */
     fixRootPosition: boolean;
+    /**
+     *
+     */
     fixGroundReference: boolean;
+    /**
+     *
+     */
     fixGroundReferenceDynamicRefNode: boolean;
+    /**
+     *
+     */
     rootNodeName: string;
+    /**
+     *
+     */
     groundReferenceNodeName: string;
+    /**
+     *
+     */
     groundReferenceVerticalAxis: string;
 };
 
@@ -211,22 +280,62 @@ export const DefaultPanelState: PanelStateStore = {
 };
 
 export type AnimationRetargetingPanelProps = {
+    /**
+     *
+     */
     initialIsEnabled: boolean;
+    /**
+     *
+     */
     isEnabledObs: Observable<boolean>;
+    /**
+     *
+     */
     onConfigChangedObs: Observable<void>;
+    /**
+     *
+     */
     onManagerReadyObs: Observable<RetargetingSceneManager>;
+    /**
+     *
+     */
     getCurrentManager: () => RetargetingSceneManager | null;
+    /**
+     *
+     */
     getCurrentScene: () => Nullable<Scene>;
+    /**
+     *
+     */
     getPlaygroundBridge: () => IPlaygroundBridge | null;
+    /**
+     *
+     */
     namingSchemeManager: NamingSchemeManager;
+    /**
+     *
+     */
     avatarManager: AvatarManager;
+    /**
+     *
+     */
     animationManager: AnimationManager;
     /** Persisted across remounts (e.g. when the panel is docked elsewhere). Lives in the extension closure. */
     stateStore: PanelStateStore;
+    /**
+     *
+     */
     onSetEnabled: (enabled: boolean) => void;
+    /**
+     *
+     */
     onToggleConsole: () => void;
 };
 
+/**
+ * Main panel component for the Animation Retargeting extension.
+ * @returns The React element.
+ */
 export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPanelProps> = ({
     initialIsEnabled,
     isEnabledObs,
@@ -281,9 +390,29 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
     const [groundReferenceVerticalAxis, setGroundReferenceVerticalAxis] = useState(() => stateStore.groundReferenceVerticalAxis);
 
     // Dynamic bone lists
-    const [avatarBoneOptions, setAvatarBoneOptions] = useState<{ label: string; value: string }[]>([]);
+    const [avatarBoneOptions, setAvatarBoneOptions] = useState<
+        {
+            /**
+             *
+             */
+            label: string /**
+             *
+             */;
+            value: string;
+        }[]
+    >([]);
     const [rootNodeOptions, setRootNodeOptions] = useState([{ label: "Auto", value: "Auto" }]);
-    const [groundRefNodeOptions, setGroundRefNodeOptions] = useState<{ label: string; value: string }[]>([]);
+    const [groundRefNodeOptions, setGroundRefNodeOptions] = useState<
+        {
+            /**
+             *
+             */
+            label: string /**
+             *
+             */;
+            value: string;
+        }[]
+    >([]);
 
     // Dropdown options derived from managers — refreshed when config dialog closes
     const [avatarOptions, setAvatarOptions] = useState(() =>
@@ -457,7 +586,21 @@ export const AnimationRetargetingPanel: FunctionComponent<AnimationRetargetingPa
 
             // Helper: rebuild "Root node" / "Ground ref. node" dropdowns using bone-remapping filtering.
             // Mirrors original gui.ts _getSourceTransformNodeList + updateBoneList logic.
-            const rebuildBoneLists = (allNames: string[], allOptions: { label: string; value: string }[], animName: string, avatarName: string, currentGroundRef: string) => {
+            const rebuildBoneLists = (
+                allNames: string[],
+                allOptions: {
+                    /**
+                     *
+                     */
+                    label: string /**
+                     *
+                     */;
+                    value: string;
+                }[],
+                animName: string,
+                avatarName: string,
+                currentGroundRef: string
+            ) => {
                 const filtered = BuildFilteredBoneList(allNames, animName, avatarName, namingSchemeManager, avatarManager, animationManager);
                 const filteredSet = new Set(filtered);
                 const filteredOptions = allOptions.filter((o) => filteredSet.has(o.value));

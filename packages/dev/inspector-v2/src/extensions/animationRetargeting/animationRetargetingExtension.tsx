@@ -1,23 +1,19 @@
-import type { IDisposable } from "core/index";
-import type { Engine } from "core/Engines/engine";
-import type { ServiceDefinition } from "../../modularity/serviceDefinition";
-import type { IShellService } from "../../services/shellService";
-import type { ISettingsStore } from "../../services/settingsStore";
-import type { ISceneContext } from "../../services/sceneContext";
-import type { IPlaygroundBridge } from "../../services/playgroundBridgeService";
-import { ShellServiceIdentity } from "../../services/shellService";
-import { SettingsStoreIdentity } from "../../services/settingsStore";
-import { SceneContextIdentity } from "../../services/sceneContext";
-import { PlaygroundBridgeIdentity } from "../../services/playgroundBridgeService";
+import { type IDisposable } from "core/index";
+import { type Engine } from "core/Engines/engine";
+import { type ServiceDefinition } from "../../modularity/serviceDefinition";
+import { type IShellService, ShellServiceIdentity } from "../../services/shellService";
+import { type ISettingsStore, SettingsStoreIdentity } from "../../services/settingsStore";
+import { type ISceneContext, SceneContextIdentity } from "../../services/sceneContext";
+import { type IPlaygroundBridge, PlaygroundBridgeIdentity } from "../../services/playgroundBridgeService";
 
-import type { IObserver } from "core/Misc/observable";
-import { Observable } from "core/Misc/observable";
+import { type IObserver, Observable } from "core/Misc/observable";
+
 import { PersonRunningRegular } from "@fluentui/react-icons";
 
 import { AnimationRetargetingViewport } from "./animationRetargetingViewport";
-import { AnimationRetargetingPanel, DefaultPanelState } from "./animationRetargetingPanel";
-import type { PanelStateStore } from "./animationRetargetingPanel";
-import type { RetargetingSceneManager } from "./retargetingSceneManager";
+import { AnimationRetargetingPanel, DefaultPanelState, type PanelStateStore } from "./animationRetargetingPanel";
+
+import { type RetargetingSceneManager } from "./retargetingSceneManager";
 import { NamingSchemeManager } from "./namingSchemeManager";
 import { AvatarManager } from "./avatarManager";
 import { AnimationManager } from "./animationManager";

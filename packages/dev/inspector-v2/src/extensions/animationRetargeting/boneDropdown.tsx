@@ -1,14 +1,37 @@
 import { Dropdown, makeStyles, Option, useId, Body1 } from "@fluentui/react-components";
-import type { FunctionComponent } from "react";
-import { useContext, useEffect, useState } from "react";
+import { type FunctionComponent, useContext, useEffect, useState } from "react";
+
 import { ToolContext } from "shared-ui-components/fluent/hoc/fluentToolWrapper";
 
-export type BoneOption = { label: string; value: string };
+export type BoneOption = {
+    /**
+     *
+     */
+    label: string /**
+     *
+     */;
+    /**
+     *
+     */
+    value: string;
+};
 
 export type BoneDropdownProps = {
+    /**
+     *
+     */
     value: string;
+    /**
+     *
+     */
     options: readonly BoneOption[];
+    /**
+     *
+     */
     onChange: (value: string) => void;
+    /**
+     *
+     */
     disabled?: boolean;
 };
 

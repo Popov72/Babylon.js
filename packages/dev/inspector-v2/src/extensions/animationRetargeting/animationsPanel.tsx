@@ -1,10 +1,9 @@
-import type { FunctionComponent } from "react";
-import type { AnimationManager, StoredAnimation, AnimationGroupMapping } from "./animationManager";
-import type { NamingSchemeManager } from "./namingSchemeManager";
-import type { RestPoseDataUpdate } from "./avatarManager";
-import type { Nullable } from "core/types";
+import { type FunctionComponent, useState, useCallback, useRef, useEffect } from "react";
+import { type AnimationManager, type StoredAnimation, type AnimationGroupMapping } from "./animationManager";
+import { type NamingSchemeManager } from "./namingSchemeManager";
+import { type RestPoseDataUpdate } from "./avatarManager";
+import { type Nullable } from "core/types";
 
-import { useState, useCallback, useRef, useEffect } from "react";
 import {
     Input,
     Label,
@@ -27,8 +26,10 @@ import {
     DataGridHeaderCell,
     DataGridCell,
     createTableColumn,
+    type TableColumnDefinition,
+    type TableColumnSizingOptions,
 } from "@fluentui/react-components";
-import type { TableColumnDefinition, TableColumnSizingOptions } from "@fluentui/react-components";
+
 import { Button } from "shared-ui-components/fluent/primitives/button";
 import { TextInput } from "shared-ui-components/fluent/primitives/textInput";
 import { StringDropdown } from "shared-ui-components/fluent/primitives/dropdown";
@@ -38,7 +39,7 @@ import { NullEngine } from "core/Engines/nullEngine";
 import { Scene } from "core/scene";
 import { ImportMeshAsync, SceneLoader } from "core/Loading/sceneLoader";
 import { FilesInputStore } from "core/Misc/filesInputStore";
-import type { Node } from "core/node";
+import { type Node } from "core/node";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -295,6 +296,10 @@ function DetectNamingScheme(targetNames: Set<string>, namingSchemeManager: Namin
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+/**
+ * Animations tab panel for the retargeting config dialog.
+ * @returns The React element.
+ */
 export const AnimationsPanel: FunctionComponent<{
     animationManager: AnimationManager;
     namingSchemeManager: NamingSchemeManager;
@@ -306,7 +311,12 @@ export const AnimationsPanel: FunctionComponent<{
     const [editing, setEditing] = useState<AnimationEdit | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [warning, setWarning] = useState<string | null>(null);
-    const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
+    const [confirmDelete, setConfirmDelete] = useState<{
+        id: string /**
+         *
+         */;
+        label: string;
+    } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
     const [nodeList, setNodeList] = useState<NodeInfo[]>([]);
