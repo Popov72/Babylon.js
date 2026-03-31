@@ -1,4 +1,4 @@
-import type { IService } from "../modularity/serviceDefinition";
+import { type IService } from "../modularity/serviceDefinition";
 
 /**
  * The unique identity symbol for the playground bridge service.
