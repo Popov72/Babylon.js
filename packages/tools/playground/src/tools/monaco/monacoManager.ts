@@ -286,7 +286,12 @@ export class MonacoManager {
         this.globalState.onManifestChangedObservable.notifyObservers();
     }
 
-    /** Updates the content of an existing file in the Monaco model. */
+    /**
+     * Updates the content of an existing file in the Monaco editor model.
+     * If a model exists for the given path, its value is replaced with the new content.
+     * @param path - The file path identifying the model to update
+     * @param content - The new text content to set on the model
+     */
     public updateFileContent(path: string, content: string) {
         const model = this._files.getModel(path);
         if (model) {
