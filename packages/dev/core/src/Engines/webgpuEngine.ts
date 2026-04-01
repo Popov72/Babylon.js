@@ -207,9 +207,17 @@ export interface WebGPUEngineOptions extends AbstractEngineOptions, GPURequestAd
 
 /**
  * Options for pre-warming a render pipeline asynchronously.
- * All properties are optional and default to the most common opaque rendering state.
+ * All render state properties are optional and default to the most common opaque rendering state.
  */
 export interface IWebGPURenderPipelineAsyncCreationOptions {
+    /**
+     * The compiled effect (shader stages) for the pipeline.
+     */
+    effect: Effect;
+    /**
+     * The mesh whose vertex buffer layout to use.
+     */
+    mesh: AbstractMesh;
     /**
      * The fill mode / primitive topology. Defaults to Constants.MATERIAL_TriangleFillMode.
      */
@@ -252,7 +260,7 @@ export interface IWebGPURenderPipelineAsyncCreationOptions {
      */
     cullFace?: number;
     /**
-     * Front face winding order (1 = CCW, 2 = CW). Defaults to 1 (CCW).
+     * Front face winding order (1 = CCW, 2 = CW). Defaults to 2 (CW).
      */
     frontFace?: number;
     /**
@@ -717,7 +725,7 @@ export class WebGPUEngine extends ThinWebGPUEngine {
                 .then(async (adapter: GPUAdapter | null | undefined) => {
                     if (!adapter) {
                         // eslint-disable-next-line no-throw-literal
-                        throw "Could not retrieve a WebGPU adapter (adapter is null).";
+                        throw "Could not retrieve a WebGPU adapter (adapter is null or undefined).";
                     } else {
                         this._adapter = adapter!;
                         this._adapterSupportedExtensions = [];
@@ -3810,75 +3818,102 @@ export class WebGPUEngine extends ThinWebGPUEngine {
     //------------------------------------------------------------------------------
 
     /**
-     * Asynchronously pre-creates a render pipeline so it is cached and ready to use
-     * without any compilation hitch when first rendered.
+     * Asynchronously pre-creates one or more render pipelines so they are cached and ready
+     * to use without any compilation hitch when first rendered.
      *
      * Call this for effects and meshes that are not yet rendering but will be soon
      * (e.g. streaming content, predicted material changes, pre-loading the next level).
      *
-     * @param effect - the compiled effect (shader stages) for the pipeline
-     * @param mesh - the mesh whose vertex buffer layout to use
-     * @param options - optional render state overrides (all default to common opaque settings),
-     *                  or a full GPURenderPipelineDescriptor for complete control
-     * @returns a Promise that resolves when the pipeline is compiled and cached, or null if already cached.
-     *          When a raw GPURenderPipelineDescriptor is provided, always returns a Promise (no cache lookup).
+     * When passing an array, cache state is set once per entry and restored only at the end,
+     * making batch pre-warming efficient.
+     *
+     * @param options - a single options object, an array of options objects,
+     *                  or a raw GPURenderPipelineDescriptor for complete control
+     * @returns an array of Promises for the pipelines that had cache misses (empty if all were cached).
+     *          When a raw GPURenderPipelineDescriptor is provided, always returns a single-element array.
      */
     // eslint-disable-next-line no-restricted-syntax
     public createRenderPipelineAsync(
-        effect: Effect,
-        mesh: AbstractMesh,
-        options?: IWebGPURenderPipelineAsyncCreationOptions | GPURenderPipelineDescriptor
-    ): Nullable<Promise<GPURenderPipeline>> {
+        options: IWebGPURenderPipelineAsyncCreationOptions | IWebGPURenderPipelineAsyncCreationOptions[] | GPURenderPipelineDescriptor
+    ): Promise<GPURenderPipeline>[] {
         // Raw GPURenderPipelineDescriptor: bypass the cache and create directly
-        if (options && "vertex" in options) {
-            return this._device.createRenderPipelineAsync(options as GPURenderPipelineDescriptor);
+        if ("vertex" in options) {
+            return [this._device.createRenderPipelineAsync(options as GPURenderPipelineDescriptor)];
         }
+
+        const entries = Array.isArray(options) ? options : [options];
+        const promises: Promise<GPURenderPipeline>[] = [];
         const cache = this._cacheRenderPipeline;
 
-        // Render target formats
-        cache.setColorFormat(options?.colorFormat ?? this._colorFormat);
-        cache.setDepthStencilFormat(options?.depthStencilFormat ?? this._depthTextureFormat);
+        for (const entry of entries) {
+            // Render target formats
+            cache.setColorFormat(entry.colorFormat ?? this._colorFormat);
+            cache.setDepthStencilFormat(entry.depthStencilFormat ?? this._depthTextureFormat);
 
-        // Vertex / index buffers from mesh
-        const geometry = mesh.geometry;
-        if (geometry) {
+            // Vertex / index buffers from mesh
+            const geometry = entry.mesh.geometry;
+            if (!geometry) {
+                throw new Error("WebGPUEngine.createRenderPipelineAsync: mesh has no geometry to derive vertex/index buffers from.");
+            }
             cache.setBuffers(geometry.getVertexBuffers(), geometry.getIndexBuffer(), null);
+
+            // Alpha / blend state
+            const alphaMode = entry.alphaMode ?? Constants.ALPHA_DISABLE;
+            if (alphaMode === Constants.ALPHA_DISABLE) {
+                cache.setAlphaBlendEnabled([false], 0);
+            } else {
+                const prevAlphaMode = this._alphaMode[0];
+                this.setAlphaMode(alphaMode);
+                cache.setAlphaBlendEnabled(this._alphaState._alphaBlend, this._alphaState._numTargetEnabled);
+                cache.setAlphaBlendFactors(this._alphaState._blendFunctionParameters, this._alphaState._blendEquationParameters);
+                this.setAlphaMode(prevAlphaMode);
+            }
+
+            // Depth / stencil state
+            cache.setDepthWriteEnabled(entry.depthWrite ?? true);
+            cache.setDepthTestEnabled(entry.depthTest ?? true);
+            cache.setDepthCompare(entry.depthCompare ?? Constants.LEQUAL);
+
+            // Rasterization state
+            cache.setCullEnabled(entry.cullEnabled ?? true);
+            cache.setCullFace(entry.cullFace ?? 1);
+            cache.setFrontFace(entry.frontFace ?? 2);
+
+            // Write mask
+            cache.setWriteMask(entry.writeMask ?? 0xf);
+
+            // Stencil
+            cache.setStencilEnabled(entry.stencilEnabled ?? false);
+
+            const fillMode = entry.fillMode ?? Constants.MATERIAL_TriangleFillMode;
+            const sampleCount = entry.sampleCount ?? this.currentSampleCount;
+
+            const promise = cache.preWarmPipeline(fillMode, entry.effect, sampleCount, 0);
+            if (promise) {
+                promises.push(promise);
+            }
         }
 
-        // Alpha / blend state
-        const alphaMode = options?.alphaMode ?? Constants.ALPHA_DISABLE;
-        if (alphaMode === Constants.ALPHA_DISABLE) {
-            cache.setAlphaBlendEnabled([false], 0);
-        } else {
-            // Temporarily set the alpha mode on the engine to compute blend factors,
-            // then push the computed state to the cache and restore.
-            const prevAlphaMode = this._alphaMode[0];
-            this.setAlphaMode(alphaMode);
-            cache.setAlphaBlendEnabled(this._alphaState._alphaBlend, this._alphaState._numTargetEnabled);
-            cache.setAlphaBlendFactors(this._alphaState._blendFunctionParameters, this._alphaState._blendEquationParameters);
-            this.setAlphaMode(prevAlphaMode);
-        }
+        // Restore the cache state to the engine's current tracked state once after the entire batch
+        cache.setColorFormat(this._colorFormat);
+        cache.setDepthStencilFormat(this._depthTextureFormat);
+        cache.setBuffers(this._currentVertexBuffers ?? null, this._currentIndexBuffer, this._currentOverrideVertexBuffers ?? null);
+        cache.setDepthCullingState(
+            this._depthCullingState.cull ?? false,
+            this._depthCullingState.frontFace ?? 2,
+            this._depthCullingState.cullFace ?? 1,
+            this._depthCullingState.zOffset,
+            this._depthCullingState.zOffsetUnits,
+            this._depthCullingState.depthTest ?? true,
+            this._depthCullingState.depthMask ?? true,
+            this._depthCullingState.depthFunc
+        );
+        cache.setAlphaBlendEnabled(this._alphaState._alphaBlend, this._alphaState._numTargetEnabled);
+        cache.setAlphaBlendFactors(this._alphaState._blendFunctionParameters, this._alphaState._blendEquationParameters);
+        cache.setStencilEnabled(this._stencilStateComposer.enabled ?? false);
+        cache.setWriteMask(this._colorWrite ? 0xf : 0);
 
-        // Depth / stencil state
-        cache.setDepthWriteEnabled(options?.depthWrite ?? true);
-        cache.setDepthTestEnabled(options?.depthTest ?? true);
-        cache.setDepthCompare(options?.depthCompare ?? Constants.LEQUAL);
-
-        // Rasterization state
-        cache.setCullEnabled(options?.cullEnabled ?? true);
-        cache.setCullFace(options?.cullFace ?? 1);
-        cache.setFrontFace(options?.frontFace ?? 1);
-
-        // Write mask
-        cache.setWriteMask(options?.writeMask ?? 0xf);
-
-        // Stencil
-        cache.setStencilEnabled(options?.stencilEnabled ?? false);
-
-        const fillMode = options?.fillMode ?? Constants.MATERIAL_TriangleFillMode;
-        const sampleCount = options?.sampleCount ?? this.currentSampleCount;
-
-        return cache.preWarmPipeline(fillMode, effect, sampleCount, 0);
+        return promises;
     }
 
     //------------------------------------------------------------------------------

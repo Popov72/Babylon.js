@@ -194,9 +194,12 @@ export abstract class WebGPUCacheRenderPipeline {
     public readonly mrtTextureArray: InternalTexture[];
     public readonly mrtTextureCount: number = 0;
 
-    // eslint-disable-next-line jsdoc/require-param
     /**
      * Performs the cache state setup and lookup for a render pipeline.
+     * @param fillMode defines the fill mode used to configure the rasterization state
+     * @param effect defines the effect containing the shader and vertex input layout
+     * @param sampleCount defines the number of samples to use for MSAA
+     * @param textureState defines the encoded texture state used for the pipeline cache key
      * @returns the cached pipeline on hit, or null on miss (with cache state ready for creation)
      */
     private _lookupRenderPipeline(fillMode: number, effect: Effect, sampleCount: number, textureState: number): Nullable<GPURenderPipeline> {
