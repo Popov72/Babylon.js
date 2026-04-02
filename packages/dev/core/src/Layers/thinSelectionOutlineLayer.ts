@@ -477,7 +477,8 @@ export class ThinSelectionOutlineLayer extends ThinEffectLayer {
         const hardwareInstancedRendering =
             batch.hardwareInstancedRendering[subMesh._id] ||
             renderingMesh.hasThinInstances ||
-            !!(renderingMesh._userInstancedBuffersStorage?.vertexBuffers[ThinSelectionOutlineLayer.InstanceSelectionIdAttributeName]);
+            (!!renderingMesh._userInstancedBuffersStorage &&
+                ThinSelectionOutlineLayer.InstanceSelectionIdAttributeName in renderingMesh._userInstancedBuffersStorage.vertexBuffers);
 
         this._setEmissiveTextureAndColor(renderingMesh, subMesh, material);
 
