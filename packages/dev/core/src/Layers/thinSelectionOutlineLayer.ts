@@ -634,7 +634,9 @@ export class ThinSelectionOutlineLayer extends ThinEffectLayer {
 
     /** @internal */
     public override _shouldRenderMesh(mesh: Mesh): boolean {
-        return this.hasMesh(mesh);
+        // Use the base class check (renderingGroupId) rather than this.hasMesh,
+        // because LOD meshes won't be in _selection but still need to render.
+        return super.hasMesh(mesh);
     }
 
     /** @internal */
@@ -650,8 +652,10 @@ export class ThinSelectionOutlineLayer extends ThinEffectLayer {
      * @returns true if the mesh will be used
      */
     public override hasMesh(mesh: AbstractMesh): boolean {
-        // we control selection as RTT render list
-        return super.hasMesh(mesh);
+        if (!super.hasMesh(mesh) || !this._selection) {
+            return false;
+        }
+        return this._selection.indexOf(mesh) !== -1;
     }
 
     /** @internal */
