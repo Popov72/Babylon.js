@@ -474,7 +474,10 @@ export class ThinSelectionOutlineLayer extends ThinEffectLayer {
             return;
         }
 
-        const hardwareInstancedRendering = batch.hardwareInstancedRendering[subMesh._id] || renderingMesh.hasThinInstances || !!renderingMesh._userInstancedBuffersStorage;
+        const hardwareInstancedRendering =
+            batch.hardwareInstancedRendering[subMesh._id] ||
+            renderingMesh.hasThinInstances ||
+            !!(renderingMesh._userInstancedBuffersStorage?.vertexBuffers[ThinSelectionOutlineLayer.InstanceSelectionIdAttributeName]);
 
         this._setEmissiveTextureAndColor(renderingMesh, subMesh, material);
 
@@ -566,7 +569,15 @@ export class ThinSelectionOutlineLayer extends ThinEffectLayer {
                 BindClipPlane(effect, material, scene);
 
                 // Selection ID
-                const selectionId = this._meshUniqueIdToSelectionId[renderingMesh.uniqueId];
+                let selectionId = this._meshUniqueIdToSelectionId[renderingMesh.uniqueId];
+                // When using LOD, the rendering mesh is the LOD mesh, not the source mesh.
+                // Look up the selection ID from the master (source) mesh.
+                if (selectionId === undefined && renderingMesh._masterMesh) {
+                    selectionId = this._meshUniqueIdToSelectionId[renderingMesh._masterMesh.uniqueId];
+                    if (selectionId === undefined) {
+                        selectionId = renderingMesh._masterMesh.instancedBuffers?.[ThinSelectionOutlineLayer.InstanceSelectionIdAttributeName];
+                    }
+                }
                 if (!renderingMesh.hasInstances && !renderingMesh.hasThinInstances && !renderingMesh.isAnInstance && selectionId !== undefined) {
                     effect.setFloat("selectionId", selectionId);
                 }
